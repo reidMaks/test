@@ -13,3 +13,6 @@
 # Файли конфігурації Talos (вони містять ключі кластера)
 *.yaml
 !talos-config.yaml # якщо захочете зафіксувати лише шаблон
+
+*kubeconfig
+*talosconfig
