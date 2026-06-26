@@ -17,6 +17,8 @@ data "talos_machine_configuration" "worker_config" {
     machine:
       network:
         nameservers:
+          - 8.8.8.8
+          - 1.1.1.1
           - ${local.gateway_ip}
         interfaces:
           - interface: ens18

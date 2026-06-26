@@ -1,0 +1,61 @@
+---
+# 1. Deployment (залишається без змін)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pairdrop
+  namespace: default
+  labels:
+    app: pairdrop
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pairdrop
+  template:
+    metadata:
+      labels:
+        app: pairdrop
+    spec:
+      containers:
+      - name: pairdrop
+        image: ghcr.io/schlagmichdoch/pairdrop:latest
+        ports:
+        - containerPort: 3000
+
+---
+# 2. Service (Тепер він захований всередині кластера)
+apiVersion: v1
+kind: Service
+metadata:
+  name: pairdrop-service
+  namespace: default
+spec:
+  type: ClusterIP
+  selector:
+    app: pairdrop
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000
+
+---
+# 3. Ingress (Правило маршрутизації)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pairdrop-ingress
+  namespace: default
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: pairdrop.kms-lab.in.ua
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: pairdrop-service
+            port:
+              number: 80
