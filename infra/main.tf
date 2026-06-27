@@ -73,6 +73,7 @@ resource "proxmox_virtual_environment_vm" "talos" {
 
   network_device {
     bridge = "vmbr0"
+    model  = "vmxnet3"
   }
 
   operating_system {

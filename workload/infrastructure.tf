@@ -1,13 +1,24 @@
 # ==========================================
 # METALLB LOAD BALANCER
 # ==========================================
+resource "kubernetes_namespace" "metallb_system" {
+  metadata {
+    name = "metallb-system"
+    labels = {
+      "pod-security.kubernetes.io/enforce" = "privileged"
+      "pod-security.kubernetes.io/audit"   = "privileged"
+      "pod-security.kubernetes.io/warn"    = "privileged"
+    }
+  }
+}
+
 resource "helm_release" "metallb" {
   name             = "metallb"
   repository       = "https://metallb.github.io/metallb"
   chart            = "metallb"
   namespace        = "metallb-system"
-  create_namespace = true
   version          = "0.16.1"
+  depends_on       = [kubernetes_namespace.metallb_system]
 }
 
 # Застосовуємо наш локальний чарт з IP-пулами ПІСЛЯ встановлення MetalLB
@@ -40,6 +51,13 @@ resource "helm_release" "traefik" {
         type = "LoadBalancer"
         annotations = {
           "metallb.universe.tf/loadBalancerIPs" = "192.168.0.45"
+        }
+      }
+      ingressRoute = {
+        dashboard = {
+          enabled     = true
+          matchRule   = "Host(`traefik.kms-lab.in.ua`)"
+          entryPoints = ["web"]
         }
       }
     })
@@ -77,6 +95,62 @@ resource "helm_release" "longhorn" {
       persistence = {
         defaultClassReplicaCount = 2
       }
+    })
+  ]
+}
+
+# ==========================================
+# LONGHORN INGRESS
+# ==========================================
+resource "kubernetes_ingress_v1" "longhorn_ui" {
+  metadata {
+    name      = "longhorn-ui"
+    namespace = "longhorn-system"
+  }
+
+  spec {
+    ingress_class_name = "traefik"
+
+    rule {
+      host = "longhorn.kms-lab.in.ua"
+
+      http {
+        path {
+          path      = "/"
+          path_type = "Prefix"
+          
+          backend {
+            service {
+              name = "longhorn-frontend"
+              port {
+                number = 80
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  depends_on = [
+    helm_release.longhorn,
+    helm_release.traefik
+  ]
+}
+
+# ==========================================
+# METRICS SERVER (for k9s CPU/RAM)
+# ==========================================
+resource "helm_release" "metrics_server" {
+  name       = "metrics-server"
+  repository = "https://kubernetes-sigs.github.io/metrics-server/"
+  chart      = "metrics-server"
+  namespace  = "kube-system"
+  version    = "3.12.1"
+
+  values = [
+    yamlencode({
+      args = ["--kubelet-insecure-tls"]
     })
   ]
 }
