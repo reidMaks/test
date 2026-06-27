@@ -30,9 +30,23 @@ data "talos_machine_configuration" "config" {
             routes:
               - network: 0.0.0.0/0
                 gateway: ${local.gateway_ip}
+      kubelet:
+        extraMounts:
+          - destination: /var/lib/longhorn
+            type: bind
+            source: /var/lib/longhorn
+            options:
+              - bind
+              - rshared
+              - rw
+      kernel:
+        modules:
+          - name: nbd
+          - name: iscsi_tcp
+          - name: configfs
       install:
         disk: /dev/vda
-        image: factory.talos.dev/installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515:v1.13.5
+        image: ${local.talos_installer}
     EOT
   ]
 }
