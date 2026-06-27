@@ -3,8 +3,8 @@
 .terraform/
 
 # Файли стану (можуть містити паролі у відкритому вигляді!)
-*.tfstate
-*.tfstate.*
+*/*.tfstate
+*/*.tfstate.*
 
 # Файли зі змінними, де ви будете тримати токени
 *.tfvars
@@ -15,3 +15,5 @@
 
 kubeconfig
 talosconfig
+
+.env*

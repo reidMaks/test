@@ -2,10 +2,13 @@
 # ГЕНЕРАЦІЯ КОНФІГУРАЦІЇ ДЛЯ CONTROL PLANE
 # ==========================================
 
-data "talos_machine_configuration" "cp_config" {
+data "talos_machine_configuration" "config" {
+
+  for_each = local.talos_vms
+
   cluster_name     = "talos-k8s"
   cluster_endpoint = "https://${local.cp_ip}:6443"
-  machine_type     = "controlplane"
+  machine_type     = each.value.machine_type
   machine_secrets  = talos_machine_secrets.this.machine_secrets
 
   talos_version = "v1.13.5"
@@ -23,7 +26,7 @@ data "talos_machine_configuration" "cp_config" {
           - interface: ens18
             dhcp: false
             addresses:
-              - ${local.cp_ip}/24
+              - ${each.value.ip}/24
             routes:
               - network: 0.0.0.0/0
                 gateway: ${local.gateway_ip}
@@ -34,14 +37,16 @@ data "talos_machine_configuration" "cp_config" {
   ]
 }
 
-# ==========================================
-# ЗАСТОСУВАННЯ КОНФІГУРАЦІЇ
-# ==========================================
 
-resource "talos_machine_configuration_apply" "cp_apply" {
-  depends_on                  = [proxmox_virtual_environment_vm.talos_cp_01]
+
+
+resource "talos_machine_configuration_apply" "apply" {
+
+  for_each = local.talos_vms
+
+  depends_on                  = [proxmox_virtual_environment_vm.talos]
   client_configuration        = talos_machine_secrets.this.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.cp_config.machine_configuration
+  machine_configuration_input = data.talos_machine_configuration.config[each.key].machine_configuration
 
   # IP адреса, за якою Terraform шукатиме ноду для відправки конфігурації
   #   node                        = proxmox_virtual_environment_vm.talos_cp_01.ipv4_addresses[1][0]
@@ -52,19 +57,19 @@ resource "talos_machine_configuration_apply" "cp_apply" {
   # 3. [0] бере перший знайдений збіг
   node = try(
     [
-      for ip in flatten(proxmox_virtual_environment_vm.talos_cp_01.ipv4_addresses) : ip
+      for ip in flatten(proxmox_virtual_environment_vm.talos[each.key].ipv4_addresses) : ip
       if length(regexall("^192\\.168\\.0\\.", ip)) > 0
     ][0],
-    local.cp_ip
+    each.value.ip
   )
 }
 
 # ==========================================
-# ІНІЦІАЛІЗАЦІЯ КЛАС ТЕРА (BOOTSTRAP)
+# ІНІЦІАЛІЗАЦІЯ КЛАСТЕРА (BOOTSTRAP)
 # ==========================================
 
 resource "talos_machine_bootstrap" "bootstrap" {
-  depends_on           = [talos_machine_configuration_apply.cp_apply]
+  depends_on           = [talos_machine_configuration_apply.apply]
   client_configuration = talos_machine_secrets.this.client_configuration
   node                 = local.cp_ip
 }

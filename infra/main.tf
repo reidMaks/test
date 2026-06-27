@@ -37,11 +37,14 @@ resource "proxmox_download_file" "talos" {
   file_name = "talos-v1.13.5-amd64.iso"
 }
 
-resource "proxmox_virtual_environment_vm" "talos_cp_01" {
-  name        = "talos-cp-01"
-  description = "Kubernetes Control Plane 01 (Talos)"
+resource "proxmox_virtual_environment_vm" "talos" {
+
+  for_each = local.talos_vms
+
+  name        = each.value.name
+  description = each.value.description
   tags        = ["talos", "k8s"]
-  node_name   = "master"
+  node_name   = each.value.node_name
 
   started = true
 
@@ -49,23 +52,23 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
     enabled = true
   }
   cpu {
-    cores = 2
+    cores = each.value.cores
     type  = "host"
   }
 
   memory {
-    dedicated = 2048
+    dedicated = each.value.memory
   }
 
   disk {
     datastore_id = "local-lvm"
     interface    = "virtio0"
     file_format  = "raw"
-    size         = 10
+    size         = each.value.disk_size
   }
 
   cdrom {
-    file_id = proxmox_download_file.talos["master"].id
+    file_id = proxmox_download_file.talos[each.value.node_name].id
   }
 
   network_device {
@@ -75,46 +78,10 @@ resource "proxmox_virtual_environment_vm" "talos_cp_01" {
   operating_system {
     type = "l26"
   }
-}
 
-
-
-resource "proxmox_virtual_environment_vm" "talos_worker_01" {
-  name        = "talos-worker-01"
-  description = "Kubernetes worker 01 (Talos)"
-  tags        = ["talos", "k8s"]
-  node_name   = "proxmox-1"
-
-  started = true
-
-  agent {
-    enabled = true
-  }
-  cpu {
-    cores = 3
-    type  = "host"
-  }
-
-  memory {
-    dedicated = 4096
-  }
-
-  disk {
-    datastore_id = "local-lvm"
-    interface    = "virtio0"
-    file_format  = "raw"
-    size         = 30
-  }
-
-  cdrom {
-    file_id = proxmox_download_file.talos["proxmox-1"].id
-  }
-
-  network_device {
-    bridge = "vmbr0"
-  }
-
-  operating_system {
-    type = "l26"
+  lifecycle {
+    ignore_changes = [
+      network_device[0].mac_address
+    ]
   }
 }
