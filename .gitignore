@@ -19,3 +19,4 @@ talosconfig
 .env*
 
 tmp/*
+.bw-provider*

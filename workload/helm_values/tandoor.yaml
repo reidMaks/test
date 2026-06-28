@@ -1,0 +1,107 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/app-template-5.0.1/charts/other/app-template/values.schema.json
+
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: vabene1111/recipes
+          tag: "latest"
+        env:
+          DB_ENGINE: "django.db.backends.postgresql"
+          POSTGRES_HOST: "tandoor-db"
+          POSTGRES_DB: "db_recipes"
+          POSTGRES_PORT: "5432"
+          POSTGRES_USER: "tandoor"
+          STATIC_URL: "/staticfiles/"
+          MEDIA_URL: "/media/"
+          ALLOWED_HOSTS: "*"
+          CSRF_TRUSTED_ORIGINS: 'https://{{ (first .Values.ingress.main.hosts).host }}'
+        envFrom:
+          - secretRef:
+              name: tandoor-secrets
+        resources:
+          requests:
+            cpu: 10m
+            memory: 128Mi
+          limits:
+            memory: 1Gi
+  db:
+    type: statefulset
+    containers:
+      main:
+        image:
+          repository: postgres
+          tag: "16-alpine"
+        env:
+          POSTGRES_DB: "db_recipes"
+          POSTGRES_USER: "tandoor"
+          PGDATA: "/var/lib/postgresql/data/pgdata"
+        envFrom:
+          - secretRef:
+              name: tandoor-secrets
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            memory: 256Mi
+
+service:
+  app:
+    controller: main
+    ports:
+      http:
+        port: 80 
+  db:
+    controller: db
+    ports:
+      postgres:
+        port: 5432
+
+ingress:
+  main:
+    enabled: true
+    className: "traefik"
+    hosts:
+      - host: tandoor.kms-lab.in.ua
+        paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
+
+persistence:
+  staticfiles:
+    type: persistentVolumeClaim
+    annotations:
+      helm.sh/resource-policy: keep
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 200Mi
+    advancedMounts:
+      main:
+        main:
+          - path: /opt/recipes/staticfiles
+  mediafiles:
+    type: persistentVolumeClaim
+    annotations:
+      helm.sh/resource-policy: keep
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 100Mi
+    advancedMounts:
+      main:
+        main:
+          - path: /opt/recipes/mediafiles
+  db:
+    type: persistentVolumeClaim
+    annotations:
+      helm.sh/resource-policy: keep
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 100Mi
+    advancedMounts:
+      db:
+        main:
+          - path: /var/lib/postgresql/data
