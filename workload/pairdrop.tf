@@ -10,19 +10,6 @@ resource "helm_release" "pairdrop" {
   upgrade_install = true
 
   values = [
-    yamlencode({
-      ingressRoute = {
-        create      = true
-        entryPoints = ["web"]
-        rule        = "Host(`pairdrop.kms-lab.in.ua`)"
-      }
-      
-      env = [
-        {
-          name  = "WS_FALLBACK"
-          value = "true"
-        }
-      ]
-    })
+    file("${path.module}/helm_values/pairdrop.yaml")
   ]
 }

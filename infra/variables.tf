@@ -1,5 +1,5 @@
 variable "proxmox_endpoint" {
-  type = string
+  type        = string
   description = "URL до Proxmox API (наприклад, https://192.168.1.10:8006/)"
 }
 

@@ -1,0 +1,15 @@
+ingressRoute:
+  create: true
+  entryPoints: ["web"]
+  rule: "Host(`pairdrop.kms-lab.in.ua`)"
+
+env:
+  - name: WS_FALLBACK
+    value: "true"
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+  limits:
+    memory: 128Mi

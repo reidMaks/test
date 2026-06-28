@@ -14,6 +14,12 @@ controllers:
             value: "72"
           - name: DEFAULT_CURRENCY
             value: "UAH"
+        resources:
+          requests:
+            cpu: 10m
+            memory: 256Mi
+          limits:
+            memory: 512Mi
 
 service:
   app:

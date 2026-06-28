@@ -23,9 +23,9 @@ controllers:
         resources:
           requests:
             cpu: 10m
-            memory: 128Mi
-          limits:
             memory: 1Gi
+          limits:
+            memory: 2Gi
   db:
     type: statefulset
     containers:
@@ -78,7 +78,7 @@ persistence:
       helm.sh/resource-policy: keep
     storageClass: "longhorn"
     accessMode: ReadWriteOnce
-    size: 200Mi
+    size: 300Mi
     advancedMounts:
       main:
         main:
@@ -100,7 +100,7 @@ persistence:
       helm.sh/resource-policy: keep
     storageClass: "longhorn"
     accessMode: ReadWriteOnce
-    size: 100Mi
+    size: 200Mi
     advancedMounts:
       db:
         main:

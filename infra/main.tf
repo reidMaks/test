@@ -48,6 +48,8 @@ resource "proxmox_virtual_environment_vm" "talos" {
 
   started = true
 
+  boot_order = ["virtio0", "ide3", "net0"]
+
   agent {
     enabled = true
   }
