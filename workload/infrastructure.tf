@@ -18,6 +18,7 @@ resource "helm_release" "metallb" {
   chart            = "metallb"
   namespace        = "metallb-system"
   version          = "0.16.1"
+  upgrade_install  = true
   depends_on       = [kubernetes_namespace.metallb_system]
 }
 
@@ -26,6 +27,7 @@ resource "helm_release" "metallb_config" {
   name       = "metallb-config"
   chart      = "${path.module}/metallb-config"
   namespace  = "metallb-system"
+  upgrade_install = true
   depends_on = [helm_release.metallb]
 }
 
@@ -39,6 +41,7 @@ resource "helm_release" "traefik" {
   namespace        = "traefik-system"
   create_namespace = true
   version          = "41.0.0"
+  upgrade_install  = true
   depends_on       = [helm_release.metallb_config]
 
   values = [
@@ -85,6 +88,7 @@ resource "helm_release" "longhorn" {
   chart      = "longhorn"
   namespace  = "longhorn-system"
   version    = "1.12.0"
+  upgrade_install = true
 
   depends_on = [kubernetes_namespace.longhorn_system]
   values = [
@@ -147,6 +151,7 @@ resource "helm_release" "metrics_server" {
   chart      = "metrics-server"
   namespace  = "kube-system"
   version    = "3.12.1"
+  upgrade_install = true
 
   values = [
     yamlencode({

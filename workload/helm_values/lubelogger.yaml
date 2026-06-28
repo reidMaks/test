@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/app-template-5.0.1/charts/other/app-template/values.schema.json
+
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: ghcr.io/hargata/lubelogger
+          tag: "latest"
+
+
+service:
+  app:
+    controller: main
+    ports:
+      http:
+        port: 8080 
+
+ingress:
+  main:
+    enabled: true
+    className: "traefik"
+    hosts:
+      - host: lubelogger.kms-lab.in.ua
+        paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
+
+persistence:
+  # Перший том: для основних даних Lubelogger (база даних, завантажені фото чеків/деталей)
+  data:
+    type: persistentVolumeClaim
+    annotations:
+      helm.sh/resource-policy: keep
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 1Gi # За потреби можна буде збільшити пізніше
+    globalMounts:
+      - path: /App/data
+
+  # Другий том: для ключів сесій ASP.NET, щоб не "розлогінювало" після рестарту поду
+  keys:
+    type: persistentVolumeClaim
+    annotations:
+      helm.sh/resource-policy: keep
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 100Mi # Для ключів достатньо мінімального обсягу пам'яті
+    globalMounts:
+      - path: /root/.aspnet/DataProtection-Keys

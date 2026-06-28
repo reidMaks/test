@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/app-template-5.0.1/charts/other/app-template/values.schema.json
+
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: ghcr.io/cmintey/wishlist
+          tag: "latest"
+        env:
+          - name: ORIGIN
+            value: "https://wishlist.kms-lab.in.ua"
+          - name: TOKEN_TIME
+            value: "72"
+          - name: DEFAULT_CURRENCY
+            value: "UAH"
+
+service:
+  app:
+    controller: main
+    ports:
+      http:
+        port: 3280 
+
+ingress:
+  main:
+    enabled: true
+    className: "traefik"
+    hosts:
+      - host: wishlist.kms-lab.in.ua
+        paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
+
+persistence:
+  # This is where user image uploads will be stored
+  uploads:
+    type: persistentVolumeClaim
+    annotations:
+      helm.sh/resource-policy: keep
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 200Mi 
+    globalMounts:
+      - path: /usr/src/app/uploads
+
+  # This is where the sqlite database will be stored
+  data:
+    type: persistentVolumeClaim
+    annotations:
+      helm.sh/resource-policy: keep
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 100Mi 
+    globalMounts:
+      - path: /usr/src/app/data
