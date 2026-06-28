@@ -1,0 +1,36 @@
+defaultDashboardsEnabled: true
+
+# Налаштування Grafana
+grafana:
+  enabled: true
+  adminPassword: "TestPassword123!" # Змінимо пізніше або перенесемо в секрет
+  ingress:
+    enabled: true
+    ingressClassName: "traefik"
+    path: /
+    pathType: ImplementationSpecific
+    hosts:
+      - grafana.kms-lab.in.ua
+
+# Налаштування бази даних VictoriaMetrics
+vmsingle:
+  enabled: true
+  spec:
+    retentionPeriod: "14d" # Зберігати метрики 14 днів
+    storage:
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: "longhorn"
+
+# Налаштування збирачів метрик
+vmagent:
+  enabled: true
+
+# Вбудовані exporters для Kubernetes
+kubeStateMetrics:
+  enabled: true
+nodeExporter:
+  enabled: true
+prometheus-node-exporter:
+  enabled: true

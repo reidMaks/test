@@ -11,8 +11,8 @@ locals {
       name         = "talos-cp-01"
       description  = "Kubernetes Control Plane 01 (Talos)"
       node_name    = "master"
-      cores        = 2
-      memory       = 2048
+      cores        = 3
+      memory       = 4096
       disk_size    = 10
       ip           = "192.168.0.40"
       machine_type = "controlplane"
