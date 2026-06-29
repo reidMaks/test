@@ -22,7 +22,7 @@ locals {
       description  = "Kubernetes worker 01 (Talos)"
       node_name    = "proxmox-1"
       cores        = 3
-      memory       = 6144
+      memory       = 8192
       disk_size    = 40
       ip           = "192.168.0.41"
       machine_type = "worker"

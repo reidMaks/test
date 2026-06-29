@@ -1,0 +1,150 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/app-template-5.0.1/charts/other/app-template/values.schema.json
+
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: ghcr.io/paperless-ngx/paperless-ngx
+          tag: "latest"
+        env:
+          PAPERLESS_URL: 'https://{{ (first .Values.ingress.main.hosts).host }}'
+          PAPERLESS_REDIS: "redis://paperless-redis:6379"
+          PAPERLESS_DBENGINE: "postgresql"
+          PAPERLESS_DBHOST: "paperless-db"
+          PAPERLESS_DBPORT: "5432"
+          PAPERLESS_DBUSER: "paperless"
+          PAPERLESS_DBNAME: "paperless"
+          # Timezone and defaults
+          PAPERLESS_TIME_ZONE: "Europe/Kyiv"
+          PAPERLESS_OCR_LANGUAGE: "ukr+eng"
+          PAPERLESS_OCR_LANGUAGES: "ukr"
+        envFrom:
+          - secretRef:
+              name: paperless-secrets
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+          limits:
+            memory: 2Gi
+  
+  redis:
+    type: statefulset
+    containers:
+      main:
+        image:
+          repository: redis
+          tag: "7-alpine"
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            memory: 128Mi
+
+  db:
+    type: statefulset
+    containers:
+      main:
+        image:
+          repository: postgres
+          tag: "16-alpine"
+        env:
+          POSTGRES_DB: "paperless"
+          POSTGRES_USER: "paperless"
+          PGDATA: "/var/lib/postgresql/data/pgdata"
+        envFrom:
+          - secretRef:
+              name: paperless-secrets
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            memory: 256Mi
+
+service:
+  app:
+    controller: main
+    ports:
+      http:
+        port: 8000
+  redis:
+    controller: redis
+    ports:
+      redis:
+        port: 6379
+  db:
+    controller: db
+    ports:
+      postgres:
+        port: 5432
+
+ingress:
+  main:
+    enabled: true
+    className: "traefik"
+    hosts:
+      - host: paperless.kms-lab.in.ua
+        paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
+
+persistence:
+  data:
+    type: persistentVolumeClaim
+    annotations:
+      helm.sh/resource-policy: keep
+      recurring-job-group.longhorn.io/daily-backups: "enabled"
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 500Mi
+    advancedMounts:
+      main:
+        main:
+          - path: /usr/src/paperless/data
+  media:
+    type: persistentVolumeClaim
+    annotations:
+      helm.sh/resource-policy: keep
+      recurring-job-group.longhorn.io/daily-backups: "enabled"
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    advancedMounts:
+      main:
+        main:
+          - path: /usr/src/paperless/media
+  consume:
+    type: persistentVolumeClaim
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 500Mi
+    advancedMounts:
+      main:
+        main:
+          - path: /usr/src/paperless/consume
+  export:
+    type: persistentVolumeClaim
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 500Mi
+    advancedMounts:
+      main:
+        main:
+          - path: /usr/src/paperless/export
+  db:
+    type: persistentVolumeClaim
+    annotations:
+      helm.sh/resource-policy: keep
+      recurring-job-group.longhorn.io/daily-backups: "enabled"
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 500Mi
+    advancedMounts:
+      db:
+        main:
+          - path: /var/lib/postgresql/data
