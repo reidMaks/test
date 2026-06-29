@@ -46,6 +46,7 @@ persistence:
     type: persistentVolumeClaim
     annotations:
       helm.sh/resource-policy: keep
+      recurring-job-group.longhorn.io/daily-backups: "enabled"
     storageClass: "longhorn"
     accessMode: ReadWriteOnce
     size: 200Mi 
@@ -57,6 +58,7 @@ persistence:
     type: persistentVolumeClaim
     annotations:
       helm.sh/resource-policy: keep
+      recurring-job-group.longhorn.io/daily-backups: "enabled"
     storageClass: "longhorn"
     accessMode: ReadWriteOnce
     size: 100Mi 

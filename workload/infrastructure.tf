@@ -81,6 +81,28 @@ resource "kubernetes_namespace" "longhorn_system" {
   }
 }
 
+data "bitwarden-secrets_secret" "qobject_access_key" {
+  id = "6cdb37ca-5ec5-4ab6-8608-b478007ac01a"
+}
+
+data "bitwarden-secrets_secret" "qobject_secret_key" {
+  id = "88f6f448-ebc1-44f5-87a7-b478007af8f1"
+}
+
+resource "kubernetes_secret" "longhorn_backup" {
+  metadata {
+    name      = "longhorn-backup-credential-v2"
+    namespace = kubernetes_namespace.longhorn_system.metadata[0].name
+  }
+
+  data = {
+    AWS_ACCESS_KEY_ID     = data.bitwarden-secrets_secret.qobject_access_key.value
+    AWS_SECRET_ACCESS_KEY = data.bitwarden-secrets_secret.qobject_secret_key.value
+    AWS_ENDPOINTS         = "http://192.168.0.21:8010"
+    VIRTUAL_HOSTED_STYLE  = "true"
+  }
+}
+
 
 resource "helm_release" "longhorn" {
   name       = "longhorn"
@@ -90,11 +112,16 @@ resource "helm_release" "longhorn" {
   version    = "1.12.0"
   upgrade_install = true
 
-  depends_on = [kubernetes_namespace.longhorn_system]
+  depends_on = [
+    kubernetes_namespace.longhorn_system,
+    kubernetes_secret.longhorn_backup
+  ]
   values = [
     yamlencode({
       defaultSettings = {
         defaultDataPath = "/var/lib/longhorn"
+        backupTargetCredentialSecret = "longhorn-backup-credential-v2"
+        backupTarget = "s3://s3-like-bucket@us-east-1/"
       }
       persistence = {
         defaultClassReplicaCount = 2
@@ -158,4 +185,27 @@ resource "helm_release" "metrics_server" {
       args = ["--kubelet-insecure-tls"]
     })
   ]
+}
+
+# ==========================================
+# LONGHORN RECURRING JOBS
+# ==========================================
+resource "kubernetes_manifest" "longhorn_daily_backup" {
+  manifest = {
+    apiVersion = "longhorn.io/v1beta2"
+    kind       = "RecurringJob"
+    metadata = {
+      name      = "daily-backup"
+      namespace = "longhorn-system"
+    }
+    spec = {
+      cron        = "0 2 * * *"
+      task        = "backup"
+      retain      = 7
+      concurrency = 1
+      groups      = ["daily-backups"]
+    }
+  }
+
+  depends_on = [helm_release.longhorn]
 }
