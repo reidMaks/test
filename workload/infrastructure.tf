@@ -13,22 +13,22 @@ resource "kubernetes_namespace" "metallb_system" {
 }
 
 resource "helm_release" "metallb" {
-  name             = "metallb"
-  repository       = "https://metallb.github.io/metallb"
-  chart            = "metallb"
-  namespace        = "metallb-system"
-  version          = "0.16.1"
-  upgrade_install  = true
-  depends_on       = [kubernetes_namespace.metallb_system]
+  name            = "metallb"
+  repository      = "https://metallb.github.io/metallb"
+  chart           = "metallb"
+  namespace       = "metallb-system"
+  version         = "0.16.1"
+  upgrade_install = true
+  depends_on      = [kubernetes_namespace.metallb_system]
 }
 
 # Застосовуємо наш локальний чарт з IP-пулами ПІСЛЯ встановлення MetalLB
 resource "helm_release" "metallb_config" {
-  name       = "metallb-config"
-  chart      = "${path.module}/metallb-config"
-  namespace  = "metallb-system"
+  name            = "metallb-config"
+  chart           = "${path.module}/metallb-config"
+  namespace       = "metallb-system"
   upgrade_install = true
-  depends_on = [helm_release.metallb]
+  depends_on      = [helm_release.metallb]
 }
 
 # ==========================================
@@ -105,11 +105,11 @@ resource "kubernetes_secret" "longhorn_backup" {
 
 
 resource "helm_release" "longhorn" {
-  name       = "longhorn"
-  repository = "https://charts.longhorn.io"
-  chart      = "longhorn"
-  namespace  = "longhorn-system"
-  version    = "1.12.0"
+  name            = "longhorn"
+  repository      = "https://charts.longhorn.io"
+  chart           = "longhorn"
+  namespace       = "longhorn-system"
+  version         = "1.12.0"
   upgrade_install = true
 
   depends_on = [
@@ -119,9 +119,9 @@ resource "helm_release" "longhorn" {
   values = [
     yamlencode({
       defaultSettings = {
-        defaultDataPath = "/var/lib/longhorn"
+        defaultDataPath              = "/var/lib/longhorn"
         backupTargetCredentialSecret = "longhorn-backup-credential-v2"
-        backupTarget = "s3://s3-like-bucket@us-east-1/"
+        backupTarget                 = "s3://s3-like-bucket@us-east-1/"
       }
       persistence = {
         defaultClassReplicaCount = 2
@@ -149,7 +149,7 @@ resource "kubernetes_ingress_v1" "longhorn_ui" {
         path {
           path      = "/"
           path_type = "Prefix"
-          
+
           backend {
             service {
               name = "longhorn-frontend"
@@ -173,11 +173,11 @@ resource "kubernetes_ingress_v1" "longhorn_ui" {
 # METRICS SERVER (for k9s CPU/RAM)
 # ==========================================
 resource "helm_release" "metrics_server" {
-  name       = "metrics-server"
-  repository = "https://kubernetes-sigs.github.io/metrics-server/"
-  chart      = "metrics-server"
-  namespace  = "kube-system"
-  version    = "3.12.1"
+  name            = "metrics-server"
+  repository      = "https://kubernetes-sigs.github.io/metrics-server/"
+  chart           = "metrics-server"
+  namespace       = "kube-system"
+  version         = "3.12.1"
   upgrade_install = true
 
   values = [

@@ -1,5 +1,5 @@
 variable "bitwarden_token" {
-  type = string
+  type        = string
   description = "ТОкен доступу до менеджера секретів"
-  sensitive   = true 
+  sensitive   = true
 }

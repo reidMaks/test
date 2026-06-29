@@ -30,11 +30,11 @@ resource "kubernetes_secret" "grafana" {
 }
 
 resource "helm_release" "victoriametrics" {
-  name             = "vm"
-  repository       = "https://victoriametrics.github.io/helm-charts/"
-  chart            = "victoria-metrics-k8s-stack"
-  namespace        = kubernetes_namespace.monitoring.metadata[0].name
-  upgrade_install  = true
+  name            = "vm"
+  repository      = "https://victoriametrics.github.io/helm-charts/"
+  chart           = "victoria-metrics-k8s-stack"
+  namespace       = kubernetes_namespace.monitoring.metadata[0].name
+  upgrade_install = true
 
   values = [
     file("${path.module}/helm_values/victoriametrics.yaml")

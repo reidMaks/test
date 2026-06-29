@@ -3,10 +3,10 @@
 # ==========================================
 
 resource "helm_release" "searxng" {
-  name       = "searxng"
-  repository = "https://charts.kubito.dev"
-  chart      = "searxng"
-  namespace  = "default"
+  name            = "searxng"
+  repository      = "https://charts.kubito.dev"
+  chart           = "searxng"
+  namespace       = "default"
   upgrade_install = true
 
   values = [

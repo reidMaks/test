@@ -3,10 +3,10 @@
 # ==========================================
 
 resource "helm_release" "speedtest" {
-  name       = "speedtest"
-  repository = "https://openspeedtest.github.io/Helm-chart/"
-  chart      = "openspeedtest"
-  namespace  = "default"
+  name            = "speedtest"
+  repository      = "https://openspeedtest.github.io/Helm-chart/"
+  chart           = "openspeedtest"
+  namespace       = "default"
   upgrade_install = true
 
   values = [

@@ -3,10 +3,10 @@
 # ==========================================
 
 resource "helm_release" "pairdrop" {
-  name       = "pairdrop"
-  repository = "https://charts.pascaliske.dev"
-  chart      = "pairdrop"
-  namespace  = "default"
+  name            = "pairdrop"
+  repository      = "https://charts.pascaliske.dev"
+  chart           = "pairdrop"
+  namespace       = "default"
   upgrade_install = true
 
   values = [

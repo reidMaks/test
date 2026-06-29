@@ -14,12 +14,22 @@ grafana:
     pathType: ImplementationSpecific
     hosts:
       - grafana.kms-lab.in.ua
+  plugins:
+    - victoriametrics-logs-datasource
+
+defaultDatasources:
+  extra:
+    - name: VictoriaLogs
+      type: victoriametrics-logs-datasource
+      access: proxy
+      url: http://vlogs-victoria-logs-single-server.monitoring.svc.cluster.local:9428
+      isDefault: false
 
 # Налаштування бази даних VictoriaMetrics
 vmsingle:
   enabled: true
   spec:
-    retentionPeriod: "14d" # Зберігати метрики 14 днів
+    retentionPeriod: "14d"
     storage:
       resources:
         requests:
@@ -29,6 +39,21 @@ vmsingle:
 # Налаштування збирачів метрик
 vmagent:
   enabled: true
+  spec:
+    scrapeInterval: "60s" # Опитуємо раз на хвилину замість 10-15 сек
+    inlineRelabelConfig:
+      # Викидаємо метрики Go та процесів (внутрішня статистика програм)
+      - action: drop
+        sourceLabels: [__name__]
+        regex: "^(go_|process_).*"
+      # Викидаємо мережеву статистику по віртуальних інтерфейсах подів
+      - action: drop
+        sourceLabels: [device]
+        regex: "^(veth.*|cali.*|flannel.*|cni.*)$"
+      # Викидаємо детальні гістограми (займають купу місця, потрібні рідко)
+      - action: drop
+        sourceLabels: [__name__]
+        regex: ".*_bucket"
 
 # Вбудовані exporters для Kubernetes
 kubeStateMetrics:
