@@ -3,7 +3,10 @@ defaultDashboardsEnabled: true
 # Налаштування Grafana
 grafana:
   enabled: true
-  adminPassword: "TestPassword123!" # Змінимо пізніше або перенесемо в секрет
+  admin:
+    existingSecret: "grafana-secrets"
+    userKey: admin-user
+    passwordKey: admin-password
   ingress:
     enabled: true
     ingressClassName: "traefik"

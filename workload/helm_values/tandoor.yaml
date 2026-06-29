@@ -78,7 +78,7 @@ persistence:
       helm.sh/resource-policy: keep
     storageClass: "longhorn"
     accessMode: ReadWriteOnce
-    size: 300Mi
+    size: 400Mi
     advancedMounts:
       main:
         main:
