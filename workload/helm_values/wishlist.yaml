@@ -6,7 +6,7 @@ controllers:
       main:
         image:
           repository: ghcr.io/cmintey/wishlist
-          tag: "latest"
+          tag: "v0.65.2"
         env:
           - name: ORIGIN
             value: "https://wishlist.kms-lab.in.ua"

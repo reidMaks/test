@@ -8,7 +8,7 @@ controllers:
       main:
         image:
           repository: cloudflare/cloudflared
-          tag: "latest"
+          tag: "2026.6.1"
         args:
           - tunnel
           - --no-autoupdate
