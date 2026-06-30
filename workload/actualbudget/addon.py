@@ -56,16 +56,28 @@ class MonobankInjector:
             return
 
         if "/api/v2/institutions/" in path:
-            fake_bank = {
-                "id": "MONOBANK_UA",
-                "name": "Monobank",
-                "bic": "MONOUA",
-                "transaction_total_days": "31",
-                "countries": ["GB", "IE", "FR", "ES", "DE", "IT", "NL", "UA"],
-                "logo": "https://www.monobank.ua/assets/img/logo.svg"
-            }
-            flow.response = http.Response.make(200, json.dumps([fake_bank]), {"Content-Type": "application/json"})
-            return
+            if "MONOBANK_UA" in path:
+                fake_inst = {
+                    "id": "MONOBANK_UA",
+                    "name": "Monobank",
+                    "bic": "MONOUA",
+                    "transaction_total_days": "90",
+                    "countries": ["UA"],
+                    "logo": ""
+                }
+                flow.response = http.Response.make(200, json.dumps(fake_inst), {"Content-Type": "application/json"})
+                return
+            else:
+                fake_bank = {
+                    "id": "MONOBANK_UA",
+                    "name": "Monobank",
+                    "bic": "MONOUA",
+                    "transaction_total_days": "31",
+                    "countries": ["GB", "IE", "FR", "ES", "DE", "IT", "NL", "UA"],
+                    "logo": "https://www.monobank.ua/assets/img/logo.svg"
+                }
+                flow.response = http.Response.make(200, json.dumps([fake_bank]), {"Content-Type": "application/json"})
+                return
 
         if "/api/v2/agreements/" in path:
             fake_agreement = {
@@ -156,7 +168,7 @@ class MonobankInjector:
                     res = {
                         "balances": [{
                             "balanceAmount": {"amount": str(bal), "currency": "UAH"},
-                            "balanceType": "expected"
+                            "balanceType": "interimAvailable"
                         }]
                     }
                     flow.response = http.Response.make(200, json.dumps(res), {"Content-Type": "application/json"})
@@ -186,9 +198,9 @@ class MonobankInjector:
                         with urllib.request.urlopen(req) as response:
                             txs = json.loads(response.read().decode())
                     except urllib.error.URLError as e:
-                        print("Error fetching txs:", e)
+                        print("Error fetching txs:", e, flush=True)
                         if hasattr(e, 'read'):
-                            print("Response:", e.read().decode())
+                            print("Response:", e.read().decode(), flush=True)
                         txs = []
 
                     booked = []
@@ -196,7 +208,7 @@ class MonobankInjector:
                         amt = t.get("amount", 0) / 100.0
                         dt_str = datetime.fromtimestamp(t.get("time", 0), tz=timezone.utc).strftime("%Y-%m-%d")
                         tx_obj = {
-                            "transactionId": t.get("id"),
+                            "transactionId": str(t.get("id", "")),
                             "bookingDate": dt_str,
                             "valueDate": dt_str,
                             "transactionAmount": {
@@ -209,6 +221,30 @@ class MonobankInjector:
                         booked.append(tx_obj)
                     
                     res = {"transactions": {"booked": booked, "pending": []}}
+                    flow.response = http.Response.make(200, json.dumps(res), {"Content-Type": "application/json"})
+                    return
+
+                elif subpath == "details":
+                    is_jar = "title" in acc_info
+                    if is_jar:
+                        name = f"Jar: {acc_info.get('title', '')}"
+                    else:
+                        masked = acc_info.get('maskedPan', [])
+                        pan = masked[0] if (masked and len(masked) > 0) else ""
+                        name = f"{acc_info.get('type', 'Account').capitalize()} {pan}"
+                    
+                    res = {
+                        "account": {
+                            "id": acc_id,
+                            "resourceId": acc_id,
+                            "iban": acc_info.get("iban", acc_id),
+                            "currency": "UAH",
+                            "ownerName": "Monobank Client",
+                            "name": name.strip(),
+                            "product": "Monobank",
+                            "institution_id": "MONOBANK_UA"
+                        }
+                    }
                     flow.response = http.Response.make(200, json.dumps(res), {"Content-Type": "application/json"})
                     return
 
@@ -227,7 +263,9 @@ class MonobankInjector:
                         "iban": acc_info.get("iban", acc_id),
                         "currency": "UAH",
                         "ownerName": "Monobank Client",
-                        "product": "Monobank"
+                        "product": "Monobank",
+                        "institution_id": "MONOBANK_UA",
+                        "status": "READY"
                     }
                     flow.response = http.Response.make(200, json.dumps(res), {"Content-Type": "application/json"})
                     return

@@ -74,7 +74,7 @@ ingress:
     enabled: true
     className: "traefik"
     hosts:
-      - host: actual-test.kms-lab.in.ua
+      - host: actual.kms-lab.in.ua
         paths:
           - path: /
             service:
@@ -84,9 +84,12 @@ ingress:
 persistence:
   data:
     type: persistentVolumeClaim
+    annotations:
+      helm.sh/resource-policy: keep
+      recurring-job-group.longhorn.io/daily-backups: "enabled"
     storageClass: "longhorn"
     accessMode: ReadWriteOnce
-    size: 1Gi
+    size: 100Mi
     advancedMounts:
       main:
         main:
