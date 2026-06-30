@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/app-template-5.0.1/charts/other/app-template/values.schema.json
+
+controllers:
+  main:
+    pod:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+    containers:
+      main:
+        image:
+          repository: esphome/esphome
+          tag: "stable"
+        env:
+          TZ: "Europe/Kyiv"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            memory: 2Gi
+            # CPU is uncapped intentionally to allow fast compilation
+
+service:
+  app:
+    controller: main
+    ports:
+      http:
+        port: 6052
+
+ingress:
+  main:
+    enabled: true
+    className: "traefik"
+    hosts:
+      - host: esphome.kms-lab.in.ua
+        paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
+
+persistence:
+  config:
+    type: persistentVolumeClaim
+    annotations:
+      helm.sh/resource-policy: keep
+    labels:
+      recurring-job-group.longhorn.io/daily-backups: "enabled"
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 100Mi
+    advancedMounts:
+      main:
+        main:
+          - path: /config
+  cache:
+    type: persistentVolumeClaim
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 6Gi
+    advancedMounts:
+      main:
+        main:
+          - path: /config/.esphome
