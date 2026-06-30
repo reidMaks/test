@@ -1,0 +1,110 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/app-template-5.0.1/charts/other/app-template/values.schema.json
+
+controllers:
+  main:
+    pod:
+      hostAliases:
+        - ip: "127.0.0.1"
+          hostnames:
+            - "ob.nordigen.com"
+            - "bankaccountdata.gocardless.com"
+            - "api.nordigen.com"
+
+    initContainers:
+      init-certs:
+        image:
+          repository: mitmproxy/mitmproxy
+          tag: "10.1.6"
+        command: ["sh", "-c", "mitmdump --set confdir=/certs & sleep 5; kill $!"]
+        
+    containers:
+      main:
+        image:
+          repository: actualbudget/actual-server
+          tag: "latest"
+        env:
+          NODE_EXTRA_CA_CERTS: "/certs/mitmproxy-ca-cert.pem"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            memory: 512Mi
+            
+      mitmproxy:
+        image:
+          repository: mitmproxy/mitmproxy
+          tag: "10.1.6"
+        securityContext:
+          runAsUser: 0
+        command: 
+          - mitmdump 
+          - "-q"
+          - "--listen-port"
+          - "443"
+          - "--mode"
+          - "reverse:https://1.1.1.1"
+          - "--set"
+          - "confdir=/certs"
+          - "-s"
+          - "/scripts/addon.py"
+        env:
+          MONOBANK_TOKEN: "${monobank_token}"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+
+configMaps:
+  mitm-addon:
+    enabled: true
+    data:
+      addon.py: |
+        ${indent(8, addon_py)}
+
+service:
+  app:
+    controller: main
+    ports:
+      http:
+        port: 5006
+
+ingress:
+  main:
+    enabled: true
+    className: "traefik"
+    hosts:
+      - host: actual-test.kms-lab.in.ua
+        paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
+
+persistence:
+  data:
+    type: persistentVolumeClaim
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    advancedMounts:
+      main:
+        main:
+          - path: /data
+  certs:
+    type: emptyDir
+    advancedMounts:
+      main:
+        init-certs:
+          - path: /certs
+        main:
+          - path: /certs
+        mitmproxy:
+          - path: /certs
+  addon:
+    type: configMap
+    name: actualbudget
+    advancedMounts:
+      main:
+        mitmproxy:
+          - path: /scripts
