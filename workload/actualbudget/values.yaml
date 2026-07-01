@@ -21,9 +21,10 @@ controllers:
       main:
         image:
           repository: actualbudget/actual-server
-          tag: "latest"
+          tag: "26.6.0"
         env:
           NODE_EXTRA_CA_CERTS: "/certs/mitmproxy-ca-cert.pem"
+          LOG_LEVEL: "WARNING"
         resources:
           requests:
             cpu: 50m
@@ -50,6 +51,7 @@ controllers:
           - "/scripts/addon.py"
         env:
           MONOBANK_TOKEN: "${monobank_token}"
+          LOG_LEVEL: "INFO"
         resources:
           requests:
             cpu: 50m

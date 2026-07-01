@@ -5,8 +5,14 @@ import urllib.error
 import time
 import sys
 from datetime import datetime, timezone
+import logging
 from mitmproxy import http
 from mitmproxy import ctx
+
+log_level_str = os.environ.get("LOG_LEVEL", "INFO").upper()
+log_level = getattr(logging, log_level_str, logging.INFO)
+logging.basicConfig(level=log_level, format='%(levelname)s: %(message)s')
+logger = logging.getLogger(__name__)
 
 class MonobankInjector:
     def __init__(self):
@@ -16,7 +22,7 @@ class MonobankInjector:
 
     def get_client_info(self):
         if not self.token:
-            print("MONOBANK_TOKEN is missing!", flush=True)
+            logger.warning("MONOBANK_TOKEN is missing!")
             return None
             
         if time.time() - self.client_info_time < 60 and self.client_info:
@@ -32,9 +38,9 @@ class MonobankInjector:
                 self.client_info = json.loads(response.read().decode())
                 return self.client_info
         except urllib.error.URLError as e:
-            print("Error fetching client info:", e, flush=True)
+            logger.error(f"Error fetching client info: {e}")
             if hasattr(e, 'read'):
-                print("Response:", e.read().decode(), flush=True)
+                logger.error(f"Response: {e.read().decode()}")
             # If we failed but have stale data, return it to prevent 404s
             if self.client_info:
                 return self.client_info
@@ -147,19 +153,19 @@ class MonobankInjector:
                 ci = self.get_client_info()
                 acc_info = None
                 
-                print(f"DEBUG: Looking for acc_id: '{acc_id}' in subpath '{subpath}'", flush=True)
+                logger.debug(f"Looking for acc_id: '{acc_id}' in subpath '{subpath}'")
                 if ci:
-                    print(f"DEBUG: ci has {len(ci.get('accounts', []))} accounts and {len(ci.get('jars', []))} jars", flush=True)
+                    logger.debug(f"ci has {len(ci.get('accounts', []))} accounts and {len(ci.get('jars', []))} jars")
                     for a in ci.get("accounts", []) + ci.get("jars", []):
                         if str(a.get("id")) == str(acc_id):
                             acc_info = a
-                            print("DEBUG: Found acc_info!", flush=True)
+                            logger.debug("Found acc_info!")
                             break
                 else:
-                    print("DEBUG: ci is None!", flush=True)
+                    logger.debug("ci is None!")
                 
                 if not acc_info:
-                    print(f"DEBUG: Could not find account {acc_id}", flush=True)
+                    logger.debug(f"Could not find account {acc_id}")
                     flow.response = http.Response.make(404, "Not Found")
                     return
 
@@ -198,9 +204,9 @@ class MonobankInjector:
                         with urllib.request.urlopen(req) as response:
                             txs = json.loads(response.read().decode())
                     except urllib.error.URLError as e:
-                        print("Error fetching txs:", e, flush=True)
+                        logger.error(f"Error fetching txs: {e}")
                         if hasattr(e, 'read'):
-                            print("Response:", e.read().decode(), flush=True)
+                            logger.error(f"Response: {e.read().decode()}")
                         txs = []
 
                     booked = []
@@ -270,14 +276,12 @@ class MonobankInjector:
                     flow.response = http.Response.make(200, json.dumps(res), {"Content-Type": "application/json"})
                     return
             except Exception as e:
-                import traceback
-                print(f"DEBUG EXCEPTION: {e}", flush=True)
-                traceback.print_exc()
+                logger.error(f"EXCEPTION: {e}", exc_info=True)
                 flow.response = http.Response.make(500, str(e))
                 return
 
         if "/api/v2/" in path:
-            print(f"UNMOCKED API REQUEST: {method} {path}")
+            logger.info(f"UNMOCKED API REQUEST: {method} {path}")
             flow.response = http.Response.make(200, "{}", {"Content-Type": "application/json"})
 
 addons = [MonobankInjector()]
