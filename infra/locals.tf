@@ -23,7 +23,7 @@ locals {
       node_name    = "proxmox-1"
       cores        = 3
       memory       = 8192
-      disk_size    = 40
+      disk_size    = 60
       ip           = "192.168.0.41"
       machine_type = "worker"
     }

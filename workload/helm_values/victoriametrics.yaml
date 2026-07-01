@@ -29,7 +29,7 @@ defaultDatasources:
 vmsingle:
   enabled: true
   spec:
-    retentionPeriod: "14d"
+    retentionPeriod: "7d"
     storage:
       resources:
         requests:
@@ -54,6 +54,22 @@ vmagent:
       - action: drop
         sourceLabels: [__name__]
         regex: ".*_bucket"
+      # Викидаємо дуже детальні метрики cadvisor (I/O, TCP, FS inodes тощо)
+      - action: drop
+        sourceLabels: [__name__]
+        regex: "^(container_network_tcp_.*|container_memory_failures_total|container_fs_inodes_.*|container_blkio_.*)$"
+      # Викидаємо labels та annotations (генерують безліч непотрібних time series)
+      - action: drop
+        sourceLabels: [__name__]
+        regex: "^(kube_.*_labels|kube_.*_annotations|kube_.*_created)$"
+      # Викидаємо специфічні та рідко потрібні метрики node_exporter
+      - action: drop
+        sourceLabels: [__name__]
+        regex: "^(node_arp_.*|node_sockstat_.*|node_nf_conntrack_.*|node_netstat_.*|node_timex_.*)$"
+      # Викидаємо системні метрики контрол-плейну, якщо вони збираються
+      - action: drop
+        sourceLabels: [__name__]
+        regex: "^(apiserver_.*|etcd_.*|rest_client_.*|scheduler_.*|workqueue_.*)$"
 
 # Вбудовані exporters для Kubernetes
 kubeStateMetrics:

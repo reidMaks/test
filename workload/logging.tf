@@ -12,7 +12,7 @@ resource "helm_release" "victorialogs" {
   values = [
     yamlencode({
       server = {
-        retentionPeriod = "7d" # Зберігати логи 7 днів
+        retentionPeriod = "3d" # Зберігати логи 3 дні (замість 7)
         persistentVolume = {
           enabled          = true
           size             = "2Gi"
@@ -42,7 +42,7 @@ resource "helm_release" "promtail" {
           pipelineStages = [
             {
               drop = {
-                expression = ".*Uptime-Kuma.*"
+                expression = ".*Uptime-Kuma.*|.*DEBUG: ci has 7 accounts.*|.*DEBUG: Found acc_info.*|.*DEBUG: Looking for acc_id.*|.*info: POST 200 /sync/sync.*"
               }
             },
             {
