@@ -1,0 +1,39 @@
+controllers:
+  main:
+    pod:
+      automountServiceAccountToken: true
+    serviceAccount:
+      name: "diun"
+    containers:
+      main:
+        image:
+          repository: ghcr.io/crazy-max/diun
+          tag: "latest"
+        env:
+          TZ: "Europe/Kyiv"
+          LOG_LEVEL: "info"
+          LOG_JSON: "false"
+          
+          # Рідше перевіряємо оновлення (кожні 12 годин), щоб не ловити бан від Docker Hub
+          DIUN_WATCH_SCHEDULE: "0 */12 * * *"
+          DIUN_WATCH_JITTER: "30s"
+          
+          # Увімкнення Kubernetes провайдера
+          DIUN_PROVIDERS_KUBERNETES: "true"
+          # Змушує Diun автоматично сканувати ВСІ поди у кластері 
+          # (якщо false, то треба додавати анотацію diun.enable="true" на кожен Deployment)
+          DIUN_PROVIDERS_KUBERNETES_WATCHBYDEFAULT: "true"
+          
+          # Налаштування ntfy сповіщень
+          DIUN_NOTIF_NTFY_ENDPOINT: "https://ntfy.sh"
+          DIUN_NOTIF_NTFY_TOPIC: "TusHLjYwah424h"
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            memory: 128Mi
+
+service:
+  main:
+    enabled: false
