@@ -19,10 +19,14 @@ resource "helm_release" "descheduler" {
               nodeResourceUtilizationThresholds = {
                 useDeviationThresholds = true
                 thresholds = {
-                  pods = 15
+                  cpu    = 100
+                  memory = 100
+                  pods   = 15
                 }
                 targetThresholds = {
-                  pods = 15
+                  cpu    = 100
+                  memory = 100
+                  pods   = 15
                 }
               }
             }
