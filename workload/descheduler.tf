@@ -12,26 +12,36 @@ resource "helm_release" "descheduler" {
       schedule = "*/15 * * * *"
 
       deschedulerPolicy = {
-        strategies = {
-          LowNodeUtilization = {
-            enabled = true
-            params = {
-              nodeResourceUtilizationThresholds = {
-                useDeviationThresholds = true
-                thresholds = {
-                  cpu    = 100
-                  memory = 100
-                  pods   = 15
+        apiVersion = "descheduler/v1alpha2"
+        kind       = "DeschedulerPolicy"
+        profiles = [
+          {
+            name = "default"
+            pluginConfig = [
+              {
+                name = "LowNodeUtilization"
+                args = {
+                  useDeviationThresholds = true
+                  thresholds = {
+                    cpu    = 100
+                    memory = 100
+                    pods   = 15
+                  }
+                  targetThresholds = {
+                    cpu    = 100
+                    memory = 100
+                    pods   = 15
+                  }
                 }
-                targetThresholds = {
-                  cpu    = 100
-                  memory = 100
-                  pods   = 15
-                }
+              }
+            ]
+            plugins = {
+              balance = {
+                enabled = ["LowNodeUtilization"]
               }
             }
           }
-        }
+        ]
       }
     })
   ]

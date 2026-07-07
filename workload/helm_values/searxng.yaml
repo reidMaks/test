@@ -1,3 +1,9 @@
+image:
+  repository: searxng/searxng
+  tag: "latest"
+  imagePullPolicy: Always
+
+
 ingress:
   enabled: true
   className: "traefik"
