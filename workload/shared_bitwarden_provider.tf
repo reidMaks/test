@@ -1,0 +1,1 @@
+../shared_bitwarden_provider.tf

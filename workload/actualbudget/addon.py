@@ -16,47 +16,77 @@ logger = logging.getLogger(__name__)
 
 class MonobankInjector:
     def __init__(self):
-        self.token = os.environ.get("MONOBANK_TOKEN", "")
-        self.client_info = None
-        self.client_info_time = 0
+        # We no longer rely on the environment variable globally.
+        # We cache client_info per token (for 60s) to prevent Monobank 429 limits during setup.
+        self.client_info_cache = {} # Dict[token, {"info": dict, "time": float}]
 
-    def get_client_info(self):
-        if not self.token:
-            logger.warning("MONOBANK_TOKEN is missing!")
+    def get_client_info(self, token):
+        logger.info(f"get_client_info called with token: '{token}'")
+        if not token:
+            logger.warning("No token provided!")
             return None
             
-        if time.time() - self.client_info_time < 60 and self.client_info:
-            return self.client_info
+        cached = self.client_info_cache.get(token)
+        if cached and time.time() - cached["time"] < 60:
+            return cached["info"]
             
         # Prevent concurrent requests from stampeding Monobank API
-        self.client_info_time = time.time()
+        if cached:
+            self.client_info_cache[token]["time"] = time.time()
+        else:
+            self.client_info_cache[token] = {"info": None, "time": time.time()}
         
         req = urllib.request.Request("https://api.monobank.ua/personal/client-info")
-        req.add_header("X-Token", self.token)
+        req.add_header("X-Token", token)
         try:
             with urllib.request.urlopen(req) as response:
-                self.client_info = json.loads(response.read().decode())
-                return self.client_info
+                info = json.loads(response.read().decode())
+                self.client_info_cache[token]["info"] = info
+                return info
         except urllib.error.URLError as e:
             logger.error(f"Error fetching client info: {e}")
             if hasattr(e, 'read'):
                 logger.error(f"Response: {e.read().decode()}")
             # If we failed but have stale data, return it to prevent 404s
-            if self.client_info:
-                return self.client_info
-            self.client_info_time = 0
+            if cached and cached["info"]:
+                return cached["info"]
             return None
+
+    def get_token_from_flow(self, flow: http.HTTPFlow):
+        auth_header = flow.request.headers.get("Authorization", "")
+        token = ""
+        if auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1].strip()
+            
+        return token
 
     def request(self, flow: http.HTTPFlow):
         path = flow.request.path.split("?")[0]
         method = flow.request.method
 
         if "/api/v2/token/" in path:
+            # Here we intercept GoCardless token generation.
+            # Actual Budget sends the Secret Key the user typed in the UI.
+            try:
+                req_data = json.loads(flow.request.content)
+                logger.info(f"Token endpoint payload: {req_data}")
+                
+                # Check both secret_key and secret_id just in case the user pasted it in the wrong field
+                user_token = req_data.get("secret_key", "")
+                if not user_token or user_token == "fake-access-token" or len(user_token) < 10:
+                    user_token = req_data.get("secret_id", "fake-access-token")
+                    
+                user_token = user_token.strip()
+                logger.info(f"Extracted user token: {user_token}")
+            except Exception as e:
+                logger.error(f"Error parsing token payload: {e}")
+                user_token = "fake-access-token"
+
             fake_token = {
-                "access": "fake-access-token",
-                "access_expires": 86400,
-                "refresh": "fake-refresh-token",
-                "refresh_expires": 2592000
+                "access": user_token,
+                "access_expires": 864000000, # Valid for 10,000 days
+                "refresh": user_token,
+                "refresh_expires": 864000000
             }
             flow.response = http.Response.make(200, json.dumps(fake_token), {"Content-Type": "application/json"})
             return
@@ -119,7 +149,8 @@ class MonobankInjector:
             return
 
         if "/api/v2/requisitions/" in path and method == "GET":
-            ci = self.get_client_info()
+            token = self.get_token_from_flow(flow)
+            ci = self.get_client_info(token)
             accs = []
             if ci:
                 for a in ci.get("accounts", []):
@@ -150,7 +181,8 @@ class MonobankInjector:
                 acc_id = parts[3]
                 subpath = parts[4] if len(parts) > 4 else None
 
-                ci = self.get_client_info()
+                token = self.get_token_from_flow(flow)
+                ci = self.get_client_info(token)
                 acc_info = None
                 
                 logger.debug(f"Looking for acc_id: '{acc_id}' in subpath '{subpath}'")
@@ -198,7 +230,8 @@ class MonobankInjector:
 
                     endpoint = f"https://api.monobank.ua/personal/statement/{acc_id}/{from_unix}"
                     req = urllib.request.Request(endpoint)
-                    req.add_header("X-Token", self.token)
+                    token = self.get_token_from_flow(flow)
+                    req.add_header("X-Token", token)
                     
                     try:
                         with urllib.request.urlopen(req) as response:

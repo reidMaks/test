@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy_data:/data
+      - ./caddy_config:/config
+    depends_on:
+      - mitmproxy
+
+  mitmproxy:
+    image: mitmproxy/mitmproxy:10.1.6
+    user: "0" # required to write to /certs and run bash
+    # Port 5006 is no longer exposed to the host, Caddy will access it internally
+    volumes:
+      - ./certs:/certs
+      - ./addon.py:/scripts/addon.py:ro
+    environment:
+      - MONOBANK_TOKEN=${MONOBANK_TOKEN}
+      - LOG_LEVEL=INFO
+    command: >
+      bash -c "
+      if [ ! -f /certs/mitmproxy-ca-cert.pem ]; then
+        mitmdump --set confdir=/certs & sleep 5; kill $$!
+      fi;
+      mitmdump -q --listen-port 443 --mode reverse:https://1.1.1.1 --set confdir=/certs -s /scripts/addon.py
+      "
+    extra_hosts:
+      - "ob.nordigen.com:127.0.0.1"
+      - "bankaccountdata.gocardless.com:127.0.0.1"
+      - "api.nordigen.com:127.0.0.1"
+    restart: unless-stopped
+
+  actual_server:
+    image: actualbudget/actual-server:26.7.0
+    network_mode: "service:mitmproxy"
+    volumes:
+      - ./data:/data
+      - ./certs:/certs:ro
+    environment:
+      - NODE_EXTRA_CA_CERTS=/certs/mitmproxy-ca-cert.pem
+      - LOG_LEVEL=WARNING
+    depends_on:
+      - mitmproxy
+    restart: unless-stopped

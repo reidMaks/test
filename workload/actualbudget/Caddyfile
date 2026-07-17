@@ -1,0 +1,3 @@
+actual.kms-lab.in.ua {
+    reverse_proxy mitmproxy:5006
+}
