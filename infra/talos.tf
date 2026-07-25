@@ -11,44 +11,59 @@ data "talos_machine_configuration" "config" {
   machine_type     = each.value.machine_type
   machine_secrets  = talos_machine_secrets.this.machine_secrets
 
-  talos_version = "v1.13.5"
+  talos_version = local.talos_version
 
   # Патчі: статичний IP, DNS та правильний диск
-  config_patches = [
-    <<-EOT
-    machine:
-      network:
-        nameservers:
-          - 8.8.8.8
-          - 1.1.1.1
-          - ${local.gateway_ip}
-        interfaces:
-          - interface: ens18
-            dhcp: false
-            addresses:
-              - ${each.value.ip}/24
-            routes:
-              - network: 0.0.0.0/0
-                gateway: ${local.gateway_ip}
-      kubelet:
-        extraMounts:
-          - destination: /var/lib/longhorn
-            type: bind
-            source: /var/lib/longhorn
-            options:
-              - bind
-              - rshared
-              - rw
-      kernel:
-        modules:
-          - name: nbd
-          - name: iscsi_tcp
-          - name: configfs
-      install:
-        disk: /dev/vda
-        image: ${local.talos_installer}
-    EOT
-  ]
+  config_patches = concat(
+    [
+      <<-EOT
+      machine:
+        nodeLabels:
+          topology.kubernetes.io/zone: "home"
+        network:
+          kubespan:
+            enabled: true
+          nameservers:
+            - 8.8.8.8
+            - 1.1.1.1
+            - ${local.gateway_ip}
+          interfaces:
+            - interface: ens18
+              dhcp: false
+              addresses:
+                - ${each.value.ip}/24
+              routes:
+                - network: 0.0.0.0/0
+                  gateway: ${local.gateway_ip}
+        kubelet:
+          extraMounts:
+            - destination: /var/lib/longhorn
+              type: bind
+              source: /var/lib/longhorn
+              options:
+                - bind
+                - rshared
+                - rw
+        kernel:
+          modules:
+            - name: nbd
+            - name: iscsi_tcp
+            - name: configfs
+        install:
+          disk: /dev/vda
+          image: ${local.talos_installer}
+      EOT
+    ],
+    each.value.machine_type == "controlplane" ? [
+      <<-EOT
+      cluster:
+        etcd:
+          extraArgs:
+            heartbeat-interval: "500"
+            election-timeout: "5000"
+      EOT
+    ] : []
+  )
 }
 
 
@@ -118,4 +133,82 @@ resource "local_sensitive_file" "talosconfig" {
   depends_on = [data.talos_client_configuration.talosconfig]
   content    = data.talos_client_configuration.talosconfig.talos_config
   filename   = "${path.module}/talosconfig"
+}
+
+# ==========================================
+# GCP WITNESS NODE
+# ==========================================
+
+data "talos_machine_configuration" "gcp" {
+  cluster_name     = "talos-k8s"
+  cluster_endpoint = "https://${local.cp_ip}:6443"
+  machine_type     = "controlplane"
+  machine_secrets  = talos_machine_secrets.this.machine_secrets
+
+  talos_version = local.talos_version
+
+  config_patches = [
+    <<-EOT
+    machine:
+      nodeLabels:
+        node-role.kubernetes.io/witness: ""
+      nodeTaints:
+        node-role.kubernetes.io/witness: ":NoSchedule"
+      network:
+        kubespan:
+          enabled: true
+    cluster:
+      etcd:
+        extraArgs:
+          heartbeat-interval: "500"
+          election-timeout: "5000"
+    EOT
+  ]
+}
+
+resource "talos_machine_configuration_apply" "gcp" {
+  depends_on                  = [google_compute_instance.gcp_cp]
+  client_configuration        = talos_machine_secrets.this.client_configuration
+  machine_configuration_input = data.talos_machine_configuration.gcp.machine_configuration
+  node                        = google_compute_instance.gcp_cp.network_interface[0].access_config[0].nat_ip
+}
+
+# ==========================================
+# OCI WITNESS NODE
+# ==========================================
+
+data "talos_machine_configuration" "oci" {
+  cluster_name     = "talos-k8s"
+  cluster_endpoint = "https://${local.cp_ip}:6443"
+  machine_type     = "controlplane"
+  machine_secrets  = talos_machine_secrets.this.machine_secrets
+
+  talos_version = local.talos_version
+
+  config_patches = [
+    <<-EOT
+    machine:
+      nodeLabels:
+        node-role.kubernetes.io/control-plane: ""
+        topology.kubernetes.io/zone: "oci"
+      certSANs:
+        - ${oci_core_instance.talos_oci.public_ip}
+      network:
+        kubespan:
+          enabled: true
+    cluster:
+      allowSchedulingOnControlPlanes: true
+      etcd:
+        extraArgs:
+          heartbeat-interval: "500"
+          election-timeout: "5000"
+    EOT
+  ]
+}
+
+resource "talos_machine_configuration_apply" "oci" {
+  depends_on                  = [oci_core_instance.talos_oci]
+  client_configuration        = talos_machine_secrets.this.client_configuration
+  machine_configuration_input = data.talos_machine_configuration.oci.machine_configuration
+  node                        = oci_core_instance.talos_oci.public_ip
 }

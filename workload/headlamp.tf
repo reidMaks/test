@@ -16,6 +16,7 @@ resource "helm_release" "headlamp" {
 
   values = [
     yamlencode({
+      replicaCount = 2
       ingress = {
         enabled          = true
         ingressClassName = "traefik"

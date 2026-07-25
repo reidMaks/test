@@ -8,7 +8,26 @@ terraform {
       source  = "siderolabs/talos"
       version = "0.12.0-alpha.5"
     }
+    google = {
+      source  = "hashicorp/google"
+      version = "~> 5.0"
+    }
+    bitwarden-secrets = {
+      source  = "bitwarden/bitwarden-secrets"
+      version = "~> 1.0"
+    }
+    oci = {
+      source  = "oracle/oci"
+      version = "~> 5.0"
+    }
   }
+}
+
+provider "google" {
+  credentials = file("../tmp/gcp-creds.json")
+  project     = var.project_id
+  region      = var.region
+  zone        = var.zone
 }
 
 provider "proxmox" {
@@ -86,5 +105,71 @@ resource "proxmox_virtual_environment_vm" "talos" {
     ignore_changes = [
       network_device[0].mac_address
     ]
+  }
+}
+
+resource "null_resource" "download_talos" {
+  provisioner "local-exec" {
+    command = "wget -qO gcp-amd64.raw.tar.gz ${local.talos_gcp_image}"
+  }
+}
+
+resource "google_storage_bucket" "talos_bucket" {
+  name          = "${var.project_id}-talos"
+  location      = "US" # US multi-region is covered by Free Tier
+  force_destroy = true
+}
+
+resource "google_storage_bucket_object" "talos_image" {
+  name       = "gcp-amd64.raw.tar.gz"
+  bucket     = google_storage_bucket.talos_bucket.name
+  source     = "gcp-amd64.raw.tar.gz"
+  depends_on = [null_resource.download_talos]
+}
+
+resource "google_compute_image" "talos" {
+  name = "talos-${replace(local.talos_version, ".", "-")}-${substr(local.talos_schematic_id, 0, 7)}"
+  raw_disk {
+    source = "https://storage.googleapis.com/${google_storage_bucket.talos_bucket.name}/${google_storage_bucket_object.talos_image.name}"
+  }
+}
+
+resource "google_compute_firewall" "allow_talos" {
+  name    = "allow-talos"
+  network = "default"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["50000", "6443"]
+  }
+
+  allow {
+    protocol = "udp"
+    ports    = ["51820", "51821"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["talos"]
+}
+
+resource "google_compute_instance" "gcp_cp" {
+  name         = "talos-cp-gcp"
+  machine_type = "e2-micro"
+  zone         = var.zone
+  tags         = ["talos", "k8s"]
+
+  boot_disk {
+    initialize_params {
+      image = google_compute_image.talos.self_link
+      size  = 30
+      type  = "pd-standard"
+    }
+  }
+
+  network_interface {
+    network = "default"
+    access_config {
+      # Ephemeral IP
+    }
   }
 }

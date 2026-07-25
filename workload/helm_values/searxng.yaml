@@ -1,3 +1,4 @@
+replicaCount: 2
 image:
   repository: searxng/searxng
   tag: "latest"

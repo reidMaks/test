@@ -123,6 +123,7 @@ resource "helm_release" "longhorn" {
         backupTargetCredentialSecret = "longhorn-backup-credential-v2"
         backupTarget                 = "s3://s3-like-bucket@us-east-1/"
         nodeDownPodDeletionPolicy    = "delete-pod-when-node-down"
+        replicaZoneSoftAntiAffinity  = "true"
       }
       persistence = {
         defaultClassReplicaCount = 2

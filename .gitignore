@@ -20,3 +20,10 @@ talosconfig
 
 tmp/*
 .bw-provider*
+
+# Downloaded Images
+*.raw
+*.qcow2
+*.oci
+image_metadata.json*.raw.tar.gz
+*.raw
