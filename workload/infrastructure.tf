@@ -98,8 +98,8 @@ resource "kubernetes_secret" "longhorn_backup" {
   data = {
     AWS_ACCESS_KEY_ID     = data.bitwarden-secrets_secret.qobject_access_key.value
     AWS_SECRET_ACCESS_KEY = data.bitwarden-secrets_secret.qobject_secret_key.value
-    AWS_ENDPOINTS         = "http://192.168.0.21:8010"
-    VIRTUAL_HOSTED_STYLE  = "true"
+    AWS_ENDPOINTS         = "http://rclone-s3-gateway.longhorn-system.svc.cluster.local:8080"
+    VIRTUAL_HOSTED_STYLE  = "false"
   }
 }
 
