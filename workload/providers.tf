@@ -1,4 +1,8 @@
 terraform {
+  backend "gcs" {
+    bucket = "terraform-state-actual-budget-server-502619"
+    prefix = "terraform/state/workload"
+  }
   required_providers {
     helm = {
       source  = "hashicorp/helm"
