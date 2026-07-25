@@ -24,7 +24,7 @@ terraform {
 }
 
 provider "google" {
-  credentials = file("../tmp/gcp-creds.json")
+  credentials = try(file("../tmp/gcp-creds.json"), null)
   project     = var.project_id
   region      = var.region
   zone        = var.zone
