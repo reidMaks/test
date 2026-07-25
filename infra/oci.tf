@@ -119,6 +119,10 @@ resource "oci_objectstorage_preauthrequest" "upload" {
   name         = "upload-talos"
   namespace    = data.oci_objectstorage_namespace.ns.namespace
   time_expires = timeadd(timestamp(), "2h")
+
+  lifecycle {
+    ignore_changes = [time_expires]
+  }
 }
 
 resource "null_resource" "upload_talos_oci" {

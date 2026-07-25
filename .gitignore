@@ -28,3 +28,4 @@ tmp/*
 image_metadata.json*.raw.tar.gz
 *.raw
 !.envrc
+infra/image_metadata.json

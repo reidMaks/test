@@ -133,6 +133,10 @@ resource "google_storage_bucket_object" "talos_image" {
   bucket     = google_storage_bucket.talos_bucket.name
   source     = "gcp-amd64.raw.tar.gz"
   depends_on = [null_resource.download_talos]
+
+  lifecycle {
+    ignore_changes = [detect_md5hash]
+  }
 }
 
 resource "google_compute_image" "talos" {
