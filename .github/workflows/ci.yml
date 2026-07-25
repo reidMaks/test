@@ -1,0 +1,55 @@
+name: CI / IaaC Checks
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # 1. Перевірка на секрети (паролі, токени)
+  secret-scan:
+    name: Secret Scanner (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Важливо для перевірки всієї історії комітів
+      
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # 2. Перевірка Terraform коду
+  terraform-check:
+    name: Terraform Lint & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Format Check
+        # Перевіряє, чи всі файли відформатовані через terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init (infra)
+        run: terraform init -backend=false
+        working-directory: infra
+
+      - name: Terraform Validate (infra)
+        # Перевіряє синтаксис та валідність коду
+        run: terraform validate
+        working-directory: infra
+
+      - name: Terraform Init (workload)
+        run: terraform init -backend=false
+        working-directory: workload
+
+      - name: Terraform Validate (workload)
+        run: terraform validate
+        working-directory: workload
