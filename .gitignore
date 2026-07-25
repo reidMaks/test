@@ -27,3 +27,4 @@ tmp/*
 *.oci
 image_metadata.json*.raw.tar.gz
 *.raw
+!.envrc
