@@ -27,8 +27,12 @@ terraform {
   }
 }
 
+data "bitwarden-secrets_secret" "gcp_creds" {
+  id = "35f051fc-df4b-4627-8472-b492007d6f77"
+}
+
 provider "google" {
-  credentials = try(file("../tmp/gcp-creds.json"), null)
+  credentials = data.bitwarden-secrets_secret.gcp_creds.value
   project     = var.project_id
   region      = var.region
   zone        = var.zone
