@@ -63,12 +63,12 @@ resource "oci_core_security_list" "sl" {
 }
 
 resource "oci_core_subnet" "main_subnet" {
-  compartment_id      = var.compartment_ocid
-  vcn_id              = oci_core_vcn.main_vcn.id
-  cidr_block          = "10.0.1.0/24"
-  display_name        = "k8s-subnet"
-  route_table_id      = oci_core_route_table.rt.id
-  security_list_ids   = [oci_core_security_list.sl.id]
+  compartment_id    = var.compartment_ocid
+  vcn_id            = oci_core_vcn.main_vcn.id
+  cidr_block        = "10.0.1.0/24"
+  display_name      = "k8s-subnet"
+  route_table_id    = oci_core_route_table.rt.id
+  security_list_ids = [oci_core_security_list.sl.id]
 }
 
 resource "local_file" "image_metadata" {
@@ -136,13 +136,13 @@ resource "oci_core_image" "talos" {
   compartment_id = var.compartment_ocid
   display_name   = "talos-${replace(local.talos_version, ".", "-")}-${substr(local.talos_schematic_id, 0, 7)}"
   depends_on     = [null_resource.upload_talos_oci]
-  
+
   image_source_details {
-    source_type    = "objectStorageTuple"
-    bucket_name    = oci_objectstorage_bucket.talos.name
-    namespace_name = data.oci_objectstorage_namespace.ns.namespace
-    object_name    = "oracle-arm64.oci"
-    operating_system = "Custom"
+    source_type              = "objectStorageTuple"
+    bucket_name              = oci_objectstorage_bucket.talos.name
+    namespace_name           = data.oci_objectstorage_namespace.ns.namespace
+    object_name              = "oracle-arm64.oci"
+    operating_system         = "Custom"
     operating_system_version = "Custom"
   }
 }

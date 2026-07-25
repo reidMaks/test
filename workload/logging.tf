@@ -47,8 +47,8 @@ resource "helm_release" "promtail" {
             },
             {
               match = {
-                selector = "{namespace=~\"kube-system|longhorn-system\"}"
-                action   = "drop"
+                selector            = "{namespace=~\"kube-system|longhorn-system\"}"
+                action              = "drop"
                 drop_counter_reason = "drop_system_namespaces"
               }
             }

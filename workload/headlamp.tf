@@ -8,11 +8,11 @@ resource "kubernetes_namespace" "headlamp" {
 }
 
 resource "helm_release" "headlamp" {
-  name             = "headlamp"
-  repository       = "https://kubernetes-sigs.github.io/headlamp/"
-  chart            = "headlamp"
-  namespace        = kubernetes_namespace.headlamp.metadata[0].name
-  upgrade_install  = true
+  name            = "headlamp"
+  repository      = "https://kubernetes-sigs.github.io/headlamp/"
+  chart           = "headlamp"
+  namespace       = kubernetes_namespace.headlamp.metadata[0].name
+  upgrade_install = true
 
   values = [
     yamlencode({
