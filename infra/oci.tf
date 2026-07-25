@@ -1,9 +1,13 @@
+data "bitwarden-secrets_secret" "oci_key" {
+  id = "4b9127b4-6a3f-4f3b-af1e-b49200a7f3df"
+}
+
 provider "oci" {
-  tenancy_ocid     = var.tenancy_ocid
-  user_ocid        = var.user_ocid
-  fingerprint      = var.fingerprint
-  private_key_path = var.private_key_path
-  region           = var.oci_region
+  tenancy_ocid = var.tenancy_ocid
+  user_ocid    = var.user_ocid
+  fingerprint  = var.fingerprint
+  private_key  = data.bitwarden-secrets_secret.oci_key.value
+  region       = var.oci_region
 }
 
 # VCN & Networking

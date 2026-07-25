@@ -38,9 +38,13 @@ provider "google" {
   zone        = var.zone
 }
 
+data "bitwarden-secrets_secret" "proxmox_token" {
+  id = "728a8819-1cd2-4f90-97dd-b49200a85353"
+}
+
 provider "proxmox" {
   endpoint  = var.proxmox_endpoint
-  api_token = var.proxmox_api_token
+  api_token = data.bitwarden-secrets_secret.proxmox_token.value
   insecure  = true
 }
 
