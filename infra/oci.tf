@@ -73,6 +73,16 @@ resource "oci_core_security_list" "sl" {
       max = 51820
     }
   }
+
+  # Custom WG Hub
+  ingress_security_rules {
+    protocol = "17" # UDP
+    source   = "0.0.0.0/0"
+    udp_options {
+      min = 51821
+      max = 51821
+    }
+  }
 }
 
 resource "oci_core_subnet" "main_subnet" {
