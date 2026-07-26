@@ -139,39 +139,7 @@ resource "local_sensitive_file" "talosconfig" {
 # GCP WITNESS NODE
 # ==========================================
 
-data "talos_machine_configuration" "gcp" {
-  cluster_name     = "talos-k8s"
-  cluster_endpoint = "https://${local.cp_ip}:6443"
-  machine_type     = "controlplane"
-  machine_secrets  = talos_machine_secrets.this.machine_secrets
 
-  talos_version = local.talos_version
-
-  config_patches = [
-    <<-EOT
-    machine:
-      nodeLabels:
-        node-role.kubernetes.io/witness: ""
-      nodeTaints:
-        node-role.kubernetes.io/witness: ":NoSchedule"
-      network:
-        kubespan:
-          enabled: true
-    cluster:
-      etcd:
-        extraArgs:
-          heartbeat-interval: "500"
-          election-timeout: "5000"
-    EOT
-  ]
-}
-
-resource "talos_machine_configuration_apply" "gcp" {
-  depends_on                  = [google_compute_instance.gcp_cp]
-  client_configuration        = talos_machine_secrets.this.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.gcp.machine_configuration
-  node                        = google_compute_instance.gcp_cp.network_interface[0].access_config[0].nat_ip
-}
 
 # ==========================================
 # OCI WITNESS NODE
@@ -196,6 +164,13 @@ data "talos_machine_configuration" "oci" {
       network:
         kubespan:
           enabled: true
+        # Хак для обходу NAT: додаємо публічний IP до loopback (lo).
+        # Talos автоматично розпізнає цей IP і передасть його KubeSpan,
+        # що дозволить хмарним нодам з'єднуватись безпосередньо.
+        interfaces:
+          - interface: lo
+            addresses:
+              - ${oci_core_instance.talos_oci.public_ip}/32
     cluster:
       allowSchedulingOnControlPlanes: true
       etcd:
@@ -211,4 +186,48 @@ resource "talos_machine_configuration_apply" "oci" {
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.oci.machine_configuration
   node                        = oci_core_instance.talos_oci.public_ip
+}
+
+# ==========================================
+# OCI NODE 2
+# ==========================================
+
+data "talos_machine_configuration" "oci_2" {
+  cluster_name     = "talos-k8s"
+  cluster_endpoint = "https://${local.cp_ip}:6443"
+  machine_type     = "controlplane"
+  machine_secrets  = talos_machine_secrets.this.machine_secrets
+
+  talos_version = local.talos_version
+
+  config_patches = [
+    <<-EOT
+    machine:
+      nodeLabels:
+        node-role.kubernetes.io/control-plane: ""
+        topology.kubernetes.io/zone: "oci"
+      certSANs:
+        - ${oci_core_instance.talos_oci_2.public_ip}
+      network:
+        kubespan:
+          enabled: true
+        interfaces:
+          - interface: lo
+            addresses:
+              - ${oci_core_instance.talos_oci_2.public_ip}/32
+    cluster:
+      allowSchedulingOnControlPlanes: true
+      etcd:
+        extraArgs:
+          heartbeat-interval: "500"
+          election-timeout: "5000"
+    EOT
+  ]
+}
+
+resource "talos_machine_configuration_apply" "oci_2" {
+  depends_on                  = [oci_core_instance.talos_oci_2]
+  client_configuration        = talos_machine_secrets.this.client_configuration
+  machine_configuration_input = data.talos_machine_configuration.oci_2.machine_configuration
+  node                        = oci_core_instance.talos_oci_2.public_ip
 }

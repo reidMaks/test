@@ -55,6 +55,15 @@ resource "oci_core_security_list" "sl" {
     }
   }
 
+  ingress_security_rules {
+    protocol = "6" # TCP
+    source   = "0.0.0.0/0"
+    tcp_options {
+      min = 6443
+      max = 6443
+    }
+  }
+
   # KubeSpan Wireguard
   ingress_security_rules {
     protocol = "17" # UDP
@@ -184,6 +193,33 @@ resource "oci_core_instance" "talos_oci" {
   }
 }
 
+resource "oci_core_instance" "talos_oci_2" {
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  compartment_id      = var.compartment_ocid
+  display_name        = "talos-cp-oci-2"
+  shape               = "VM.Standard.A1.Flex"
+
+  shape_config {
+    ocpus         = 2
+    memory_in_gbs = 12
+  }
+
+  source_details {
+    source_type             = "image"
+    source_id               = oci_core_image.talos.id
+    boot_volume_size_in_gbs = 50 # Free tier limit is 200GB.
+  }
+
+  create_vnic_details {
+    subnet_id        = oci_core_subnet.main_subnet.id
+    assign_public_ip = true
+  }
+}
+
 output "oci_public_ip" {
   value = oci_core_instance.talos_oci.public_ip
+}
+
+output "oci_public_ip_2" {
+  value = oci_core_instance.talos_oci_2.public_ip
 }

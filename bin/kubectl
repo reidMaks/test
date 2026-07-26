@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Сценарій: намагаємось підключитись до найшвидшої живої Control Plane
+
+# Шлях до вашого kubeconfig
+KUBECONFIG_PATH="infra/kubeconfig"
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+ABS_KUBECONFIG="$REPO_ROOT/$KUBECONFIG_PATH"
+
+# Отримуємо IP-адреси наших 3-х нод
+HOME_IP="192.168.0.40"
+OCI_IP="152.67.85.188"
+OCI_IP2=$(cd "$REPO_ROOT/infra" && terraform output -raw oci_public_ip_2 2>/dev/null)
+
+# Функція для перевірки, чи живий API-сервер
+check_api() {
+  local ip=$1
+  [ -n "$ip" ] && curl -sk -m 1 "https://${ip}:6443/readyz" >/dev/null 2>&1
+}
+
+# Визначаємо, яка нода жива
+ALIVE_IP=""
+if check_api "$HOME_IP"; then
+  ALIVE_IP=$HOME_IP
+elif check_api "$OCI_IP"; then
+  ALIVE_IP=$OCI_IP
+elif check_api "$OCI_IP2"; then
+  ALIVE_IP=$OCI_IP2
+fi
+
+if [ -z "$ALIVE_IP" ]; then
+  echo "🚨 Всі Control Plane ноди недоступні!" >&2
+  # Fallback: просто викликаємо оригінальний kubectl, хай він сам падає
+  command kubectl "$@"
+  exit $?
+fi
+
+# Викликаємо справжній kubectl з правильним сервером
+command kubectl --kubeconfig="$ABS_KUBECONFIG" --server="https://${ALIVE_IP}:6443" "$@"
