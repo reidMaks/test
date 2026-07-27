@@ -1,0 +1,179 @@
+version: "2.1"
+services:
+  traefik-qnap:
+    image: traefik:v3.0
+    container_name: traefik-qnap
+    restart: always
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
+      - "--entryPoints.web.address=:80"
+      - "--api.insecure=true"
+      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+    ports:
+      - 8880:80
+      - 8081:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./dynamic.yml:/etc/traefik/dynamic.yml:ro
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    dns:
+      - 192.168.0.1
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=Europe/Kyiv
+      - WEBUI_PORT=8085
+    volumes:
+      - /share/CACHEDEV2_DATA/appdata/arr-stack/config/qbittorrent:/config
+      - /share/CACHEDEV1_DATA/torrent:/torrent
+    ports:
+      - 8085:8085
+      - 34760:34760
+      - 34760:34760/udp
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.qbittorrent.rule=Host(`qb.home.arpa`) || Host(`qbittorrent.home.arpa`)"
+      - "traefik.http.services.qbittorrent.loadbalancer.server.port=8085"
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    dns:
+      - 192.168.0.1
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=Europe/Kyiv
+    volumes:
+      - /share/CACHEDEV2_DATA/appdata/arr-stack/config/prowlarr:/config
+    ports:
+      - 9696:80
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.home.arpa`)"
+      - "traefik.http.services.prowlarr.loadbalancer.server.port=80"
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    dns:
+      - 192.168.0.1
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=Europe/Kyiv
+    volumes:
+      - /share/CACHEDEV2_DATA/appdata/arr-stack/config/sonarr:/config
+      - /share/CACHEDEV1_DATA/torrent:/torrent
+    ports:
+      - 8989:80
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sonarr.rule=Host(`sonarr.home.arpa`)"
+      - "traefik.http.services.sonarr.loadbalancer.server.port=80"
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    dns:
+      - 192.168.0.1
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=Europe/Kyiv
+    volumes:
+      - /share/CACHEDEV2_DATA/appdata/arr-stack/config/radarr:/config
+      - /share/CACHEDEV1_DATA/torrent:/torrent
+    ports:
+      - 7878:80
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.radarr.rule=Host(`radarr.home.arpa`)"
+      - "traefik.http.services.radarr.loadbalancer.server.port=80"
+
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    dns:
+      - 192.168.0.1
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=Europe/Kyiv
+    volumes:
+      - /share/CACHEDEV2_DATA/appdata/arr-stack/config/lidarr:/config
+      - /share/CACHEDEV1_DATA/torrent:/torrent
+    ports:
+      - 8686:80
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lidarr.rule=Host(`lidarr.home.arpa`)"
+      - "traefik.http.services.lidarr.loadbalancer.server.port=80"
+
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
+    container_name: seerr
+    user: "0:0"
+    dns:
+      - 192.168.0.1
+    environment:
+      - TZ=Europe/Kyiv
+      - LOG_LEVEL=debug
+    volumes:
+      - /share/CACHEDEV2_DATA/appdata/arr-stack/config/seerr:/app/config
+    ports:
+      - 5055:5055
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.seerr.rule=Host(`seerr.home.arpa`)"
+      - "traefik.http.services.seerr.loadbalancer.server.port=5055"
+
+  cross-seed:
+    image: ghcr.io/cross-seed/cross-seed:latest
+    container_name: cross-seed
+    dns:
+      - 192.168.0.1
+    environment:
+      - TZ=Europe/Kyiv
+    volumes:
+      - /share/CACHEDEV2_DATA/appdata/arr-stack/config/cross-seed:/config
+      - /share/CACHEDEV1_DATA/torrent:/torrent
+      - /share/CACHEDEV2_DATA/appdata/arr-stack/config/qbittorrent/qBittorrent/BT_backup:/torrent-dir:ro
+    ports:
+      - 2468:2468
+    command: daemon
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.cross-seed.rule=Host(`cross-seed.home.arpa`)"
+      - "traefik.http.services.cross-seed.loadbalancer.server.port=2468"
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    dns:
+      - 192.168.0.1
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=Europe/Kyiv
+    volumes:
+      - /share/CACHEDEV2_DATA/appdata/arr-stack/config/jellyfin:/config
+      - /share/CACHEDEV1_DATA/torrent:/torrent
+    ports:
+      - 8096:8096
+      - 7359:7359/udp
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.home.arpa`)"
+      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"

@@ -1,0 +1,11 @@
+http:
+  routers:
+    proxmox:
+      rule: "Host(`pve.kms-lab.in.ua`)"
+      service: proxmox-svc
+      tls: true
+  services:
+    proxmox-svc:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.0.26:8006"
