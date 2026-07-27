@@ -7,6 +7,8 @@ controllers:
           tag: v5.7.0
         env:
           GATUS_CONFIG_PATH: /config/config.yaml
+          HTTP_PROXY: "http://wg-hub-proxy.wg-hub.svc.cluster.local:3128"
+          HTTPS_PROXY: "http://wg-hub-proxy.wg-hub.svc.cluster.local:3128"
         resources:
           requests:
             cpu: 50m
@@ -17,14 +19,6 @@ controllers:
 defaultPodOptions:
   nodeSelector:
     topology.kubernetes.io/zone: oci
-  hostAliases:
-    - ip: "192.168.0.21"
-      hostnames:
-        - "portainer.home.arpa"
-        - "nas72ffeb.home.arpa"
-        - "jellyfin.home.arpa"
-        - "radarr.home.arpa"
-        - "pve.kms-lab.in.ua"
 
 service:
   app:
