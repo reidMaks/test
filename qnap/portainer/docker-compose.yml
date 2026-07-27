@@ -10,18 +10,29 @@ services:
       - "--entryPoints.web.address=:80"
       - "--entryPoints.websecure.address=:443"
       - "--api.dashboard=true"
-      - "--providers.file.directory=/etc/traefik/dynamic_conf"
+      - "--serverstransport.insecureskipverify=true"
     ports:
       - 80:80
       - 443:443
       - 8081:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./qnap/portainer/traefik:/etc/traefik/dynamic_conf:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik-ui.rule=Host(`traefik.home.arpa`)"
       - "traefik.http.routers.traefik-ui.service=api@internal"
+      - "traefik.http.routers.proxmox.rule=Host(`pve.kms-lab.in.ua`)"
+      - "traefik.http.routers.proxmox.tls=true"
+      - "traefik.http.services.proxmox-svc.loadbalancer.server.url=https://192.168.0.26:8006"
+      - "traefik.http.routers.proxmox.service=proxmox-svc"
+      - "traefik.http.routers.portainer.rule=Host(`portainer.home.arpa`)"
+      - "traefik.http.routers.portainer.tls=true"
+      - "traefik.http.services.portainer-svc.loadbalancer.server.url=https://192.168.0.21:9443"
+      - "traefik.http.routers.portainer.service=portainer-svc"
+      - "traefik.http.routers.qnap.rule=Host(`nas72ffeb.home.arpa`)"
+      - "traefik.http.routers.qnap.tls=true"
+      - "traefik.http.services.qnap-svc.loadbalancer.server.url=https://192.168.0.21:4433"
+      - "traefik.http.routers.qnap.service=qnap-svc"
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
