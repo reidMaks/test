@@ -1,78 +1,10 @@
 version: "2.1"
 
-volumes:
-  traefik-conf:
+networks:
+  proxy:
+    external: true
 
 services:
-  traefik-configurator:
-    image: alpine:latest
-    container_name: traefik-configurator
-    volumes:
-      - traefik-conf:/conf
-    command:
-      - /bin/sh
-      - -c
-      - |
-        cat << 'EOF' > /conf/dynamic.yml
-        http:
-          routers:
-            proxmox:
-              rule: "Host(`pve.kms-lab.in.ua`)"
-              service: proxmox-svc
-              tls: {}
-            portainer:
-              rule: "Host(`portainer.home.arpa`)"
-              service: portainer-svc
-              tls: {}
-            qnap:
-              rule: "Host(`nas72ffeb.home.arpa`)"
-              service: qnap-svc
-              tls: {}
-          services:
-            proxmox-svc:
-              loadBalancer:
-                servers:
-                  - url: "https://192.168.0.26:8006"
-            portainer-svc:
-              loadBalancer:
-                servers:
-                  - url: "https://host.docker.internal:9443"
-            qnap-svc:
-              loadBalancer:
-                servers:
-                  - url: "https://192.168.0.21:4433"
-        EOF
-        echo "Traefik config generated successfully"
-
-  traefik-qnap:
-    depends_on:
-      traefik-configurator:
-        condition: service_completed_successfully
-    image: traefik:v3.0
-    container_name: traefik-qnap
-    restart: always
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    command:
-      - "--providers.docker=true"
-      - "--providers.docker.exposedByDefault=false"
-      - "--entryPoints.web.address=:80"
-      - "--entryPoints.websecure.address=:443"
-      - "--api.dashboard=true"
-      - "--serverstransport.insecureskipverify=true"
-      - "--providers.file.directory=/etc/traefik/dynamic_conf"
-    ports:
-      - 80:80
-      - 443:443
-      - 8081:8080
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - traefik-conf:/etc/traefik/dynamic_conf:ro
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik-ui.rule=Host(`traefik.home.arpa`)"
-      - "traefik.http.routers.traefik-ui.service=api@internal"
-
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
@@ -90,6 +22,8 @@ services:
       - 8085:8085
       - 34760:34760
       - 34760:34760/udp
+    networks:
+      - proxy
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -109,6 +43,8 @@ services:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/prowlarr:/config
     ports:
       - 9696:80
+    networks:
+      - proxy
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -129,6 +65,8 @@ services:
       - /share/CACHEDEV1_DATA/torrent:/torrent
     ports:
       - 8989:80
+    networks:
+      - proxy
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -149,6 +87,8 @@ services:
       - /share/CACHEDEV1_DATA/torrent:/torrent
     ports:
       - 7878:80
+    networks:
+      - proxy
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -169,6 +109,8 @@ services:
       - /share/CACHEDEV1_DATA/torrent:/torrent
     ports:
       - 8686:80
+    networks:
+      - proxy
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -188,6 +130,8 @@ services:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/seerr:/app/config
     ports:
       - 5055:5055
+    networks:
+      - proxy
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -207,12 +151,15 @@ services:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/qbittorrent/qBittorrent/BT_backup:/torrent-dir:ro
     ports:
       - 2468:2468
+    networks:
+      - proxy
     command: daemon
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.cross-seed.rule=Host(`cross-seed.home.arpa`)"
       - "traefik.http.services.cross-seed.loadbalancer.server.port=2468"
+
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
@@ -228,6 +175,8 @@ services:
     ports:
       - 8096:8096
       - 7359:7359/udp
+    networks:
+      - proxy
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
