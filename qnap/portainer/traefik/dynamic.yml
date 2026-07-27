@@ -1,27 +1,34 @@
 http:
+  serversTransports:
+    insecureSkipVerify:
+      insecureSkipVerify: true
+
   routers:
     proxmox:
       rule: "Host(`pve.kms-lab.in.ua`)"
       service: proxmox-svc
-      tls: true
+      tls: {}
     portainer:
       rule: "Host(`portainer.home.arpa`)"
       service: portainer-svc
-      tls: true
+      tls: {}
     qnap:
       rule: "Host(`nas72ffeb.home.arpa`)"
       service: qnap-svc
-      tls: true
+      tls: {}
   services:
     proxmox-svc:
       loadBalancer:
+        serversTransport: insecureSkipVerify
         servers:
           - url: "https://192.168.0.26:8006"
     portainer-svc:
       loadBalancer:
+        serversTransport: insecureSkipVerify
         servers:
           - url: "https://192.168.0.21:9443"
     qnap-svc:
       loadBalancer:
+        serversTransport: insecureSkipVerify
         servers:
           - url: "https://192.168.0.21:4433"
