@@ -1,23 +1,29 @@
 metrics: true
 endpoints:
   - name: Portainer
-    group: Infrastructure
+    group: Home Infrastructure
     url: "https://portainer.home.arpa"
     interval: 1m
+    client:
+      insecure: true
     conditions:
       - "[STATUS] == 200"
 
   - name: QNAP Admin
-    group: Infrastructure
+    group: Home Infrastructure
     url: "https://nas72ffeb.home.arpa"
     interval: 1m
+    client:
+      insecure: true
     conditions:
       - "[STATUS] == 200"
 
   - name: Proxmox
-    group: Infrastructure
+    group: Home Infrastructure
     url: "https://pve.kms-lab.in.ua"
     interval: 1m
+    client:
+      insecure: true
     conditions:
       - "[STATUS] == 200"
 
@@ -25,6 +31,8 @@ endpoints:
     group: Media
     url: "https://jellyfin.home.arpa"
     interval: 1m
+    client:
+      insecure: true
     conditions:
       - "[STATUS] == 200"
 
@@ -32,5 +40,47 @@ endpoints:
     group: Media
     url: "https://radarr.home.arpa"
     interval: 1m
+    client:
+      insecure: true
     conditions:
       - "[STATUS] == 200"
+
+  - name: Paperless
+    group: Cluster Workloads
+    url: "http://paperless-app:8000"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[STATUS] == 302"
+
+  - name: SearxNG
+    group: Cluster Workloads
+    url: "http://searxng-http:8080"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[STATUS] == 302"
+
+  - name: Tandoor
+    group: Cluster Workloads
+    url: "http://tandoor-app:80"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[STATUS] == 302"
+
+  - name: LubeLogger
+    group: Cluster Workloads
+    url: "http://lubelogger:8080"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[STATUS] == 302"
+
+  - name: Actual Budget
+    group: Cluster Workloads
+    url: "http://actualbudget:5006"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+      - "[STATUS] == 302"
