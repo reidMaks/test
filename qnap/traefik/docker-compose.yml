@@ -40,7 +40,7 @@ services:
             portainer-svc:
               loadBalancer:
                 servers:
-                  - url: "https://host.docker.internal:9443"
+                  - url: "https://portainer:9443"
             qnap-svc:
               loadBalancer:
                 servers:
