@@ -36,7 +36,7 @@ services:
             portainer-svc:
               loadBalancer:
                 servers:
-                  - url: "https://192.168.0.21:9443"
+                  - url: "https://host.docker.internal:9443"
             qnap-svc:
               loadBalancer:
                 servers:
@@ -51,6 +51,8 @@ services:
     image: traefik:v3.0
     container_name: traefik-qnap
     restart: always
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedByDefault=false"
