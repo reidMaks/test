@@ -9,6 +9,10 @@ controllers:
           GATUS_CONFIG_PATH: /config/config.yaml
           HTTP_PROXY: "http://wg-hub-proxy.wg-hub.svc.cluster.local:3128"
           HTTPS_PROXY: "http://wg-hub-proxy.wg-hub.svc.cluster.local:3128"
+          NO_PROXY: "localhost,127.0.0.1,.cluster.local,.svc,paperless-app,searxng-http,lubelogger,tandoor-app,actualbudget"
+        envFrom:
+          - secretRef:
+              name: gatus-secrets
         resources:
           requests:
             cpu: 50m
@@ -46,5 +50,4 @@ persistence:
     advancedMounts:
       main:
         main:
-          - path: /config/config.yaml
-            subPath: config.yaml
+          - path: /config

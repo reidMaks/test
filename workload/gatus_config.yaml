@@ -1,3 +1,14 @@
+alerting:
+  ntfy:
+    url: "https://ntfy.sh"
+    topic: "$NTFY_TOPIC"
+    priority: 4
+    default-alert:
+      description: "Healthcheck failed"
+      send-on-resolved: true
+      failure-threshold: 3
+      success-threshold: 2
+
 metrics: true
 endpoints:
   - name: Portainer
@@ -8,6 +19,8 @@ endpoints:
       insecure: true
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
 
   - name: QNAP Admin
     group: Home Infrastructure
@@ -17,6 +30,8 @@ endpoints:
       insecure: true
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
 
   - name: Proxmox
     group: Home Infrastructure
@@ -26,6 +41,8 @@ endpoints:
       insecure: true
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
 
   - name: Jellyfin
     group: Media
@@ -35,6 +52,8 @@ endpoints:
       insecure: true
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
 
   - name: Radarr
     group: Media
@@ -44,6 +63,8 @@ endpoints:
       insecure: true
     conditions:
       - "[STATUS] == 200"
+    alerts:
+      - type: ntfy
 
   - name: Paperless
     group: Cluster Workloads
@@ -51,7 +72,8 @@ endpoints:
     interval: 1m
     conditions:
       - "[STATUS] == 200"
-      - "[STATUS] == 302"
+    alerts:
+      - type: ntfy
 
   - name: SearxNG
     group: Cluster Workloads
@@ -59,7 +81,8 @@ endpoints:
     interval: 1m
     conditions:
       - "[STATUS] == 200"
-      - "[STATUS] == 302"
+    alerts:
+      - type: ntfy
 
   - name: Tandoor
     group: Cluster Workloads
@@ -67,7 +90,8 @@ endpoints:
     interval: 1m
     conditions:
       - "[STATUS] == 200"
-      - "[STATUS] == 302"
+    alerts:
+      - type: ntfy
 
   - name: LubeLogger
     group: Cluster Workloads
@@ -75,7 +99,8 @@ endpoints:
     interval: 1m
     conditions:
       - "[STATUS] == 200"
-      - "[STATUS] == 302"
+    alerts:
+      - type: ntfy
 
   - name: Actual Budget
     group: Cluster Workloads
@@ -83,4 +108,5 @@ endpoints:
     interval: 1m
     conditions:
       - "[STATUS] == 200"
-      - "[STATUS] == 302"
+    alerts:
+      - type: ntfy

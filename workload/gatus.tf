@@ -1,3 +1,18 @@
+data "bitwarden-secrets_secret" "gatus_ntfy_topic" {
+  id = "ec5b6dd0-bead-4991-a0e7-b494013a4910"
+}
+
+resource "kubernetes_secret" "gatus_secrets" {
+  metadata {
+    name      = "gatus-secrets"
+    namespace = "default"
+  }
+
+  data = {
+    NTFY_TOPIC = data.bitwarden-secrets_secret.gatus_ntfy_topic.value
+  }
+}
+
 resource "kubernetes_config_map" "gatus_config" {
   metadata {
     name      = "gatus-config"
@@ -21,5 +36,5 @@ resource "helm_release" "gatus" {
     file("${path.module}/helm_values/gatus.yaml")
   ]
 
-  depends_on = [kubernetes_config_map.gatus_config]
+  depends_on = [kubernetes_config_map.gatus_config, kubernetes_secret.gatus_secrets]
 }
