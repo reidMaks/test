@@ -9,13 +9,13 @@ services:
       - "--providers.docker.exposedByDefault=false"
       - "--entryPoints.web.address=:80"
       - "--api.insecure=true"
-      - "--providers.file.filename=/etc/traefik/dynamic.yml"
+      - "--providers.file.directory=/etc/traefik/dynamic_conf"
     ports:
       - 8880:80
       - 8081:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./traefik:/etc/traefik/dynamic_conf:ro
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
