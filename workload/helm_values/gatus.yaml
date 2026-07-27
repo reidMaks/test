@@ -1,0 +1,56 @@
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: twinproduction/gatus
+          tag: v5.7.0
+        env:
+          GATUS_CONFIG_PATH: /config/config.yaml
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            memory: 256Mi
+
+defaultPodOptions:
+  nodeSelector:
+    topology.kubernetes.io/zone: oci
+  hostAliases:
+    - ip: "192.168.0.21"
+      hostnames:
+        - "portainer.home.arpa"
+        - "nas72ffeb.home.arpa"
+        - "jellyfin.home.arpa"
+        - "radarr.home.arpa"
+        - "pve.kms-lab.in.ua"
+
+service:
+  app:
+    controller: main
+    ports:
+      http:
+        port: 8080
+
+ingress:
+  main:
+    enabled: true
+    className: "traefik"
+    hosts:
+      - host: status.kms-lab.in.ua
+        paths:
+          - path: /
+            service:
+              identifier: app
+              port: http
+
+persistence:
+  config:
+    type: configMap
+    name: gatus-config
+    advancedMounts:
+      main:
+        main:
+          - path: /config/config.yaml
+            subPath: config.yaml

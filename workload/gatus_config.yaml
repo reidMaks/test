@@ -1,0 +1,36 @@
+metrics: true
+endpoints:
+  - name: Portainer
+    group: Infrastructure
+    url: "https://portainer.home.arpa"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: QNAP Admin
+    group: Infrastructure
+    url: "https://nas72ffeb.home.arpa"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Proxmox
+    group: Infrastructure
+    url: "https://pve.kms-lab.in.ua"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Jellyfin
+    group: Media
+    url: "https://jellyfin.home.arpa"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
+
+  - name: Radarr
+    group: Media
+    url: "https://radarr.home.arpa"
+    interval: 1m
+    conditions:
+      - "[STATUS] == 200"
