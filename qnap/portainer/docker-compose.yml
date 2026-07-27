@@ -8,14 +8,20 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedByDefault=false"
       - "--entryPoints.web.address=:80"
-      - "--api.insecure=true"
+      - "--entryPoints.websecure.address=:443"
+      - "--api.dashboard=true"
       - "--providers.file.directory=/etc/traefik/dynamic_conf"
     ports:
       - 80:80
+      - 443:443
       - 8081:8080
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik:/etc/traefik/dynamic_conf:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik-ui.rule=Host(`traefik.home.arpa`)"
+      - "traefik.http.routers.traefik-ui.service=api@internal"
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest

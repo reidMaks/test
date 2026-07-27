@@ -4,8 +4,24 @@ http:
       rule: "Host(`pve.kms-lab.in.ua`)"
       service: proxmox-svc
       tls: true
+    portainer:
+      rule: "Host(`portainer.home.arpa`)"
+      service: portainer-svc
+      tls: true
+    qnap:
+      rule: "Host(`nas72ffeb.home.arpa`)"
+      service: qnap-svc
+      tls: true
   services:
     proxmox-svc:
       loadBalancer:
         servers:
           - url: "https://192.168.0.26:8006"
+    portainer-svc:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.0.21:9443"
+    qnap-svc:
+      loadBalancer:
+        servers:
+          - url: "https://192.168.0.21:4433"
