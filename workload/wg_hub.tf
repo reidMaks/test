@@ -32,6 +32,10 @@ resource "kubernetes_deployment" "wg_hub" {
   spec {
     replicas = 1
 
+    strategy {
+      type = "Recreate"
+    }
+
     selector {
       match_labels = {
         app = "wg-hub"
@@ -68,6 +72,7 @@ resource "kubernetes_deployment" "wg_hub" {
           command = ["/bin/sh", "-c"]
           args = [
             <<-EOF
+            set -e
             apk add --no-cache wireguard-tools iptables
             mkdir -p /etc/wireguard
             cp /etc/wireguard-secret/wg0.conf /etc/wireguard/wg0.conf
@@ -91,6 +96,7 @@ resource "kubernetes_deployment" "wg_hub" {
           command = ["/bin/sh", "-c"]
           args = [
             <<-EOF
+            set -e
             apk add --no-cache dnsmasq
             # Чекаємо поки wg-server підніме інтерфейс
             while ! ip addr show wg0 >/dev/null 2>&1; do sleep 1; done
@@ -127,6 +133,7 @@ resource "kubernetes_deployment" "wg_hub" {
           command = ["/bin/sh", "-c"]
           args = [
             <<-EOF
+            set -e
             apk add --no-cache squid
             cat << 'SQUID' > /etc/squid/squid.conf
             http_port 3128
