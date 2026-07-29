@@ -52,7 +52,7 @@ service:
     controller: main
     ports:
       http:
-        port: 80 
+        port: 80
   db:
     controller: db
     ports:

@@ -16,7 +16,7 @@ controllers:
           repository: mitmproxy/mitmproxy
           tag: "10.1.6"
         command: ["sh", "-c", "mitmdump --set confdir=/certs & sleep 5; kill $!"]
-        
+
     containers:
       main:
         image:
@@ -31,15 +31,15 @@ controllers:
             memory: 128Mi
           limits:
             memory: 512Mi
-            
+
       mitmproxy:
         image:
           repository: mitmproxy/mitmproxy
           tag: "10.1.6"
         securityContext:
           runAsUser: 0
-        command: 
-          - mitmdump 
+        command:
+          - mitmdump
           - "-q"
           - "--listen-port"
           - "443"

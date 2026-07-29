@@ -28,7 +28,7 @@ controllers:
             memory: 512Mi
           limits:
             memory: 2Gi
-  
+
   redis:
     type: statefulset
     containers:

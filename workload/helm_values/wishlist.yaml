@@ -26,7 +26,7 @@ service:
     controller: main
     ports:
       http:
-        port: 3280 
+        port: 3280
 
 ingress:
   main:
@@ -50,7 +50,7 @@ persistence:
       recurring-job-group.longhorn.io/daily-backups: "enabled"
     storageClass: "longhorn"
     accessMode: ReadWriteOnce
-    size: 200Mi 
+    size: 200Mi
     globalMounts:
       - path: /usr/src/app/uploads
 
@@ -63,6 +63,6 @@ persistence:
       recurring-job-group.longhorn.io/daily-backups: "enabled"
     storageClass: "longhorn"
     accessMode: ReadWriteOnce
-    size: 100Mi 
+    size: 100Mi
     globalMounts:
       - path: /usr/src/app/data

@@ -25,17 +25,17 @@ class MonobankInjector:
         if not token:
             logger.warning("No token provided!")
             return None
-            
+
         cached = self.client_info_cache.get(token)
         if cached and time.time() - cached["time"] < 60:
             return cached["info"]
-            
+
         # Prevent concurrent requests from stampeding Monobank API
         if cached:
             self.client_info_cache[token]["time"] = time.time()
         else:
             self.client_info_cache[token] = {"info": None, "time": time.time()}
-        
+
         req = urllib.request.Request("https://api.monobank.ua/personal/client-info")
         req.add_header("X-Token", token)
         try:
@@ -57,7 +57,7 @@ class MonobankInjector:
         token = ""
         if auth_header.startswith("Bearer "):
             token = auth_header.split(" ")[1].strip()
-            
+
         return token
 
     def request(self, flow: http.HTTPFlow):
@@ -70,12 +70,12 @@ class MonobankInjector:
             try:
                 req_data = json.loads(flow.request.content)
                 logger.info(f"Token endpoint payload: {req_data}")
-                
+
                 # Check both secret_key and secret_id just in case the user pasted it in the wrong field
                 user_token = req_data.get("secret_key", "")
                 if not user_token or user_token == "fake-access-token" or len(user_token) < 10:
                     user_token = req_data.get("secret_id", "fake-access-token")
-                    
+
                 user_token = user_token.strip()
                 logger.info(f"Extracted user token: {user_token}")
             except Exception as e:
@@ -133,7 +133,7 @@ class MonobankInjector:
                 req_data = json.loads(flow.request.content)
             except:
                 req_data = {}
-                
+
             fake_req = {
                 "id": "fake-req-123",
                 "created": "2026-06-30T00:00:00Z",
@@ -157,7 +157,7 @@ class MonobankInjector:
                     accs.append(a.get("id"))
                 for j in ci.get("jars", []):
                     accs.append(j.get("id"))
-            
+
             fake_req = {
                 "id": "fake-req-123",
                 "created": "2026-06-30T00:00:00Z",
@@ -177,14 +177,14 @@ class MonobankInjector:
                 parts = path.strip("/").split("/")
                 if len(parts) < 4:
                     return
-                    
+
                 acc_id = parts[3]
                 subpath = parts[4] if len(parts) > 4 else None
 
                 token = self.get_token_from_flow(flow)
                 ci = self.get_client_info(token)
                 acc_info = None
-                
+
                 logger.debug(f"Looking for acc_id: '{acc_id}' in subpath '{subpath}'")
                 if ci:
                     logger.debug(f"ci has {len(ci.get('accounts', []))} accounts and {len(ci.get('jars', []))} jars")
@@ -195,7 +195,7 @@ class MonobankInjector:
                             break
                 else:
                     logger.debug("ci is None!")
-                
+
                 if not acc_info:
                     logger.debug(f"Could not find account {acc_id}")
                     flow.response = http.Response.make(404, "Not Found")
@@ -232,7 +232,7 @@ class MonobankInjector:
                     req = urllib.request.Request(endpoint)
                     token = self.get_token_from_flow(flow)
                     req.add_header("X-Token", token)
-                    
+
                     try:
                         with urllib.request.urlopen(req) as response:
                             txs = json.loads(response.read().decode())
@@ -258,7 +258,7 @@ class MonobankInjector:
                             "remittanceInformationStructured": t.get("comment", "")
                         }
                         booked.append(tx_obj)
-                    
+
                     res = {"transactions": {"booked": booked, "pending": []}}
                     flow.response = http.Response.make(200, json.dumps(res), {"Content-Type": "application/json"})
                     return
@@ -271,7 +271,7 @@ class MonobankInjector:
                         masked = acc_info.get('maskedPan', [])
                         pan = masked[0] if (masked and len(masked) > 0) else ""
                         name = f"{acc_info.get('type', 'Account').capitalize()} {pan}"
-                    
+
                     res = {
                         "account": {
                             "id": acc_id,
@@ -295,7 +295,7 @@ class MonobankInjector:
                         masked = acc_info.get('maskedPan', [])
                         pan = masked[0] if (masked and len(masked) > 0) else ""
                         name = f"{acc_info.get('type', 'Account').capitalize()} {pan}"
-                    
+
                     res = {
                         "id": acc_id,
                         "name": name.strip(),
