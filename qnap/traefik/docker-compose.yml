@@ -17,7 +17,22 @@ services:
       - /bin/sh
       - -c
       - |
+        apk add --no-cache openssl
+        mkdir -p /conf/certs
+        if [ ! -f /conf/certs/home-arpa.crt ]; then
+          echo "Generating new Local CA and Wildcard Certificate..."
+          openssl req -x509 -nodes -newkey rsa:4096 -keyout /conf/certs/local-ca.key -out /conf/certs/local-ca.crt -days 3650 -subj "/O=Home Network/CN=Home Local CA"
+          openssl req -nodes -newkey rsa:2048 -keyout /conf/certs/home-arpa.key -out /conf/certs/home-arpa.csr -subj "/O=Home Network/CN=*.home.arpa"
+          echo "subjectAltName=DNS:*.home.arpa,DNS:home.arpa" > /conf/certs/extfile.cnf
+          openssl x509 -req -in /conf/certs/home-arpa.csr -CA /conf/certs/local-ca.crt -CAkey /conf/certs/local-ca.key -CAcreateserial -out /conf/certs/home-arpa.crt -days 3650 -extfile /conf/certs/extfile.cnf
+        fi
         cat << 'EOF' > /conf/dynamic.yml
+        tls:
+          stores:
+            default:
+              defaultCertificate:
+                certFile: /etc/traefik/dynamic_conf/certs/home-arpa.crt
+                keyFile: /etc/traefik/dynamic_conf/certs/home-arpa.key
         http:
           routers:
             proxmox:
