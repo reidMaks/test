@@ -124,6 +124,7 @@ services:
     environment:
       - TZ=Europe/Kyiv
       - LOG_LEVEL=debug
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
     volumes:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/seerr:/app/config
     ports:
