@@ -23,8 +23,8 @@ services:
           echo "Generating new Local CA and Wildcard Certificate..."
           openssl req -x509 -nodes -newkey rsa:4096 -keyout /conf/certs/local-ca.key -out /conf/certs/local-ca.crt -days 3650 -subj "/O=Home Network/CN=Home Local CA"
           openssl req -nodes -newkey rsa:2048 -keyout /conf/certs/home-arpa.key -out /conf/certs/home-arpa.csr -subj "/O=Home Network/CN=*.home.arpa"
-          echo "subjectAltName=DNS:*.home.arpa,DNS:home.arpa" > /conf/certs/extfile.cnf
-          openssl x509 -req -in /conf/certs/home-arpa.csr -CA /conf/certs/local-ca.crt -CAkey /conf/certs/local-ca.key -CAcreateserial -out /conf/certs/home-arpa.crt -days 3650 -extfile /conf/certs/extfile.cnf
+          echo "subjectAltName=DNS:*.home.arpa,DNS:home.arpa,DNS:seerr.home.arpa,DNS:jellyfin.home.arpa,DNS:qb.home.arpa,DNS:portainer.home.arpa,DNS:sonarr.home.arpa,DNS:radarr.home.arpa,DNS:prowlarr.home.arpa,DNS:traefik.home.arpa,DNS:nas72ffeb.home.arpa,DNS:pve.kms-lab.in.ua" > /conf/certs/extfile.cnf
+          openssl x509 -req -in /conf/certs/home-arpa.csr -CA /conf/certs/local-ca.crt -CAkey /conf/certs/local-ca.key -CAcreateserial -out /conf/certs/home-arpa.crt -days 398 -extfile /conf/certs/extfile.cnf
         fi
         cat << 'EOF' > /conf/dynamic.yml
         tls:
