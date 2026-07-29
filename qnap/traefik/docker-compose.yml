@@ -73,7 +73,14 @@ services:
       - 80:80
       - 443:443
     networks:
-      - proxy
+      proxy:
+        aliases:
+          - jellyfin.home.arpa
+          - seerr.home.arpa
+          - sonarr.home.arpa
+          - radarr.home.arpa
+          - qb.home.arpa
+          - prowlarr.home.arpa
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik-conf:/etc/traefik/dynamic_conf:ro

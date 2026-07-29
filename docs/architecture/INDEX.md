@@ -11,6 +11,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[002-networking-and-ingress]] - Networking, Ingress, WG Hub, and Cloudflare
 - [[003-storage]] - Longhorn Storage and S3 Backups
 - [[004-qnap-nas]] - QNAP NAS and Media Stack (Arr-stack)
+- [[005-qnap-internal-dns]] - QNAP Internal DNS and Traefik Aliasing
 
 ## Workloads & Services
 - Traefik (Ingress)

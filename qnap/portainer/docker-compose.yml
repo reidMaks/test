@@ -121,8 +121,6 @@ services:
     image: ghcr.io/seerr-team/seerr:latest
     container_name: seerr
     user: "0:0"
-    dns:
-      - 192.168.0.1
     environment:
       - TZ=Europe/Kyiv
       - LOG_LEVEL=debug
@@ -163,8 +161,6 @@ services:
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
-    dns:
-      - 192.168.0.1
     environment:
       - PUID=0
       - PGID=0
