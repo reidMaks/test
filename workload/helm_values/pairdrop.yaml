@@ -1,7 +1,8 @@
 ingressRoute:
   create: true
-  entryPoints: ["web"]
+  entryPoints: ["web", "websecure"]
   rule: "Host(`pairdrop.kms-lab.in.ua`)"
+  tls: {}
 
 env:
   - name: WS_FALLBACK
