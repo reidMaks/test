@@ -12,6 +12,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[003-storage]] - Longhorn Storage and S3 Backups
 - [[004-qnap-nas]] - QNAP NAS and Media Stack (Arr-stack)
 - [[005-qnap-internal-dns]] - QNAP Internal DNS and Traefik Aliasing
+- [[006-qnap-local-ca-tls]] - QNAP Local CA and TLS Configuration
 
 ## Workloads & Services
 - Traefik (Ingress)
