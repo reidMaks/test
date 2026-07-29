@@ -1,7 +1,7 @@
 # Multi-Cloud Highly Available Kubernetes Architecture (Talos Linux)
 
 ## 1. Concept & Vision
-The goal is to build a fault-tolerant, hybrid-cloud Kubernetes cluster that seamlessly spans across an on-premise Proxmox environment (Home) and public cloud providers (Oracle Cloud and GCP). 
+The goal is to build a fault-tolerant, hybrid-cloud Kubernetes cluster that seamlessly spans across an on-premise Proxmox environment (Home) and public cloud providers (Oracle Cloud and GCP).
 
 By leveraging **Talos Linux** and its built-in **KubeSpan** feature (WireGuard mesh network), nodes in completely different physical locations and networks will securely communicate as if they are on the same local switch.
 
@@ -27,8 +27,8 @@ Kubernetes `etcd` requires a strict majority (quorum) to function. Having an eve
 **WARNING:** Synchronous block storage replication (Longhorn) over a WAN connection (Internet) is strongly discouraged. The 40-60ms latency between Ukraine and Zurich will bottleneck disk IOPS, causing databases (PostgreSQL) to freeze or severely throttle.
 
 * **Primary Storage:** Longhorn replicas should be restricted via Node Affinity to `location=home` nodes to maintain SSD-like performance.
-* **Disaster Recovery (Offsite Backups):** Currently, Longhorn backs up to a local NAS (`192.168.0.21:8010`). This is a single point of failure. 
-  * **Action Required:** Provision a free cloud S3 bucket (Oracle Object Storage 10GB free, or Cloudflare R2). Configure Longhorn to push hourly/daily backups to this Cloud S3. 
+* **Disaster Recovery (Offsite Backups):** Currently, Longhorn backs up to a local NAS (`192.168.0.21:8010`). This is a single point of failure.
+  * **Action Required:** Provision a free cloud S3 bucket (Oracle Object Storage 10GB free, or Cloudflare R2). Configure Longhorn to push hourly/daily backups to this Cloud S3.
 * **If Home fails:** The Oracle node will still be alive. You can trigger a Longhorn Volume Restoration from the Cloud S3 bucket directly into the Oracle node to resume operations.
 
 ## 4. Implementation Steps (When Home Hardware is Accessible)
