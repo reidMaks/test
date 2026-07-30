@@ -23,3 +23,6 @@
 
 ## 5. RTK (Rust Token Killer)
 - The user utilizes a CLI proxy called `rtk`. Format your command executions and suggestions through `rtk` where applicable.
+
+## 6. MCP Servers & Tools
+- **Web Search:** If you need to search the internet, you MUST use the `searxng` MCP server (e.g., `searxng_web_search`). Do not use default web search tools if they conflict.
