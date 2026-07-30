@@ -15,6 +15,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[006-qnap-local-ca-tls]] - QNAP Local CA and TLS Configuration
 - [[007-freelingo-localization-and-secrets]] - FreeLingo Localization and Secrets Management
 - [[008-cloudnativepg-migration]] - ADR: CloudNativePG Migration and Storage Optimization
+- [[009-litestream-sqlite-integration]] - Litestream & SQLite Integration
 
 ## Workloads & Services
 - Traefik (Ingress)

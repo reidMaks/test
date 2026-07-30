@@ -136,6 +136,13 @@ resource "oci_objectstorage_bucket" "talos" {
   access_type    = "ObjectReadWithoutList"
 }
 
+resource "oci_objectstorage_bucket" "data" {
+  compartment_id = var.compartment_ocid
+  name           = "kms-lab-data"
+  namespace      = data.oci_objectstorage_namespace.ns.namespace
+  access_type    = "NoPublicAccess"
+}
+
 resource "oci_objectstorage_preauthrequest" "upload" {
   access_type  = "AnyObjectWrite"
   bucket       = oci_objectstorage_bucket.talos.name
@@ -232,4 +239,14 @@ output "oci_public_ip" {
 
 output "oci_public_ip_2" {
   value = oci_core_instance.talos_oci_2.public_ip
+}
+
+output "oci_s3_namespace" {
+  value       = data.oci_objectstorage_namespace.ns.namespace
+  description = "Namespace for OCI Object Storage"
+}
+
+output "oci_s3_endpoint" {
+  value       = "https://${data.oci_objectstorage_namespace.ns.namespace}.compat.objectstorage.${var.oci_region}.oraclecloud.com"
+  description = "S3-compatible API endpoint for OCI Object Storage"
 }

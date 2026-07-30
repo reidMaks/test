@@ -7,6 +7,11 @@ controllers:
         image:
           repository: ghcr.io/cmintey/wishlist
           tag: "v0.65.2"
+        command:
+          - sh
+          - -c
+          - |
+            sed -i 's/pnpm prisma.*//g' entrypoint.sh && sh entrypoint.sh
         env:
           - name: ORIGIN
             value: "https://wishlist.kms-lab.in.ua"
@@ -20,6 +25,18 @@ controllers:
             memory: 256Mi
           limits:
             memory: 512Mi
+    initContainers:
+      02-wishlist-migrate:
+        image:
+          repository: ghcr.io/cmintey/wishlist
+          tag: "v0.65.2"
+        command:
+          - sh
+          - -c
+          - pnpm prisma migrate deploy && pnpm prisma db seed && pnpm db:patch
+        env:
+          - name: DATABASE_URL
+            value: "file:/usr/src/app/data/prod.db"
 
 service:
   app:
@@ -44,25 +61,13 @@ persistence:
   # This is where user image uploads will be stored
   uploads:
     type: persistentVolumeClaim
-    annotations:
-      helm.sh/resource-policy: keep
-    labels:
-      recurring-job-group.longhorn.io/daily-backups: "enabled"
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 200Mi
+    existingClaim: wishlist-uploads-s3
     globalMounts:
       - path: /usr/src/app/uploads
 
   # This is where the sqlite database will be stored
   data:
     type: persistentVolumeClaim
-    annotations:
-      helm.sh/resource-policy: keep
-    labels:
-      recurring-job-group.longhorn.io/daily-backups: "enabled"
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 100Mi
+    existingClaim: wishlist-data
     globalMounts:
       - path: /usr/src/app/data
