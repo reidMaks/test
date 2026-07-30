@@ -14,6 +14,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[005-qnap-internal-dns]] - QNAP Internal DNS and Traefik Aliasing
 - [[006-qnap-local-ca-tls]] - QNAP Local CA and TLS Configuration
 - [[007-freelingo-localization-and-secrets]] - FreeLingo Localization and Secrets Management
+- [[008-proposal-cloudnativepg-migration]] - Proposal: CloudNativePG Migration and Storage Optimization
 
 ## Workloads & Services
 - Traefik (Ingress)
