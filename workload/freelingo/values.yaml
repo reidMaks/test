@@ -1,0 +1,234 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/app-template-5.0.1/charts/other/app-template/values.schema.json
+
+controllers:
+  backend:
+    containers:
+      main:
+        image:
+          repository: ghcr.io/artcc/freelingo-backend
+          tag: "latest"
+        env:
+          DATABASE_URL: "postgresql+asyncpg://freelingo:freelingo_password123@freelingo-db:5432/freelingo"
+          REDIS_URL: "redis://:redis_password123@freelingo-redis:6379/0"
+
+          # LLM Config (OpenRouter)
+          LLM_PROVIDER: "openai"
+          OPENAI_BASE_URL: "https://openrouter.ai/api/v1"
+          OPENAI_MODEL: "qwen/qwen3.7-flash"
+
+          # Voice Config (Local)
+          TTS_PROVIDER: "local"
+          TTS_BASE_URL: "http://freelingo-kokoro:8880"
+          STT_PROVIDER: "local"
+          STT_BASE_URL: "http://freelingo-whisper:9000"
+
+          CORS_ORIGINS: '["https://freelingo.kms-lab.in.ua"]'
+          APP_BASE_URL: "https://freelingo.kms-lab.in.ua"
+          ALLOW_REGISTRATION: "true"
+          FIRST_USER_IS_ADMIN: "true"
+        envFrom:
+          - secretRef:
+              name: freelingo-secrets
+        command:
+          - sh
+          - -c
+          - "cd /tmp && PYTHONPATH=/app alembic -c /app/alembic.ini upgrade head && cd /app && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+          limits:
+            memory: 512Mi
+
+  frontend:
+    containers:
+      main:
+        image:
+          repository: ttl.sh/freelingo-frontend-uk-max-001
+          tag: "1h"
+        env:
+          BACKEND_URL: "http://freelingo-backend:8000"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            memory: 256Mi
+    pod:
+      nodeSelector:
+        kubernetes.io/arch: amd64
+
+  kokoro:
+    pod:
+      nodeSelector:
+        topology.kubernetes.io/zone: home
+    containers:
+      main:
+        image:
+          repository: ghcr.io/remsky/kokoro-fastapi-cpu
+          tag: "latest"
+        env:
+          PYTHONUNBUFFERED: "1"
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            memory: 2Gi
+
+  whisper:
+    pod:
+      nodeSelector:
+        topology.kubernetes.io/zone: home
+    containers:
+      main:
+        image:
+          repository: onerahmet/openai-whisper-asr-webservice
+          tag: "latest"
+        env:
+          ASR_MODEL: "base"
+          ASR_ENGINE: "faster_whisper"
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            memory: 2Gi
+
+  db:
+    type: statefulset
+    containers:
+      main:
+        image:
+          repository: postgres
+          tag: "16-alpine"
+        env:
+          PGDATA: "/var/lib/postgresql/data/pgdata"
+        envFrom:
+          - secretRef:
+              name: freelingo-secrets
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            memory: 256Mi
+
+  redis:
+    type: statefulset
+    containers:
+      main:
+        image:
+          repository: redis
+          tag: "7-alpine"
+        command:
+          - sh
+          - -c
+          - "redis-server --requirepass $REDIS_PASSWORD"
+        envFrom:
+          - secretRef:
+              name: freelingo-secrets
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            memory: 128Mi
+
+service:
+  backend:
+    controller: backend
+    ports:
+      http:
+        port: 8000
+  frontend:
+    controller: frontend
+    ports:
+      http:
+        port: 3000
+  kokoro:
+    controller: kokoro
+    ports:
+      http:
+        port: 8880
+  whisper:
+    controller: whisper
+    ports:
+      http:
+        port: 9000
+  db:
+    controller: db
+    ports:
+      postgres:
+        port: 5432
+  redis:
+    controller: redis
+    ports:
+      redis:
+        port: 6379
+
+ingress:
+  main:
+    enabled: true
+    className: "traefik"
+    hosts:
+      - host: freelingo.kms-lab.in.ua
+        paths:
+          - path: /api
+            service:
+              identifier: backend
+              port: http
+          - path: /
+            service:
+              identifier: frontend
+              port: http
+
+persistence:
+  backend-avatars:
+    type: persistentVolumeClaim
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 100Mi
+    advancedMounts:
+      backend:
+        main:
+          - path: /app/avatars
+  backend-audio:
+    type: persistentVolumeClaim
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 200Mi
+    advancedMounts:
+      backend:
+        main:
+          - path: /data/audio
+  db:
+    type: persistentVolumeClaim
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 1Gi
+    advancedMounts:
+      db:
+        main:
+          - path: /var/lib/postgresql/data
+  redis:
+    type: persistentVolumeClaim
+    storageClass: "longhorn"
+    accessMode: ReadWriteOnce
+    size: 100Mi
+    advancedMounts:
+      redis:
+        main:
+          - path: /data
+  patches:
+    type: configMap
+    name: freelingo-patches
+    advancedMounts:
+      backend:
+        main:
+          - path: /app/app/schemas/auth.py
+            subPath: auth.py
+            readOnly: true
+          - path: /app/app/schemas/admin.py
+            subPath: admin.py
+            readOnly: true
