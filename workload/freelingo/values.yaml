@@ -8,7 +8,7 @@ controllers:
           repository: ghcr.io/artcc/freelingo-backend
           tag: "latest"
         env:
-          DATABASE_URL: "postgresql+asyncpg://freelingo:freelingo_password123@freelingo-db:5432/freelingo"
+          DATABASE_URL: "postgresql+asyncpg://freelingo:freelingo_password123@shared-db-rw.cnpg-system.svc.cluster.local:5432/freelingo"
           REDIS_URL: "redis://:redis_password123@freelingo-redis:6379/0"
 
           # LLM Config (OpenRouter)
@@ -95,24 +95,7 @@ controllers:
           limits:
             memory: 2Gi
 
-  db:
-    type: statefulset
-    containers:
-      main:
-        image:
-          repository: postgres
-          tag: "16-alpine"
-        env:
-          PGDATA: "/var/lib/postgresql/data/pgdata"
-        envFrom:
-          - secretRef:
-              name: freelingo-secrets
-        resources:
-          requests:
-            cpu: 10m
-            memory: 64Mi
-          limits:
-            memory: 256Mi
+
 
   redis:
     type: statefulset
@@ -156,11 +139,7 @@ service:
     ports:
       http:
         port: 9000
-  db:
-    controller: db
-    ports:
-      postgres:
-        port: 5432
+
   redis:
     controller: redis
     ports:
@@ -202,15 +181,7 @@ persistence:
       backend:
         main:
           - path: /data/audio
-  db:
-    type: persistentVolumeClaim
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 1Gi
-    advancedMounts:
-      db:
-        main:
-          - path: /var/lib/postgresql/data
+
   redis:
     type: persistentVolumeClaim
     storageClass: "longhorn"

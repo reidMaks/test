@@ -1,7 +1,7 @@
-# 008 Proposal: CloudNativePG Migration and Storage Optimization
+# 008 ADR: CloudNativePG Migration and Storage Optimization
 
 ## Status
-Proposed (Future Roadmap)
+**Implemented** (July 2026)
 
 ## Context
 The current Kubernetes cluster topology spans a hybrid environment: local Proxmox nodes (amd64) and Oracle Cloud Infrastructure (OCI) instances (arm64).
@@ -35,11 +35,25 @@ For applications utilizing Redis solely as a cache or Celery broker (e.g., FreeL
 - **Benefit:** Prevents Longhorn from thrashing disks and network bandwidth with constant, high-frequency cache writes.
 
 ## Migration Strategy
-If this proposal is accepted, the migration would follow these steps:
-1. Deploy CloudNativePG operator and initialize the shared cluster on Proxmox nodes.
-2. Create logical databases for existing services (FreeLingo, Paperless, etc.).
-3. Export data from the individual Postgres pods (using `pg_dump`) and import it into the CNPG cluster.
-4. Update the Helm `values.yaml` for each service to point to the CNPG cluster.
-5. Reconfigure Redis deployments to use `emptyDir`.
-6. Remove the old Postgres StatefulSets and delete their associated Longhorn PVCs.
-7. Reconfigure Longhorn Node Selectors to evict replicas from OCI nodes.
+The following steps were executed to migrate to the new architecture:
+1. Deployed CloudNativePG operator (`cnpg-system`) and initialized the `shared-db` cluster.
+2. Created logical databases and owners via `initdb` configuration in `cnpg.tf`.
+3. Reconfigured Tandoor, Paperless, and FreeLingo workloads to use `shared-db-rw` service.
+4. Manually removed the old Postgres StatefulSets and associated Longhorn PVCs (including cleanup of orphaned `Released` Longhorn PVs/Volumes).
+
+## Implementation Details
+
+### High Availability and Pod Anti-Affinity
+The CNPG cluster was configured with `instances: 3` to ensure high availability.
+To guarantee cross-site disaster recovery (home lab + OCI cloud), we enforced a strict scheduling policy:
+```hcl
+podAntiAffinityType = "required"
+```
+Because the home lab only has 2 physical `amd64` nodes (`talos-f9o-10o`, `talos-wfh-33w`), Kubernetes is forced to schedule the 3rd replica on the remaining OCI nodes (`arm64`), despite the CNPG primary preferring `amd64`. This setup effectively achieves:
+- **Primary / Replica 1 (Local):** Fast, low-latency synchronous reads/writes.
+- **Replica 2 (Cloud):** Asynchronous streaming replica in OCI, resilient to home power/internet outages.
+
+### Monitoring
+CNPG was integrated into the cluster's Grafana and VictoriaMetrics stack:
+- **ServiceMonitor/VMPodScrape:** Added `VMPodScrape` resources for the operator and the cluster pods to scrape metrics via port `9187`.
+- **Grafana Dashboard:** Configured a `ConfigMap` labeled with `grafana_dashboard=1` containing the official CNPG dashboard JSON, allowing the Grafana Sidecar (`grafana-sc-dashboard`) to automatically discover and mount it.

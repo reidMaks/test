@@ -11,7 +11,7 @@ controllers:
           PAPERLESS_URL: 'https://{{ (first .Values.ingress.main.hosts).host }}'
           PAPERLESS_REDIS: "redis://paperless-redis:6379"
           PAPERLESS_DBENGINE: "postgresql"
-          PAPERLESS_DBHOST: "paperless-db"
+          PAPERLESS_DBHOST: "shared-db-rw.cnpg-system.svc.cluster.local"
           PAPERLESS_DBPORT: "5432"
           PAPERLESS_DBUSER: "paperless"
           PAPERLESS_DBNAME: "paperless"
@@ -43,26 +43,7 @@ controllers:
           limits:
             memory: 128Mi
 
-  db:
-    type: statefulset
-    containers:
-      main:
-        image:
-          repository: postgres
-          tag: "16-alpine"
-        env:
-          POSTGRES_DB: "paperless"
-          POSTGRES_USER: "paperless"
-          PGDATA: "/var/lib/postgresql/data/pgdata"
-        envFrom:
-          - secretRef:
-              name: paperless-secrets
-        resources:
-          requests:
-            cpu: 10m
-            memory: 64Mi
-          limits:
-            memory: 256Mi
+
 
 service:
   app:
@@ -75,11 +56,7 @@ service:
     ports:
       redis:
         port: 6379
-  db:
-    controller: db
-    ports:
-      postgres:
-        port: 5432
+
 
 ingress:
   main:
@@ -138,16 +115,3 @@ persistence:
       main:
         main:
           - path: /usr/src/paperless/export
-  db:
-    type: persistentVolumeClaim
-    annotations:
-      helm.sh/resource-policy: keep
-    labels:
-      recurring-job-group.longhorn.io/daily-backups: "enabled"
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 500Mi
-    advancedMounts:
-      db:
-        main:
-          - path: /var/lib/postgresql/data

@@ -37,3 +37,62 @@ resource "helm_release" "tandoor" {
 
   depends_on = [kubernetes_secret.tandoor]
 }
+
+resource "kubernetes_secret" "tandoor_db_password_cnpg" {
+  metadata {
+    name      = "tandoor-db-password"
+    namespace = "cnpg-system"
+  }
+  type = "kubernetes.io/basic-auth"
+  data = {
+    username = "tandoor"
+    password = data.bitwarden-secrets_secret.tandoor_db_password.value
+  }
+}
+
+resource "kubernetes_manifest" "tandoor_role" {
+  depends_on = [kubernetes_secret.tandoor_db_password_cnpg]
+  manifest = {
+    apiVersion = "postgresql.cnpg.io/v1"
+    kind       = "DatabaseRole"
+    metadata = {
+      name      = "tandoor"
+      namespace = "cnpg-system"
+      labels = {
+        "cnpg.io/cluster" = "shared-db"
+      }
+    }
+    spec = {
+      cluster = {
+        name = "shared-db"
+      }
+      name  = "tandoor"
+      login = true
+      passwordSecret = {
+        name = kubernetes_secret.tandoor_db_password_cnpg.metadata[0].name
+      }
+    }
+  }
+}
+
+resource "kubernetes_manifest" "tandoor_database" {
+  depends_on = [kubernetes_manifest.tandoor_role]
+  manifest = {
+    apiVersion = "postgresql.cnpg.io/v1"
+    kind       = "Database"
+    metadata = {
+      name      = "db-recipes"
+      namespace = "cnpg-system"
+      labels = {
+        "cnpg.io/cluster" = "shared-db"
+      }
+    }
+    spec = {
+      cluster = {
+        name = "shared-db"
+      }
+      name  = "db_recipes"
+      owner = "tandoor"
+    }
+  }
+}
