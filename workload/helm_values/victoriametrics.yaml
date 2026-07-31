@@ -78,12 +78,3 @@ nodeExporter:
   enabled: true
 prometheus-node-exporter:
   enabled: true
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: NotIn
-                values:
-                  - talos-cp-gcp
