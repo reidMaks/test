@@ -11,6 +11,18 @@ controllers:
             - "api.nordigen.com"
 
     initContainers:
+      01-litestream-restore:
+        image:
+          repository: alpine
+          tag: latest
+        securityContext:
+          runAsUser: 0
+        command:
+          - sh
+          - /scripts/restore.sh
+        envFrom:
+          - secretRef:
+              name: litestream-s3
       init-certs:
         image:
           repository: mitmproxy/mitmproxy
@@ -31,6 +43,23 @@ controllers:
             memory: 128Mi
           limits:
             memory: 512Mi
+
+      backup-files:
+        image:
+          repository: alpine
+          tag: latest
+        securityContext:
+          runAsUser: 0
+        command:
+          - sh
+          - /scripts/backup.sh
+        envFrom:
+          - secretRef:
+              name: litestream-s3
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
 
       mitmproxy:
         image:
@@ -63,6 +92,56 @@ configMaps:
     data:
       addon.py: |
         ${indent(8, addon_py)}
+  litestream-config:
+    enabled: true
+    data:
+      litestream.yml: |
+        dbs:
+          - dir: /data
+            pattern: "*.sqlite"
+            recursive: true
+            watch: true
+            replica:
+              url: s3://kms-lab-data/actualbudget-db?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true
+  scripts:
+    enabled: true
+    data:
+      restore.sh: |
+        #!/bin/sh
+        apk add --no-cache wget tar rsync
+        ARCH=$(uname -m)
+        if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
+          LITESTREAM_ARCH="arm64"
+        else
+          LITESTREAM_ARCH="x86_64"
+        fi
+        wget -qO- "https://github.com/benbjohnson/litestream/releases/download/v0.5.15/litestream-0.5.15-linux-$${LITESTREAM_ARCH}.tar.gz" | tar -xz -C /usr/local/bin
+
+        echo "Listing databases in s3-db PVC..."
+        # Litestream stores WAL data inside directories named after the DB file in the S3 replica bucket.
+        # Since we mounted the bucket to /s3-db via CSI, we can just look for those directories.
+        for db_dir in /s3-db/*; do
+          if [ -d "$db_dir" ]; then
+            db_name=$(basename "$db_dir")
+            # We don't restore .migrate from the DB bucket because we moved it to the files bucket.
+            if [ "$db_name" != ".migrate" ]; then
+              echo "Restoring /data/$db_name..."
+              # litestream restore needs exact path in replica
+              litestream restore -if-replica-exists -if-db-not-exists -o "/data/$db_name" "s3://kms-lab-data/actualbudget-db/$db_name?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true"
+            fi
+          fi
+        done
+
+        echo "Restoring non-SQLite files from S3..."
+        mkdir -p /data/user-files /data/server-files
+        rsync -a --exclude="*.sqlite*" /s3-data/ /data/ || true
+      backup.sh: |
+        #!/bin/sh
+        apk add --no-cache rsync
+        while true; do
+          rsync -a --exclude="*.sqlite*" /data/ /s3-data/ > /dev/null 2>&1
+          sleep 60
+        done
 
 service:
   app:
@@ -85,18 +164,43 @@ ingress:
 
 persistence:
   data:
-    type: persistentVolumeClaim
-    annotations:
-      helm.sh/resource-policy: keep
-    labels:
-      recurring-job-group.longhorn.io/daily-backups: "enabled"
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 100Mi
+    type: emptyDir
     advancedMounts:
       main:
         main:
           - path: /data
+        litestream:
+          - path: /data
+        backup-files:
+          - path: /data
+        01-litestream-restore:
+          - path: /data
+  s3-data:
+    type: persistentVolumeClaim
+    existingClaim: actualbudget-files-s3
+    advancedMounts:
+      main:
+        backup-files:
+          - path: /s3-data
+        01-litestream-restore:
+          - path: /s3-data
+  s3-db:
+    type: persistentVolumeClaim
+    existingClaim: actualbudget-db-s3
+    advancedMounts:
+      main:
+        01-litestream-restore:
+          - path: /s3-db
+  scripts:
+    type: configMap
+    name: actualbudget-scripts
+    defaultMode: 0755
+    advancedMounts:
+      main:
+        backup-files:
+          - path: /scripts
+        01-litestream-restore:
+          - path: /scripts
   certs:
     type: emptyDir
     advancedMounts:
@@ -109,8 +213,19 @@ persistence:
           - path: /certs
   addon:
     type: configMap
-    name: actualbudget
+    name: actualbudget-mitm-addon
     advancedMounts:
       main:
         mitmproxy:
           - path: /scripts
+  litestream-config:
+    type: configMap
+    name: actualbudget-litestream-config
+    advancedMounts:
+      main:
+        litestream:
+          - path: /etc/litestream.yml
+            subPath: litestream.yml
+        01-litestream-restore:
+          - path: /etc/litestream.yml
+            subPath: litestream.yml

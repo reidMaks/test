@@ -17,8 +17,6 @@ resource "helm_release" "wishlist" {
     templatefile("${path.module}/helm_values/litestream_sidecar.yaml.tpl", {
       controller_name = "main"
       db_path         = "/usr/src/app/data/prod.db"
-      s3_path         = "s3://kms-lab-data/wishlist-db"
-      oci_s3_endpoint = data.terraform_remote_state.infra.outputs.oci_s3_endpoint
       secret_name     = "litestream-s3"
     })
   ]

@@ -13,6 +13,9 @@ controllers:
             memory: 128Mi
           limits:
             memory: 256Mi
+        envFrom:
+          - secretRef:
+              name: lubelogger-env
 
 
 service:
@@ -35,28 +38,22 @@ ingress:
               port: http
 
 persistence:
-  # Перший том: для основних даних Lubelogger (база даних, завантажені фото чеків/деталей)
+  # Том для завантажених фотографій, документів та конфігурацій (в OCI Object Storage)
   data:
     type: persistentVolumeClaim
-    annotations:
-      helm.sh/resource-policy: keep
-    labels:
-      recurring-job-group.longhorn.io/daily-backups: "enabled"
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 1Gi # За потреби можна буде збільшити пізніше
-    globalMounts:
-      - path: /App/data
+    existingClaim: lubelogger-files-s3
+    advancedMounts:
+      main:
+        main:
+          - path: /App/data
+            subPath: data
 
-  # Другий том: для ключів сесій ASP.NET, щоб не "розлогінювало" після рестарту поду
+  # Том для ключів сесій ASP.NET, щоб не "розлогінювало" після рестарту поду (в тому ж бакеті)
   keys:
     type: persistentVolumeClaim
-    annotations:
-      helm.sh/resource-policy: keep
-    labels:
-      recurring-job-group.longhorn.io/daily-backups: "enabled"
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 100Mi # Для ключів достатньо мінімального обсягу пам'яті
-    globalMounts:
-      - path: /root/.aspnet/DataProtection-Keys
+    existingClaim: lubelogger-files-s3
+    advancedMounts:
+      main:
+        main:
+          - path: /root/.aspnet/DataProtection-Keys
+            subPath: keys

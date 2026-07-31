@@ -26,3 +26,6 @@
 
 ## 6. MCP Servers & Tools
 - **Web Search:** If you need to search the internet, you MUST use the `searxng` MCP server (e.g., `searxng_web_search`). Do not use default web search tools if they conflict.
+
+## 7. Tool Usage (CRITICAL)
+- **NO CAT FOR FILES:** You must NEVER run `cat` inside a bash command to create a new file, append to an existing file, or patch files. Always use the built-in API tools (like `replace_file_content`, `multi_replace_file_content`, `write_to_file`) for any file modifications.

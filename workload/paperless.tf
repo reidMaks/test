@@ -19,6 +19,51 @@ resource "kubernetes_secret" "paperless" {
   }
 }
 
+resource "kubernetes_persistent_volume" "paperless_media_s3" {
+  metadata {
+    name = "paperless-media-s3"
+  }
+  spec {
+    capacity = {
+      storage = "5Gi"
+    }
+    access_modes                     = ["ReadWriteMany"]
+    persistent_volume_reclaim_policy = "Retain"
+    storage_class_name               = "s3-rclone"
+    persistent_volume_source {
+      csi {
+        driver        = "csi-rclone"
+        volume_handle = "paperless-media-s3"
+        volume_attributes = {
+          remote     = "s3"
+          remotePath = "kms-lab-data/paperless-media"
+        }
+        node_publish_secret_ref {
+          name      = "oci-s3-rclone-config"
+          namespace = "kube-system"
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_persistent_volume_claim" "paperless_media_s3" {
+  metadata {
+    name      = "paperless-media-s3"
+    namespace = "default"
+  }
+  spec {
+    access_modes       = ["ReadWriteMany"]
+    storage_class_name = "s3-rclone"
+    resources {
+      requests = {
+        storage = "5Gi"
+      }
+    }
+    volume_name = kubernetes_persistent_volume.paperless_media_s3.metadata[0].name
+  }
+}
+
 resource "helm_release" "paperless" {
   name            = "paperless"
   repository      = "https://bjw-s-labs.github.io/helm-charts"
@@ -31,7 +76,10 @@ resource "helm_release" "paperless" {
     file("${path.module}/helm_values/paperless.yaml")
   ]
 
-  depends_on = [kubernetes_secret.paperless]
+  depends_on = [
+    kubernetes_secret.paperless,
+    kubernetes_persistent_volume_claim.paperless_media_s3
+  ]
 }
 
 resource "kubernetes_secret" "paperless_db_password_cnpg" {

@@ -71,13 +71,13 @@ ingress:
               port: http
 
 persistence:
-  data:
+  index:
     type: persistentVolumeClaim
     annotations:
       helm.sh/resource-policy: keep
     labels:
       recurring-job-group.longhorn.io/daily-backups: "enabled"
-    storageClass: "longhorn"
+    storageClass: "longhorn-postgres" # Змінено на локальний без реплікації
     accessMode: ReadWriteOnce
     size: 500Mi
     advancedMounts:
@@ -86,31 +86,19 @@ persistence:
           - path: /usr/src/paperless/data
   media:
     type: persistentVolumeClaim
-    annotations:
-      helm.sh/resource-policy: keep
-    labels:
-      recurring-job-group.longhorn.io/daily-backups: "enabled"
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 1Gi
+    existingClaim: paperless-media-s3
     advancedMounts:
       main:
         main:
           - path: /usr/src/paperless/media
   consume:
-    type: persistentVolumeClaim
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 500Mi
+    type: emptyDir
     advancedMounts:
       main:
         main:
           - path: /usr/src/paperless/consume
   export:
-    type: persistentVolumeClaim
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 500Mi
+    type: emptyDir
     advancedMounts:
       main:
         main:

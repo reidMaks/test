@@ -11,10 +11,8 @@ controllers:
         command:
           - litestream
           - replicate
-          - -exec
-          - ""
-          - ${db_path}
-          - ${s3_path}?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true
+          - -config
+          - /etc/litestream.yml
         envFrom:
           - secretRef:
               name: ${secret_name}
@@ -24,6 +22,7 @@ controllers:
             memory: 64Mi
           limits:
             memory: 128Mi
+%{ if try(db_path, "") != "" }
     initContainers:
       01-litestream-restore:
         image:
@@ -35,11 +34,12 @@ controllers:
         command:
           - litestream
           - restore
+          - -config
+          - /etc/litestream.yml
           - -if-replica-exists
           - -if-db-not-exists
-          - -o
           - ${db_path}
-          - ${s3_path}?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true
         envFrom:
           - secretRef:
               name: ${secret_name}
+%{ endif }

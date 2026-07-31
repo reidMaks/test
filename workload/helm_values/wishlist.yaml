@@ -1,5 +1,15 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/app-template-5.0.1/charts/other/app-template/values.schema.json
 
+configMaps:
+  litestream-config:
+    enabled: true
+    data:
+      litestream.yml: |
+        dbs:
+          - path: /usr/src/app/data/prod.db
+            replica:
+              url: s3://kms-lab-data/wishlist-db?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true
+
 controllers:
   main:
     containers:
@@ -65,9 +75,19 @@ persistence:
     globalMounts:
       - path: /usr/src/app/uploads
 
-  # This is where the sqlite database will be stored
   data:
-    type: persistentVolumeClaim
-    existingClaim: wishlist-data
+    type: emptyDir
     globalMounts:
       - path: /usr/src/app/data
+
+  litestream-config:
+    type: configMap
+    name: wishlist
+    advancedMounts:
+      main:
+        litestream:
+          - path: /etc/litestream.yml
+            subPath: litestream.yml
+        01-litestream-restore:
+          - path: /etc/litestream.yml
+            subPath: litestream.yml
