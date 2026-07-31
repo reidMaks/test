@@ -63,11 +63,12 @@
 ## 7. Tandoor Recipes (`tandoor`)
 - **База даних:** Спільна PostgreSQL (через CloudNativePG).
 - **Навіщо диск:** `staticfiles` та `mediafiles`.
-- **Готовність до відключення реплікації:** Майже готово
+- **Готовність до відключення реплікації:** Так (Готово)
 - **План робіт:**
-  - БД PostgreSQL вже має HA.
-  - Tandoor нативно підтримує AWS S3. Треба прописати S3 змінні (`S3_BUCKET_NAME`, `S3_REGION_NAME` тощо) для збереження `mediafiles` безпосередньо в OCI Object Storage.
-  - PV для `staticfiles` можна замінити на `emptyDir`, налаштувавши команду ініціалізації на копіювання/компіляцію статики (`collectstatic`) під час старту поду, або також розмістити статику на S3.
+  - БД PostgreSQL успішно мігровано на `shared-db`.
+  - Диск `mediafiles` (фото рецептів) перенесено на S3 Object Storage через `s3-rclone` PVC.
+  - Диск `staticfiles` переведено на `emptyDir`, оскільки статика компілюється під час старту.
+  - Усі класичні диски Longhorn відв'язані і можуть бути видалені.
 
 ## 8. VictoriaMetrics (`victoriametrics`)
 - **База даних:** Власна Time-Series Database (TSDB).

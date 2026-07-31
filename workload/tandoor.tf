@@ -23,6 +23,51 @@ resource "kubernetes_secret" "tandoor" {
   }
 }
 
+resource "kubernetes_persistent_volume" "tandoor_mediafiles_s3" {
+  metadata {
+    name = "tandoor-mediafiles-s3"
+  }
+  spec {
+    capacity = {
+      storage = "1Gi"
+    }
+    access_modes                     = ["ReadWriteMany"]
+    persistent_volume_reclaim_policy = "Retain"
+    storage_class_name               = "s3-rclone"
+    persistent_volume_source {
+      csi {
+        driver        = "csi-rclone"
+        volume_handle = "tandoor-mediafiles-s3"
+        volume_attributes = {
+          remote     = "s3"
+          remotePath = "kms-lab-data/tandoor-mediafiles"
+        }
+        node_publish_secret_ref {
+          name      = "oci-s3-rclone-config"
+          namespace = "kube-system"
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_persistent_volume_claim" "tandoor_mediafiles_s3" {
+  metadata {
+    name      = "tandoor-mediafiles-s3"
+    namespace = "default"
+  }
+  spec {
+    access_modes       = ["ReadWriteMany"]
+    storage_class_name = "s3-rclone"
+    resources {
+      requests = {
+        storage = "1Gi"
+      }
+    }
+    volume_name = kubernetes_persistent_volume.tandoor_mediafiles_s3.metadata[0].name
+  }
+}
+
 resource "helm_release" "tandoor" {
   name            = "tandoor"
   repository      = "https://bjw-s-labs.github.io/helm-charts"
@@ -35,7 +80,10 @@ resource "helm_release" "tandoor" {
     file("${path.module}/helm_values/tandoor.yaml")
   ]
 
-  depends_on = [kubernetes_secret.tandoor]
+  depends_on = [
+    kubernetes_secret.tandoor,
+    kubernetes_persistent_volume_claim.tandoor_mediafiles_s3
+  ]
 }
 
 resource "kubernetes_secret" "tandoor_db_password_cnpg" {

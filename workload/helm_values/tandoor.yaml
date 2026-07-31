@@ -48,27 +48,14 @@ ingress:
 
 persistence:
   staticfiles:
-    type: persistentVolumeClaim
-    annotations:
-      helm.sh/resource-policy: keep
-    labels:
-      recurring-job-group.longhorn.io/daily-backups: "enabled"
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 400Mi
+    type: emptyDir
     advancedMounts:
       main:
         main:
           - path: /opt/recipes/staticfiles
   mediafiles:
     type: persistentVolumeClaim
-    annotations:
-      helm.sh/resource-policy: keep
-    labels:
-      recurring-job-group.longhorn.io/daily-backups: "enabled"
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 100Mi
+    existingClaim: tandoor-mediafiles-s3
     advancedMounts:
       main:
         main:
