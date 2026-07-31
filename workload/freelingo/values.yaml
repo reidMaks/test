@@ -163,30 +163,18 @@ ingress:
               port: http
 
 persistence:
-  backend-avatars:
+  data-s3:
     type: persistentVolumeClaim
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 100Mi
+    existingClaim: freelingo-data-s3
     advancedMounts:
       backend:
         main:
           - path: /app/avatars
-  backend-audio:
-    type: persistentVolumeClaim
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 200Mi
-    advancedMounts:
-      backend:
-        main:
+            subPath: avatars
           - path: /data/audio
-
+            subPath: audio
   redis:
-    type: persistentVolumeClaim
-    storageClass: "longhorn"
-    accessMode: ReadWriteOnce
-    size: 100Mi
+    type: emptyDir
     advancedMounts:
       redis:
         main:

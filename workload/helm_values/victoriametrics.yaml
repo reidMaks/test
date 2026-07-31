@@ -34,7 +34,7 @@ vmsingle:
       resources:
         requests:
           storage: 1Gi
-      storageClassName: "longhorn"
+      storageClassName: "longhorn-postgres"
 
 # Налаштування збирачів метрик
 vmagent:

@@ -26,6 +26,51 @@ resource "kubernetes_secret" "freelingo" {
   }
 }
 
+resource "kubernetes_persistent_volume" "freelingo_data_s3" {
+  metadata {
+    name = "freelingo-data-s3"
+  }
+  spec {
+    capacity = {
+      storage = "1Gi"
+    }
+    access_modes                     = ["ReadWriteMany"]
+    persistent_volume_reclaim_policy = "Retain"
+    storage_class_name               = "s3-rclone"
+    persistent_volume_source {
+      csi {
+        driver        = "csi-rclone"
+        volume_handle = "freelingo-data-s3"
+        volume_attributes = {
+          remote     = "s3"
+          remotePath = "kms-lab-data/freelingo-data"
+        }
+        node_publish_secret_ref {
+          name      = "oci-s3-rclone-config"
+          namespace = "kube-system"
+        }
+      }
+    }
+  }
+}
+
+resource "kubernetes_persistent_volume_claim" "freelingo_data_s3" {
+  metadata {
+    name      = "freelingo-data-s3"
+    namespace = "default"
+  }
+  spec {
+    access_modes       = ["ReadWriteMany"]
+    storage_class_name = "s3-rclone"
+    resources {
+      requests = {
+        storage = "1Gi"
+      }
+    }
+    volume_name = kubernetes_persistent_volume.freelingo_data_s3.metadata[0].name
+  }
+}
+
 resource "helm_release" "freelingo" {
   name            = "freelingo"
   repository      = "https://bjw-s-labs.github.io/helm-charts"
@@ -38,7 +83,10 @@ resource "helm_release" "freelingo" {
     file("${path.module}/freelingo/values.yaml")
   ]
 
-  depends_on = [kubernetes_secret.freelingo]
+  depends_on = [
+    kubernetes_secret.freelingo,
+    kubernetes_persistent_volume_claim.freelingo_data_s3
+  ]
 }
 
 resource "kubernetes_config_map" "freelingo_patches" {
