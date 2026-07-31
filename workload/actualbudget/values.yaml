@@ -125,9 +125,15 @@ configMaps:
             db_name=$(basename "$db_dir")
             # We don't restore .migrate from the DB bucket because we moved it to the files bucket.
             if [ "$db_name" != ".migrate" ]; then
-              echo "Restoring /data/$db_name..."
-              # litestream restore needs exact path in replica
-              litestream restore -if-replica-exists -if-db-not-exists -o "/data/$db_name" "s3://kms-lab-data/actualbudget-db/$db_name?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true"
+              if [ "$db_name" = "account.sqlite" ]; then
+                echo "Restoring /data/server-files/$db_name..."
+                mkdir -p /data/server-files
+                litestream restore -if-replica-exists -if-db-not-exists -o "/data/server-files/$db_name" "s3://kms-lab-data/actualbudget-db/$db_name?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true"
+              else
+                echo "Restoring /data/user-files/$db_name..."
+                mkdir -p /data/user-files
+                litestream restore -if-replica-exists -if-db-not-exists -o "/data/user-files/$db_name" "s3://kms-lab-data/actualbudget-db/$db_name?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true"
+              fi
             fi
           fi
         done

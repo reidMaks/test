@@ -168,7 +168,7 @@ resource "null_resource" "upload_talos_oci" {
 
 resource "oci_core_image" "talos" {
   compartment_id = var.compartment_ocid
-  display_name   = "talos-${replace(local.talos_version, ".", "-")}-${substr(local.talos_schematic_id, 0, 7)}"
+  display_name   = "talos-${replace(local.talos_version, ".", "-")}-${substr(local.talos_oci_schematic_id, 0, 7)}"
   depends_on     = [null_resource.upload_talos_oci]
 
   image_source_details {
@@ -208,6 +208,10 @@ resource "oci_core_instance" "talos_oci" {
     subnet_id        = oci_core_subnet.main_subnet.id
     assign_public_ip = true
   }
+
+  lifecycle {
+    ignore_changes = [source_details]
+  }
 }
 
 resource "oci_core_instance" "talos_oci_2" {
@@ -230,6 +234,10 @@ resource "oci_core_instance" "talos_oci_2" {
   create_vnic_details {
     subnet_id        = oci_core_subnet.main_subnet.id
     assign_public_ip = true
+  }
+
+  lifecycle {
+    ignore_changes = [source_details]
   }
 }
 
