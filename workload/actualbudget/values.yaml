@@ -143,10 +143,23 @@ configMaps:
         rsync -a --exclude="*.sqlite*" /s3-data/ /data/ || true
       backup.sh: |
         #!/bin/sh
-        apk add --no-cache rsync
-        while true; do
+        apk add --no-cache rsync inotify-tools
+
+        # Initial sync
+        rsync -a --exclude="*.sqlite*" /data/ /s3-data/ > /dev/null 2>&1
+
+        # Fallback sync every 10 minutes in the background
+        (
+          while true; do
+            sleep 600
+            rsync -a --exclude="*.sqlite*" /data/ /s3-data/ > /dev/null 2>&1
+          done
+        ) &
+
+        # Immediate sync on file changes
+        while inotifywait -r -e modify,create,delete,move --exclude '.*\.sqlite.*' /data/; do
+          sleep 1
           rsync -a --exclude="*.sqlite*" /data/ /s3-data/ > /dev/null 2>&1
-          sleep 60
         done
 
 service:
