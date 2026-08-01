@@ -44,8 +44,8 @@ controllers:
     containers:
       main:
         image:
-          repository: ttl.sh/freelingo-frontend-uk-max-001
-          tag: "1h"
+          repository: ghcr.io/reidmaks/freelingo-frontend
+          tag: "latest"
         env:
           BACKEND_URL: "http://freelingo-backend:8000"
         resources:
@@ -54,14 +54,8 @@ controllers:
             memory: 128Mi
           limits:
             memory: 256Mi
-    pod:
-      nodeSelector:
-        kubernetes.io/arch: amd64
 
   kokoro:
-    pod:
-      nodeSelector:
-        topology.kubernetes.io/zone: home
     containers:
       main:
         image:
@@ -77,9 +71,6 @@ controllers:
             memory: 4Gi
 
   whisper:
-    pod:
-      nodeSelector:
-        topology.kubernetes.io/zone: home
     containers:
       main:
         image:

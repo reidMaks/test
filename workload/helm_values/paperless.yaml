@@ -6,7 +6,7 @@ controllers:
       main:
         image:
           repository: ghcr.io/paperless-ngx/paperless-ngx
-          tag: "2.20.15"
+          tag: "3.0.4"
         env:
           PAPERLESS_URL: 'https://{{ (first .Values.ingress.main.hosts).host }}'
           PAPERLESS_REDIS: "redis://paperless-redis:6379"
@@ -28,6 +28,13 @@ controllers:
             memory: 512Mi
           limits:
             memory: 2Gi
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - "sleep 30 && document_index reindex --no-progress > /tmp/reindex.log 2>&1 &"
 
   redis:
     type: statefulset
@@ -72,14 +79,7 @@ ingress:
 
 persistence:
   index:
-    type: persistentVolumeClaim
-    annotations:
-      helm.sh/resource-policy: keep
-    labels:
-      recurring-job-group.longhorn.io/daily-backups: "enabled"
-    storageClass: "longhorn-postgres" # Змінено на локальний без реплікації
-    accessMode: ReadWriteOnce
-    size: 500Mi
+    type: emptyDir
     advancedMounts:
       main:
         main:

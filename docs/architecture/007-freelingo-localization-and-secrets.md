@@ -18,10 +18,12 @@ We utilize Kubernetes ConfigMaps to patch `auth.py` and `admin.py` in the FreeLi
 ### 2. Model Selection
 We updated the OpenRouter model configuration in `values.yaml` to use `qwen/qwen3.7-flash`. This model provides robust multi-language support (including Ukrainian), is cost-effective, and currently functions correctly without endpoint 404 errors.
 
-### 3. Frontend Localization via Custom Image
-Since Next.js UI translations are embedded into the compiled frontend build, we manually generated `messages/uk.json` (translated from `en.json`), added `"uk"` to the `SUPPORTED_LOCALES`, and rebuilt the Docker image locally.
-- **Image:** `ttl.sh/freelingo-frontend-uk-max-001:1h`
-- **Node Affinity:** Because the local machine architecture (`amd64`) differs from the OCI nodes (`arm64`), we applied a `nodeSelector` (`kubernetes.io/arch: amd64`) in `values.yaml` to ensure the frontend pod runs on compatible nodes (e.g. Proxmox local workers).
+### 3. Frontend Localization via GitHub Actions
+Since Next.js UI translations are embedded into the compiled frontend build, we manually generated `messages/uk.json` (translated from `en.json`) and added `"uk"` to the `SUPPORTED_LOCALES`.
+To ensure High Availability (HA) across our `amd64` (home) and `arm64` (OCI) nodes, we automated the multi-architecture build process using GitHub Actions:
+- **Workflow:** `.github/workflows/build-freelingo.yml` automatically clones the official repo, injects `uk.json`, modifies locales, and builds/pushes the image using Docker Buildx.
+- **Image:** `ghcr.io/reidmaks/freelingo-frontend:latest` (Public Package on GHCR).
+- **Node Affinity:** Removed previous `amd64` nodeSelectors. The frontend (along with Kokoro and Whisper) now runs natively on both architectures.
 
 ### 4. Secrets Management Refactoring
 To comply with the rule of "no hardcoded secrets in Git," we consolidated the PostgreSQL password, Redis password, and Secret Key into a single JSON object stored in Bitwarden (`freelingo_env`).
