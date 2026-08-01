@@ -35,5 +35,8 @@ if [ -z "$ALIVE_IP" ]; then
   exit $?
 fi
 
-# Викликаємо справжній kubectl з правильним сервером
-command kubectl --kubeconfig="$ABS_KUBECONFIG" --server="https://${ALIVE_IP}:6443" "$@"
+# Оновлюємо kubeconfig, щоб інші інструменти (Terraform, Helm, Lens) теж бачили живу ноду
+sed -i "s|server: https://[0-9a-zA-Z\.\-]*:6443|server: https://${ALIVE_IP}:6443|g" "$ABS_KUBECONFIG"
+
+# Викликаємо справжній kubectl
+command kubectl --kubeconfig="$ABS_KUBECONFIG" "$@"

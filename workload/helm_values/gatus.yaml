@@ -1,3 +1,8 @@
+serviceAccount:
+  main:
+    enabled: true
+    forceRename: gatus
+
 controllers:
   main:
     containers:
@@ -6,7 +11,7 @@ controllers:
           repository: twinproduction/gatus
           tag: v5.7.0
         env:
-          GATUS_CONFIG_PATH: /config/config.yaml
+          GATUS_CONFIG_PATH: /config
           HTTP_PROXY: "http://wg-hub-proxy.wg-hub.svc.cluster.local:3128"
           HTTPS_PROXY: "http://wg-hub-proxy.wg-hub.svc.cluster.local:3128"
           NO_PROXY: "localhost,127.0.0.1,.cluster.local,.svc,paperless-app,searxng-http,lubelogger,tandoor-app,actualbudget"
@@ -19,8 +24,39 @@ controllers:
             memory: 64Mi
           limits:
             memory: 256Mi
+      sidecar:
+        image:
+          repository: ghcr.io/home-operations/gatus-sidecar
+          tag: latest
+        args:
+          - --auto-service
+          - --auto-ingress
+          - --output=/config/endpoints.yaml
+          - --namespace=default
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
+    initContainers:
+      init-config:
+        image:
+          repository: alpine
+          tag: latest
+        command:
+          - /bin/sh
+          - -c
+          - cp /config-map/config.yaml /config/config.yaml
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 32Mi
 
 defaultPodOptions:
+  automountServiceAccountToken: true
   nodeSelector:
     topology.kubernetes.io/zone: oci
 
@@ -44,10 +80,20 @@ ingress:
               port: http
 
 persistence:
-  config:
+  config-map:
     type: configMap
     name: gatus-config
     advancedMounts:
       main:
+        init-config:
+          - path: /config-map
+  config:
+    type: emptyDir
+    advancedMounts:
+      main:
+        init-config:
+          - path: /config
         main:
+          - path: /config
+        sidecar:
           - path: /config

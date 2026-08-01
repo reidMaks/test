@@ -15,6 +15,7 @@ controllers:
           POSTGRES_USER: "tandoor"
           STATIC_URL: "/staticfiles/"
           MEDIA_URL: "/media/"
+          GUNICORN_MEDIA: "1"
           ALLOWED_HOSTS: "*"
           CSRF_TRUSTED_ORIGINS: 'https://{{ (first .Values.ingress.main.hosts).host }}'
         envFrom:
@@ -38,6 +39,8 @@ ingress:
   main:
     enabled: true
     className: "traefik"
+    annotations:
+      gatus.io/status: "[STATUS] == 200 || [STATUS] == 302"
     hosts:
       - host: tandoor.kms-lab.in.ua
         paths:

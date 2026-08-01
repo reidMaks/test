@@ -47,6 +47,12 @@ persistence:
         main:
           - path: /App/data
             subPath: data
+          - path: /App/wwwroot/images
+            subPath: images
+          - path: /App/wwwroot/documents
+            subPath: documents
+          - path: /App/wwwroot/translations
+            subPath: translations
 
   # Том для ключів сесій ASP.NET, щоб не "розлогінювало" після рестарту поду (в тому ж бакеті)
   keys:

@@ -1,0 +1,22 @@
+{
+    "mcpServers": {
+        "kubernetes-mcp-server": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "kubernetes-mcp-server@latest"
+            ]
+        },
+        "searxng": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "mcp-searxng"
+            ],
+            "env": {
+                "SEARXNG_URL": "https://searxng.kms-lab.in.ua"
+            },
+            "trust": true
+        }
+    }
+}
