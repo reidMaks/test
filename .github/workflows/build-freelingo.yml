@@ -3,7 +3,7 @@ name: Build FreeLingo Frontend (Multi-arch)
 on:
   push:
     paths:
-      - 'tmp/uk.json'
+      - 'workload/freelingo/assets/uk.json'
       - '.github/workflows/build-freelingo.yml'
   workflow_dispatch: # Дозволяє запускати збірку вручну з інтерфейсу GitHub
 
@@ -29,7 +29,7 @@ jobs:
       - name: Inject Ukrainian localization
         run: |
           # Копіюємо файл перекладу
-          cp iaac-repo/tmp/uk.json freelingo-src/messages/uk.json
+          cp iaac-repo/workload/freelingo/assets/uk.json freelingo-src/messages/uk.json
 
           # Додаємо 'uk' у список підтримуваних мов
           sed -i "/'ru',/a \ \ 'uk'," freelingo-src/frontend/src/lib/locales.ts
