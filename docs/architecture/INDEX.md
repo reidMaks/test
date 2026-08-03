@@ -17,6 +17,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[008-cloudnativepg-migration]] - ADR: CloudNativePG Migration and Storage Optimization
 - [[009-litestream-sqlite-integration]] - Litestream & SQLite Integration
 - [[010-gatus-auto-discovery]] - Auto-discovery of Services and Ingresses for Gatus observability.
+- [[011-descheduler-tuning]] - Descheduler Tuning and Threshold Optimization
 
 ## Workloads & Services
 - Traefik (Ingress)

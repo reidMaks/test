@@ -23,14 +23,14 @@ resource "helm_release" "descheduler" {
                 args = {
                   useDeviationThresholds = true
                   thresholds = {
-                    cpu    = 100
-                    memory = 100
-                    pods   = 15
+                    cpu    = 20
+                    memory = 20
+                    pods   = 20
                   }
                   targetThresholds = {
-                    cpu    = 100
-                    memory = 100
-                    pods   = 15
+                    cpu    = 20
+                    memory = 20
+                    pods   = 20
                   }
                 }
               }
