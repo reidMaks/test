@@ -26,6 +26,36 @@ resource "kubernetes_storage_class" "longhorn_postgres" {
   }
 }
 
+resource "kubernetes_manifest" "cnpg_catalog" {
+  depends_on = [helm_release.cnpg]
+
+  manifest = {
+    apiVersion = "postgresql.cnpg.io/v1"
+    kind       = "ClusterImageCatalog"
+    metadata = {
+      name = "pg18-extensions"
+    }
+    spec = {
+      images = [
+        {
+          major = 18
+          # Чистий базовий образ PG18
+          image = "ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie"
+          # Декларативне завантаження розширення pgvector через ImageVolume
+          extensions = [
+            {
+              name = "pgvector"
+              image = {
+                reference = "ghcr.io/cloudnative-pg/postgres-extensions-containers/pgvector:18"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+
 resource "kubernetes_manifest" "cnpg_cluster" {
   depends_on = [helm_release.cnpg]
 
@@ -38,6 +68,13 @@ resource "kubernetes_manifest" "cnpg_cluster" {
     }
     spec = {
       instances = 3
+
+      imageCatalogRef = {
+        apiGroup = "postgresql.cnpg.io"
+        kind     = "ClusterImageCatalog"
+        name     = "pg18-extensions"
+        major    = 18
+      }
 
       storage = {
         size         = "20Gi"
