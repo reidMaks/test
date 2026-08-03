@@ -46,5 +46,18 @@ locals {
     }
   }
 
+  oci_vms = {
+    "talos_oci" = {
+      display_name  = "talos-cp-oci"
+      ocpus         = 2
+      memory_in_gbs = 12
+    }
+    "talos_oci_2" = {
+      display_name  = "talos-cp-oci-2"
+      ocpus         = 2
+      memory_in_gbs = 12
+    }
+  }
+
   cp_ip = [for v in local.talos_vms : v.ip if v.machine_type == "controlplane"][0]
 }

@@ -50,6 +50,15 @@ resource "helm_release" "traefik" {
         kubernetesCRD     = { enabled = true }
         kubernetesIngress = { enabled = true }
       }
+      resources = {
+        requests = {
+          cpu    = "100m"
+          memory = "100Mi"
+        }
+        limits = {
+          memory = "300Mi"
+        }
+      }
       service = {
         type = "LoadBalancer"
         annotations = {

@@ -59,6 +59,10 @@ resource "kubernetes_manifest" "cnpg_catalog" {
 resource "kubernetes_manifest" "cnpg_cluster" {
   depends_on = [helm_release.cnpg]
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   manifest = {
     apiVersion = "postgresql.cnpg.io/v1"
     kind       = "Cluster"

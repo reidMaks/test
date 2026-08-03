@@ -59,9 +59,9 @@ resource "kubernetes_deployment" "wg_hub" {
           name  = "wg-server"
           image = "alpine:3.19"
           security_context {
-            privileged = true
+            privileged = false
             capabilities {
-              add = ["NET_ADMIN"]
+              add = ["NET_ADMIN", "NET_RAW"]
             }
           }
           port {
