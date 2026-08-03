@@ -1,0 +1,61 @@
+.shared-env: &shared-env
+  DB_URL: "postgresql://immich:${db_password}@shared-db-rw.cnpg-system.svc.cluster.local:5432/immich"
+  DB_VECTOR_EXTENSION: "pgvector"
+  REDIS_HOSTNAME: "shared-redis.default.svc.cluster.local"
+  REDIS_PASSWORD: "${redis_password}"
+  REDIS_PORT: "6379"
+  REDIS_DBINDEX: "3"
+  IMMICH_MACHINE_LEARNING_URL: "http://immich-machine-learning:3003"
+  IMMICH_MEDIA_LOCATION: "/data/immich"
+
+server:
+  controllers:
+    main:
+      containers:
+        main:
+          env: *shared-env
+          image:
+            repository: ghcr.io/immich-app/immich-server
+            tag: release
+          resources:
+            requests:
+              cpu: 100m
+              memory: 250Mi
+              gpu.intel.com/i915: 1
+            limits:
+              memory: 2Gi
+              gpu.intel.com/i915: 1
+  ingress:
+    main:
+      enabled: true
+      className: "traefik"
+      hosts:
+        - host: immich.kms-lab.in.ua
+          paths:
+            - path: "/"
+              service:
+                identifier: main
+
+machine-learning:
+  controllers:
+    main:
+      containers:
+        main:
+          env: *shared-env
+          image:
+            repository: ghcr.io/immich-app/immich-machine-learning
+            tag: release
+          resources:
+            requests:
+              cpu: 100m
+              memory: 250Mi
+              gpu.intel.com/i915: 1
+            limits:
+              memory: 2Gi
+              gpu.intel.com/i915: 1
+
+immich:
+  persistence:
+    library:
+      enabled: true
+      existingClaim: immich-photos-nfs
