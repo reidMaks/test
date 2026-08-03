@@ -9,7 +9,7 @@ controllers:
           tag: "3.0.4"
         env:
           PAPERLESS_URL: 'https://{{ (first .Values.ingress.main.hosts).host }}'
-          PAPERLESS_REDIS: "redis://paperless-redis:6379"
+          PAPERLESS_REDIS: "redis://:${redis_password}@shared-redis:6379/1"
           PAPERLESS_DBENGINE: "postgresql"
           PAPERLESS_DBHOST: "shared-db-rw.cnpg-system.svc.cluster.local"
           PAPERLESS_DBPORT: "5432"
@@ -36,19 +36,7 @@ controllers:
                 - -c
                 - "sleep 30 && document_index reindex --no-progress > /tmp/reindex.log 2>&1 &"
 
-  redis:
-    type: statefulset
-    containers:
-      main:
-        image:
-          repository: redis
-          tag: "7-alpine"
-        resources:
-          requests:
-            cpu: 10m
-            memory: 64Mi
-          limits:
-            memory: 128Mi
+
 
 
 
@@ -58,11 +46,7 @@ service:
     ports:
       http:
         port: 8000
-  redis:
-    controller: redis
-    ports:
-      redis:
-        port: 6379
+
 
 
 ingress:

@@ -15,13 +15,11 @@ ingress:
           pathType: "Prefix"
 
 redis:
-  enabled: true
-  resources:
-    requests:
-      cpu: 10m
-      memory: 64Mi
-    limits:
-      memory: 128Mi
+  enabled: false
+
+env:
+  - name: SEARXNG_REDIS_URL
+    value: "redis://:${redis_password}@shared-redis:6379/2"
 
 searxng:
   base_url: "https://searxng.kms-lab.in.ua"

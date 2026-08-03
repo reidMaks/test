@@ -9,7 +9,7 @@ controllers:
           tag: "latest"
         env:
           DATABASE_URL: "postgresql+asyncpg://freelingo:freelingo_password123@shared-db-rw.cnpg-system.svc.cluster.local:5432/freelingo"
-          REDIS_URL: "redis://:redis_password123@freelingo-redis:6379/0"
+          REDIS_URL: "redis://:${redis_password}@shared-redis:6379/0"
 
           # LLM Config (OpenRouter)
           LLM_PROVIDER: "openai"
@@ -88,26 +88,7 @@ controllers:
 
 
 
-  redis:
-    type: statefulset
-    containers:
-      main:
-        image:
-          repository: redis
-          tag: "7-alpine"
-        command:
-          - sh
-          - -c
-          - "redis-server --requirepass $REDIS_PASSWORD"
-        envFrom:
-          - secretRef:
-              name: freelingo-secrets
-        resources:
-          requests:
-            cpu: 10m
-            memory: 64Mi
-          limits:
-            memory: 128Mi
+
 
 service:
   backend:
@@ -131,11 +112,7 @@ service:
       http:
         port: 9000
 
-  redis:
-    controller: redis
-    ports:
-      redis:
-        port: 6379
+
 
 ingress:
   main:
@@ -164,12 +141,7 @@ persistence:
             subPath: avatars
           - path: /data/audio
             subPath: audio
-  redis:
-    type: emptyDir
-    advancedMounts:
-      redis:
-        main:
-          - path: /data
+
   patches:
     type: configMap
     name: freelingo-patches

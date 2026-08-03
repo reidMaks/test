@@ -10,6 +10,6 @@ resource "helm_release" "searxng" {
   upgrade_install = true
 
   values = [
-    file("${path.module}/helm_values/searxng.yaml")
+    templatefile("${path.module}/helm_values/searxng.yaml", { redis_password = data.bitwarden-secrets_secret.shared_redis.value })
   ]
 }

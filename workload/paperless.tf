@@ -73,7 +73,7 @@ resource "helm_release" "paperless" {
   upgrade_install = true
 
   values = [
-    file("${path.module}/helm_values/paperless.yaml")
+    templatefile("${path.module}/helm_values/paperless.yaml", { redis_password = data.bitwarden-secrets_secret.shared_redis.value })
   ]
 
   depends_on = [

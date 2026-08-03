@@ -80,7 +80,7 @@ resource "helm_release" "freelingo" {
   upgrade_install = true
 
   values = [
-    file("${path.module}/freelingo/values.yaml")
+    templatefile("${path.module}/freelingo/values.yaml", { redis_password = data.bitwarden-secrets_secret.shared_redis.value })
   ]
 
   depends_on = [
