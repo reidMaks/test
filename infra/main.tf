@@ -37,6 +37,20 @@ provider "talos" {
   # Configuration options
 }
 
+resource "proxmox_hardware_mapping_pci" "intel_gpu" {
+  name = "intel_gpu"
+
+  map = [
+    {
+      node         = "proxmox-1"
+      path         = "0000:00:02.0"
+      id           = "8086:46d2"
+      iommu_group  = 0
+      subsystem_id = "8086:7270"
+    }
+  ]
+}
+
 resource "talos_machine_secrets" "this" {}
 
 
@@ -62,6 +76,9 @@ resource "proxmox_virtual_environment_vm" "talos" {
   tags        = ["talos", "k8s"]
   node_name   = each.value.node_name
 
+  depends_on = [proxmox_hardware_mapping_pci.intel_gpu]
+
+  machine = "q35"
   started = true
 
   boot_order = ["virtio0", "ide3", "net0"]
@@ -96,6 +113,15 @@ resource "proxmox_virtual_environment_vm" "talos" {
 
   operating_system {
     type = "l26"
+  }
+
+  dynamic "hostpci" {
+    for_each = try(each.value.hostpci_mapping, null) != null ? [each.value.hostpci_mapping] : []
+    content {
+      device  = "hostpci0"
+      mapping = hostpci.value
+      pcie    = true
+    }
   }
 
   lifecycle {

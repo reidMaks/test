@@ -2,6 +2,25 @@
 # ГЕНЕРАЦІЯ КОНФІГУРАЦІЇ ДЛЯ CONTROL PLANE
 # ==========================================
 
+resource "talos_image_factory_schematic" "this" {
+  schematic = yamlencode(
+    {
+      customization = {
+        systemExtensions = {
+          officialExtensions = [
+            "siderolabs/iscsi-tools",
+            "siderolabs/nfs-utils",
+            "siderolabs/qemu-guest-agent",
+            "siderolabs/util-linux-tools",
+            "siderolabs/intel-ucode",
+            "siderolabs/i915-ucode"
+          ]
+        }
+      }
+    }
+  )
+}
+
 data "talos_machine_configuration" "config" {
 
   for_each = local.talos_vms
@@ -54,6 +73,25 @@ data "talos_machine_configuration" "config" {
           image: ${local.talos_installer}
       EOT
     ],
+    try(each.value.hostpci_mapping, null) != null ? [
+      <<-EOT
+      machine:
+        nodeLabels:
+          intel.feature.node.kubernetes.io/gpu: "true"
+        kubelet:
+          extraMounts:
+            - destination: /dev/dri
+              type: bind
+              source: /dev/dri
+              options:
+                - bind
+                - rshared
+                - rw
+        kernel:
+          modules:
+            - name: i915
+      EOT
+    ] : [],
     each.value.machine_type == "controlplane" ? [
       <<-EOT
       cluster:
