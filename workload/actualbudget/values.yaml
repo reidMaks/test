@@ -33,7 +33,7 @@ controllers:
       main:
         image:
           repository: actualbudget/actual-server
-          tag: "26.7.0"
+          tag: "26.8.0"
         env:
           NODE_EXTRA_CA_CERTS: "/certs/mitmproxy-ca-cert.pem"
           LOG_LEVEL: "WARNING"
@@ -119,23 +119,14 @@ configMaps:
 
         echo "Listing databases in s3-db PVC..."
         # Litestream stores WAL data inside directories named after the DB file in the S3 replica bucket.
-        # Since we mounted the bucket to /s3-db via CSI, we can just look for those directories.
-        for db_dir in /s3-db/*; do
-          if [ -d "$db_dir" ]; then
-            db_name=$(basename "$db_dir")
-            # We don't restore .migrate from the DB bucket because we moved it to the files bucket.
-            if [ "$db_name" != ".migrate" ]; then
-              if [ "$db_name" = "account.sqlite" ]; then
-                echo "Restoring /data/server-files/$db_name..."
-                mkdir -p /data/server-files
-                litestream restore -if-replica-exists -if-db-not-exists -o "/data/server-files/$db_name" "s3://kms-lab-data/actualbudget-db/$db_name?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true"
-              else
-                echo "Restoring /data/user-files/$db_name..."
-                mkdir -p /data/user-files
-                litestream restore -if-replica-exists -if-db-not-exists -o "/data/user-files/$db_name" "s3://kms-lab-data/actualbudget-db/$db_name?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true"
-              fi
-            fi
-          fi
+        # Since we use recursive: true, the paths in S3 preserve the relative path from /data (e.g. server-files/account.sqlite)
+        find /s3-db -type d -name "*.sqlite" | while read -r db_dir; do
+          # Get relative path from /s3-db/ (e.g. server-files/account.sqlite)
+          db_path=$(echo "$db_dir" | sed 's|^/s3-db/||')
+
+          echo "Restoring /data/$db_path..."
+          mkdir -p "/data/$(dirname "$db_path")"
+          litestream restore -if-replica-exists -if-db-not-exists -o "/data/$db_path" "s3://kms-lab-data/actualbudget-db/$db_path?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true"
         done
 
         echo "Restoring non-SQLite files from S3..."
