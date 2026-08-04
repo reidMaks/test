@@ -20,6 +20,8 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[011-descheduler-tuning]] - Descheduler Tuning and Threshold Optimization
 - [[012-add-open-webui]] - Add Open WebUI
 - [[013-centralized-grafana-dashboards]] - Centralized Grafana Dashboards and Redis Monitoring
+- [[014-mcp-tool-server]] - MCP Tool Server for Open WebUI
+- [[015-open-webui-pgvector-rag]] - Open WebUI RAG Architecture (PGVector & OIKB)
 
 ## Workloads & Services
 - Traefik (Ingress)

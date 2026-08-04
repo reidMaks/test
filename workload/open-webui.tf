@@ -78,6 +78,11 @@ resource "kubernetes_manifest" "openwebui_database" {
       }
       name  = "openwebui"
       owner = "openwebui"
+      extensions = [
+        {
+          name = "vector"
+        }
+      ]
     }
   }
 }

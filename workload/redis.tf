@@ -32,7 +32,7 @@ resource "helm_release" "shared_redis" {
                 repository = "redis"
                 tag        = "7-alpine"
               }
-              command = ["sh", "-c", "redis-server --requirepass $REDIS_PASSWORD --maxmemory 200mb"]
+              command = ["sh", "-c", "redis-server --requirepass $REDIS_PASSWORD"]
               envFrom = [
                 { secretRef = { name = kubernetes_secret.shared_redis.metadata[0].name } }
               ]
