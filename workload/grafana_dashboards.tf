@@ -25,3 +25,17 @@ resource "kubernetes_config_map" "redis_grafana_dashboard" {
     "redis-dashboard.json" = file("${path.module}/grafana_dashboards/redis-dashboard.json")
   }
 }
+
+resource "kubernetes_config_map" "nodes_grafana_dashboard" {
+  metadata {
+    name      = "nodes-grafana-dashboard"
+    namespace = "monitoring"
+    labels = {
+      grafana_dashboard = "1"
+    }
+  }
+
+  data = {
+    "nodes-dashboard.json" = file("${path.module}/grafana_dashboards/nodes-dashboard.json")
+  }
+}
