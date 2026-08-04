@@ -107,19 +107,6 @@ resource "kubernetes_manifest" "cnpg_cluster" {
   }
 }
 
-resource "kubernetes_config_map" "cnpg_grafana_dashboard" {
-  metadata {
-    name      = "cnpg-grafana-dashboard"
-    namespace = "monitoring"
-    labels = {
-      grafana_dashboard = "1"
-    }
-  }
-
-  data = {
-    "cnpg-dashboard.json" = file("${path.module}/cnpg/grafana-dashboard.json")
-  }
-}
 
 resource "kubernetes_manifest" "vmpodscrape_cnpg_cluster" {
   manifest = {

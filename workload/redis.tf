@@ -32,7 +32,7 @@ resource "helm_release" "shared_redis" {
                 repository = "redis"
                 tag        = "7-alpine"
               }
-              command = ["sh", "-c", "redis-server --requirepass $REDIS_PASSWORD"]
+              command = ["sh", "-c", "redis-server --requirepass $REDIS_PASSWORD --maxmemory 200mb"]
               envFrom = [
                 { secretRef = { name = kubernetes_secret.shared_redis.metadata[0].name } }
               ]
@@ -46,6 +46,36 @@ resource "helm_release" "shared_redis" {
                 }
               }
             }
+            exporter = {
+              image = {
+                repository = "oliver006/redis_exporter"
+                tag        = "v1.61.0"
+              }
+              env = [
+                {
+                  name  = "REDIS_ADDR"
+                  value = "redis://localhost:6379"
+                },
+                {
+                  name = "REDIS_PASSWORD"
+                  valueFrom = {
+                    secretKeyRef = {
+                      name = kubernetes_secret.shared_redis.metadata[0].name
+                      key  = "REDIS_PASSWORD"
+                    }
+                  }
+                }
+              ]
+              resources = {
+                requests = {
+                  cpu    = "10m"
+                  memory = "32Mi"
+                }
+                limits = {
+                  memory = "64Mi"
+                }
+              }
+            }
           }
         }
       }
@@ -53,7 +83,8 @@ resource "helm_release" "shared_redis" {
         main = {
           controller = "main"
           ports = {
-            redis = { port = 6379 }
+            redis   = { port = 6379 }
+            metrics = { port = 9121 }
           }
         }
       }
@@ -71,4 +102,27 @@ resource "helm_release" "shared_redis" {
       }
     })
   ]
+}
+
+resource "kubernetes_manifest" "vmservicescrape_shared_redis" {
+  manifest = {
+    apiVersion = "operator.victoriametrics.com/v1beta1"
+    kind       = "VMServiceScrape"
+    metadata = {
+      name      = "shared-redis-metrics"
+      namespace = "default"
+    }
+    spec = {
+      endpoints = [
+        {
+          port = "metrics"
+        }
+      ]
+      selector = {
+        matchLabels = {
+          "app.kubernetes.io/name" = "shared-redis"
+        }
+      }
+    }
+  }
 }

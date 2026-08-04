@@ -19,6 +19,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[010-gatus-auto-discovery]] - Auto-discovery of Services and Ingresses for Gatus observability.
 - [[011-descheduler-tuning]] - Descheduler Tuning and Threshold Optimization
 - [[012-add-open-webui]] - Add Open WebUI
+- [[013-centralized-grafana-dashboards]] - Centralized Grafana Dashboards and Redis Monitoring
 
 ## Workloads & Services
 - Traefik (Ingress)

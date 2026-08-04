@@ -55,6 +55,9 @@ data "talos_machine_configuration" "config" {
                 - network: 0.0.0.0/0
                   gateway: ${local.gateway_ip}
         kubelet:
+          extraConfig:
+            imageGCHighThresholdPercent: 70
+            imageGCLowThresholdPercent: 50
           extraMounts:
             - destination: /var/lib/longhorn
               type: bind
