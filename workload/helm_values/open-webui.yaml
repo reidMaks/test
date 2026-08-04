@@ -1,0 +1,24 @@
+ingress:
+  enabled: true
+  class: traefik
+  host: "openui.kms-lab.in.ua"
+
+persistence:
+  enabled: false
+
+databaseUrl: "postgresql://openwebui:${db_password}@shared-db-rw.cnpg-system.svc.cluster.local:5432/openwebui"
+
+websocket:
+  redis:
+    enabled: false
+  url: "redis://:${redis_password}@shared-redis.default.svc.cluster.local:6379/4"
+
+ollama:
+  enabled: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    memory: 1024Mi

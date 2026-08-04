@@ -18,6 +18,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[009-litestream-sqlite-integration]] - Litestream & SQLite Integration
 - [[010-gatus-auto-discovery]] - Auto-discovery of Services and Ingresses for Gatus observability.
 - [[011-descheduler-tuning]] - Descheduler Tuning and Threshold Optimization
+- [[012-add-open-webui]] - Add Open WebUI
 
 ## Workloads & Services
 - Traefik (Ingress)
@@ -27,3 +28,4 @@ All documentation here should be maintained in English and linked using Obsidian
 - WireGuard Hub
 - QNAP NAS (Jellyfin, Arr-stack, Portainer)
 - FreeLingo (AI Language Learning)
+- Open WebUI (LLM Chat)

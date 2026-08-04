@@ -1,7 +1,3 @@
-data "bitwarden-secrets_secret" "open_router_api_key" {
-  id = "d16fb37b-484f-435f-abb1-b49700805557"
-}
-
 data "bitwarden-secrets_secret" "freelingo_env" {
   id = "2c68e061-6086-4507-b3d8-b49700b99d71"
 }
