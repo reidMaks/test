@@ -1,0 +1,121 @@
+{
+  "title": "Litestream Metrics",
+  "uid": "litestream",
+  "tags": [
+    "litestream",
+    "s3"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 30,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "S3 Requests (per 5m)",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(litestream_replica_operation_total{replica_type=\"s3\"}[5m])) by (operation)",
+          "legendFormat": "{{operation}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "DB Syncs (per 5m)",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(litestream_sync_count[5m])) by (db)",
+          "legendFormat": "{{db}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "S3 Data Transferred (per 5m)",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(litestream_replica_operation_bytes{replica_type=\"s3\"}[5m])) by (operation)",
+          "legendFormat": "Bytes - {{operation}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "unit": "bytes"
+        }
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "WAL Bytes Synced (per 5m)",
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(litestream_total_wal_bytes[5m])) by (db)",
+          "legendFormat": "{{db}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10,
+            "lineWidth": 2
+          },
+          "unit": "bytes"
+        }
+      }
+    }
+  ]
+}

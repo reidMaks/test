@@ -12,3 +12,29 @@ resource "kubernetes_secret" "litestream_s3" {
     LITESTREAM_SECRET_ACCESS_KEY = data.bitwarden-secrets_secret.oci_s3_secret_key.value
   }
 }
+
+resource "kubernetes_manifest" "vmpodscrape_litestream" {
+  manifest = {
+    apiVersion = "operator.victoriametrics.com/v1beta1"
+    kind       = "VMPodScrape"
+    metadata = {
+      name      = "litestream-metrics"
+      namespace = "monitoring"
+    }
+    spec = {
+      podMetricsEndpoints = [
+        {
+          port = "metrics"
+        }
+      ]
+      selector = {
+        matchLabels = {
+          "litestream-metrics" = "true"
+        }
+      }
+      namespaceSelector = {
+        any = true
+      }
+    }
+  }
+}

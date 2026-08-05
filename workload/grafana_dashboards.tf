@@ -39,3 +39,17 @@ resource "kubernetes_config_map" "nodes_grafana_dashboard" {
     "nodes-dashboard.json" = file("${path.module}/grafana_dashboards/nodes-dashboard.json")
   }
 }
+
+resource "kubernetes_config_map" "litestream_grafana_dashboard" {
+  metadata {
+    name      = "litestream-grafana-dashboard"
+    namespace = "monitoring"
+    labels = {
+      grafana_dashboard = "1"
+    }
+  }
+
+  data = {
+    "litestream-dashboard.json" = file("${path.module}/grafana_dashboards/litestream-dashboard.json")
+  }
+}

@@ -3,6 +3,11 @@
 controllers:
   main:
     pod:
+      labels:
+        litestream-metrics: "true"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
       hostAliases:
         - ip: "127.0.0.1"
           hostnames:
@@ -96,6 +101,7 @@ configMaps:
     enabled: true
     data:
       litestream.yml: |
+        addr: ":9090"
         dbs:
           - dir: /data
             pattern: "*.sqlite"
@@ -103,6 +109,7 @@ configMaps:
             watch: true
             replica:
               url: s3://kms-lab-data/actualbudget-db?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true
+              sync-interval: 10m
   scripts:
     enabled: true
     data:

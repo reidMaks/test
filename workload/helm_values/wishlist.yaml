@@ -5,13 +5,21 @@ configMaps:
     enabled: true
     data:
       litestream.yml: |
+        addr: ":9090"
         dbs:
           - path: /usr/src/app/data/prod.db
             replica:
               url: s3://kms-lab-data/wishlist-db?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true
+              sync-interval: 10m
 
 controllers:
   main:
+    pod:
+      labels:
+        litestream-metrics: "true"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
     containers:
       main:
         image:

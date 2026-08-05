@@ -13,6 +13,9 @@ controllers:
           - replicate
           - -config
           - /etc/litestream.yml
+        ports:
+          - name: metrics
+            containerPort: 9090
         envFrom:
           - secretRef:
               name: ${secret_name}
