@@ -9,8 +9,7 @@ configMaps:
         dbs:
           - path: /usr/src/app/data/prod.db
             replica:
-              url: s3://kms-lab-data/wishlist-db?endpoint=${oci_s3_endpoint}&region=eu-zurich-1&forcePathStyle=true
-              sync-interval: 10m
+              url: s3://kms-lab-data/wishlist-db?endpoint=${s3_endpoint}&region=us-east-1&forcePathStyle=true
 
 controllers:
   main:

@@ -12,7 +12,7 @@ resource "helm_release" "wishlist" {
 
   values = [
     templatefile("${path.module}/helm_values/wishlist.yaml", {
-      oci_s3_endpoint = data.terraform_remote_state.infra.outputs.oci_s3_endpoint
+      s3_endpoint = local.minio_s3_endpoint
     }),
     templatefile("${path.module}/helm_values/litestream_sidecar.yaml.tpl", {
       controller_name = "main"

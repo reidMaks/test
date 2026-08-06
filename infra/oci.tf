@@ -233,6 +233,19 @@ output "oci_s3_namespace" {
 }
 
 output "oci_s3_endpoint" {
-  value       = "https://${data.oci_objectstorage_namespace.ns.namespace}.compat.objectstorage.${var.oci_region}.oraclecloud.com"
-  description = "S3-compatible API endpoint for OCI Object Storage"
+  value       = "http://minio.default.svc.cluster.local:9000"
+  description = "Local MinIO API endpoint on OCI node"
+}
+
+resource "oci_core_volume" "minio_data" {
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  compartment_id      = var.compartment_ocid
+  display_name        = "minio-data-vol"
+  size_in_gbs         = 50
+}
+
+resource "oci_core_volume_attachment" "minio_data_attach" {
+  attachment_type = "paravirtualized"
+  instance_id     = oci_core_instance.talos_oci["talos_oci"].id
+  volume_id       = oci_core_volume.minio_data.id
 }

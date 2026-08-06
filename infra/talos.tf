@@ -195,32 +195,58 @@ data "talos_machine_configuration" "oci" {
 
   talos_version = local.talos_version
 
-  config_patches = [
-    <<-EOT
-    machine:
-      nodeLabels:
-        node-role.kubernetes.io/control-plane: ""
-        topology.kubernetes.io/zone: "oci"
-      certSANs:
-        - ${oci_core_instance.talos_oci[each.key].public_ip}
-      network:
-        kubespan:
-          enabled: true
-        # Хак для обходу NAT: додаємо публічний IP до loopback (lo).
-        # Talos автоматично розпізнає цей IP і передасть його KubeSpan,
-        # що дозволить хмарним нодам з'єднуватись безпосередньо.
-        interfaces:
-          - interface: lo
-            addresses:
-              - ${oci_core_instance.talos_oci[each.key].public_ip}/32
-    cluster:
-      allowSchedulingOnControlPlanes: true
-      etcd:
-        extraArgs:
-          heartbeat-interval: "500"
-          election-timeout: "5000"
-    EOT
-  ]
+  config_patches = concat(
+    [
+      <<-EOT
+        machine:
+          nodeLabels:
+            node-role.kubernetes.io/control-plane: ""
+            topology.kubernetes.io/zone: "oci"
+          certSANs:
+            - ${oci_core_instance.talos_oci[each.key].public_ip}
+          network:
+            kubespan:
+              enabled: true
+            interfaces:
+              - interface: lo
+                addresses:
+                  - ${oci_core_instance.talos_oci[each.key].public_ip}/32
+        cluster:
+          allowSchedulingOnControlPlanes: true
+          etcd:
+            extraArgs:
+              heartbeat-interval: "500"
+              election-timeout: "5000"
+        EOT
+    ],
+    each.key == "talos_oci" ? [
+      <<-EOT
+        machine:
+          nodeAnnotations:
+            node.longhorn.io/default-disks-config: '[{"path":"/var/lib/longhorn","allowScheduling":true},{"path":"/var/mnt/oci-disk","allowScheduling":true}]'
+          disks:
+            - device: /dev/sdb
+              partitions:
+                - mountpoint: /var/mnt/oci-disk
+          kubelet:
+            extraMounts:
+              - destination: /var/lib/longhorn
+                type: bind
+                source: /var/lib/longhorn
+                options:
+                  - bind
+                  - rshared
+                  - rw
+              - destination: /var/mnt/oci-disk
+                type: bind
+                source: /var/mnt/oci-disk
+                options:
+                  - bind
+                  - rshared
+                  - rw
+        EOT
+    ] : []
+  )
 }
 
 resource "talos_machine_configuration_apply" "oci" {

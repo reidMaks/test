@@ -14,6 +14,14 @@ data "bitwarden-secrets_secret" "oci_s3_secret_key" {
   id = "6106b013-4724-4c3e-af8e-b4970162dc38"
 }
 
+data "bitwarden-secrets_secret" "minio_s3_access_key" {
+  id = "b90365b3-63c8-41db-9103-b49e00b2a745"
+}
+
+data "bitwarden-secrets_secret" "minio_s3_secret_key" {
+  id = "2ff1738f-13f5-45f9-ba8e-b49e00b2d7af"
+}
+
 # Загальний Secret з налаштуваннями S3 для всіх томів, що використовують csi-rclone
 resource "kubernetes_secret" "oci_s3_rclone_config" {
   metadata {
@@ -23,9 +31,9 @@ resource "kubernetes_secret" "oci_s3_rclone_config" {
 
   data = {
     "s3-provider"          = "Other"
-    "s3-access-key-id"     = data.bitwarden-secrets_secret.oci_s3_access_key.value
-    "s3-secret-access-key" = data.bitwarden-secrets_secret.oci_s3_secret_key.value
-    "s3-endpoint"          = data.terraform_remote_state.infra.outputs.oci_s3_endpoint
+    "s3-access-key-id"     = data.bitwarden-secrets_secret.minio_s3_access_key.value
+    "s3-secret-access-key" = data.bitwarden-secrets_secret.minio_s3_secret_key.value
+    "s3-endpoint"          = local.minio_s3_endpoint
     "s3-acl"               = "private"
   }
 }
@@ -42,9 +50,17 @@ resource "kubernetes_secret" "oci_s3_rclone_config_default" {
       [oci-s3]
       type = s3
       provider = Other
-      access_key_id = ${data.bitwarden-secrets_secret.oci_s3_access_key.value}
-      secret_access_key = ${data.bitwarden-secrets_secret.oci_s3_secret_key.value}
-      endpoint = ${data.terraform_remote_state.infra.outputs.oci_s3_endpoint}
+      access_key_id = $${data.bitwarden-secrets_secret.minio_s3_access_key.value}
+      secret_access_key = $${data.bitwarden-secrets_secret.minio_s3_secret_key.value}
+      endpoint = ${local.minio_s3_endpoint}
+      acl = private
+
+      [minio-s3]
+      type = s3
+      provider = Other
+      access_key_id = $${data.bitwarden-secrets_secret.minio_s3_access_key.value}
+      secret_access_key = $${data.bitwarden-secrets_secret.minio_s3_secret_key.value}
+      endpoint = ${local.minio_s3_endpoint}
       acl = private
     EOT
   }
@@ -62,9 +78,9 @@ resource "helm_release" "csi_rclone" {
     yamlencode({
       params = {
         "s3-provider"          = "Other"
-        "s3-endpoint"          = data.terraform_remote_state.infra.outputs.oci_s3_endpoint
-        "s3-access-key-id"     = data.bitwarden-secrets_secret.oci_s3_access_key.value
-        "s3-secret-access-key" = data.bitwarden-secrets_secret.oci_s3_secret_key.value
+        "s3-endpoint"          = local.minio_s3_endpoint
+        "s3-access-key-id"     = data.bitwarden-secrets_secret.minio_s3_access_key.value
+        "s3-secret-access-key" = data.bitwarden-secrets_secret.minio_s3_secret_key.value
         "s3-acl"               = "private"
       }
     })
