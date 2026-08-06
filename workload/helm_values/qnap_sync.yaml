@@ -1,0 +1,56 @@
+controllers:
+  main:
+    type: cronjob
+    cronjob:
+      schedule: "*/15 * * * *"
+      concurrencyPolicy: Forbid
+    pod:
+      nodeSelector:
+        topology.kubernetes.io/zone: home
+    containers:
+      main:
+        image:
+          repository: rclone/rclone
+          tag: latest
+        command:
+          - rclone
+          - sync
+          - minio:kms-lab-data
+          - qnap:kms-lab-data
+          - --verbose
+          - --transfers=4
+          - --checkers=8
+        env:
+          RCLONE_CONFIG_MINIO_TYPE: s3
+          RCLONE_CONFIG_MINIO_PROVIDER: Minio
+          RCLONE_CONFIG_MINIO_ENDPOINT: http://minio.default.svc.cluster.local:9000
+          RCLONE_CONFIG_MINIO_REGION: us-east-1
+          RCLONE_CONFIG_MINIO_ENV_AUTH: "false"
+          RCLONE_CONFIG_MINIO_FORCE_PATH_STYLE: "true"
+
+          RCLONE_CONFIG_QNAP_TYPE: s3
+          RCLONE_CONFIG_QNAP_PROVIDER: Other
+          RCLONE_CONFIG_QNAP_ENDPOINT: http://192.168.0.21:8010
+          RCLONE_CONFIG_QNAP_REGION: us-east-1
+          RCLONE_CONFIG_QNAP_FORCE_PATH_STYLE: "true"
+
+          RCLONE_CONFIG_MINIO_ACCESS_KEY_ID:
+            valueFrom:
+              secretKeyRef:
+                name: litestream-s3
+                key: MINIO_ACCESS_KEY
+          RCLONE_CONFIG_MINIO_SECRET_ACCESS_KEY:
+            valueFrom:
+              secretKeyRef:
+                name: litestream-s3
+                key: MINIO_SECRET_KEY
+          RCLONE_CONFIG_QNAP_ACCESS_KEY_ID:
+            valueFrom:
+              secretKeyRef:
+                name: litestream-s3
+                key: QNAP_ACCESS_KEY
+          RCLONE_CONFIG_QNAP_SECRET_ACCESS_KEY:
+            valueFrom:
+              secretKeyRef:
+                name: litestream-s3
+                key: QNAP_SECRET_KEY

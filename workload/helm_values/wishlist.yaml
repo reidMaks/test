@@ -1,15 +1,6 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/app-template-5.0.1/charts/other/app-template/values.schema.json
 
-configMaps:
-  litestream-config:
-    enabled: true
-    data:
-      litestream.yml: |
-        addr: ":9090"
-        dbs:
-          - path: /usr/src/app/data/prod.db
-            replica:
-              url: s3://kms-lab-data/wishlist-db?endpoint=${s3_endpoint}&region=us-east-1&forcePathStyle=true
+
 
 controllers:
   main:
@@ -86,15 +77,3 @@ persistence:
     type: emptyDir
     globalMounts:
       - path: /usr/src/app/data
-
-  litestream-config:
-    type: configMap
-    name: wishlist
-    advancedMounts:
-      main:
-        litestream:
-          - path: /etc/litestream.yml
-            subPath: litestream.yml
-        01-litestream-restore:
-          - path: /etc/litestream.yml
-            subPath: litestream.yml

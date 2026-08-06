@@ -13,6 +13,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[003-storage]] - Distributed block storage (Longhorn)
 - [[004-qnap-nas]] - External NAS Integration via NFS
 - [[016-migrate-to-local-minio]] - Local MinIO for Litestream & CSI Rclone
+- [[017-s3-replication-qnap]] - Asynchronous S3 Replication to QNAP NAS
 - [[005-qnap-internal-dns]] - QNAP Internal DNS and Traefik Aliasing
 - [[006-qnap-local-ca-tls]] - QNAP Local CA and TLS Configuration
 - [[007-freelingo-localization-and-secrets]] - FreeLingo Localization and Secrets Management

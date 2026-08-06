@@ -17,6 +17,10 @@ resource "helm_release" "wishlist" {
     templatefile("${path.module}/helm_values/litestream_sidecar.yaml.tpl", {
       controller_name = "main"
       db_path         = "/usr/src/app/data/prod.db"
+      db_dir          = ""
+      db_path_exact   = "/usr/src/app/data/prod.db"
+      bucket_path     = "wishlist-db"
+      release_name    = "wishlist"
       secret_name     = "litestream-s3"
     })
   ]

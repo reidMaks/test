@@ -97,18 +97,7 @@ configMaps:
     data:
       addon.py: |
         ${indent(8, addon_py)}
-  litestream-config:
-    enabled: true
-    data:
-      litestream.yml: |
-        addr: ":9090"
-        dbs:
-          - dir: /data
-            pattern: "*.sqlite"
-            recursive: true
-            watch: true
-            replica:
-              url: s3://kms-lab-data/actualbudget-db?endpoint=${s3_endpoint}&region=us-east-1&forcePathStyle=true
+
   scripts:
     enabled: true
     data:
@@ -123,6 +112,9 @@ configMaps:
         fi
         LATEST_VERSION=$(wget -qO- "https://api.github.com/repos/benbjohnson/litestream/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
         wget -qO- "https://github.com/benbjohnson/litestream/releases/download/v$${LATEST_VERSION}/litestream-$${LATEST_VERSION}-linux-$${LITESTREAM_ARCH}.tar.gz" | tar -xz -C /usr/local/bin
+
+        export LITESTREAM_ACCESS_KEY_ID=$MINIO_ACCESS_KEY
+        export LITESTREAM_SECRET_ACCESS_KEY=$MINIO_SECRET_KEY
 
         echo "Listing databases in s3-db PVC..."
         # Litestream stores WAL data inside directories named after the DB file in the S3 replica bucket.
@@ -235,14 +227,3 @@ persistence:
       main:
         mitmproxy:
           - path: /scripts
-  litestream-config:
-    type: configMap
-    name: actualbudget-litestream-config
-    advancedMounts:
-      main:
-        litestream:
-          - path: /etc/litestream.yml
-            subPath: litestream.yml
-        01-litestream-restore:
-          - path: /etc/litestream.yml
-            subPath: litestream.yml

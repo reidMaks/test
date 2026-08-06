@@ -18,7 +18,11 @@ resource "helm_release" "actualbudget" {
     }),
     templatefile("${path.module}/helm_values/litestream_sidecar.yaml.tpl", {
       controller_name = "main"
-      db_path         = "" # Leave empty to skip 01-litestream-restore initContainer
+      db_path         = ""
+      db_dir          = "/data"
+      db_path_exact   = ""
+      bucket_path     = "actualbudget-db"
+      release_name    = "actualbudget"
       secret_name     = "litestream-s3"
     })
   ]
