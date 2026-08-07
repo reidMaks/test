@@ -10,4 +10,3 @@
 - [ ] **Open WebUI: Prompt Translation & Enhancement Adapter**:
   - Create a custom Filter Function in Open WebUI to automatically translate and enhance Ukrainian user prompts into high-quality English before executing the RAG vector search, ensuring perfect alignment with the English documentation.
 - [ ] **Documentation Alignment**: Ensure all project documentation is fully translated/maintained in English (as required by project rules) to maximize RAG effectiveness.
-- [ ] Evaluate using QNAP S3 (with QObject keys) for Litestream local replication, and use QNAP HBS3 to sync to Oracle Cloud S3 to improve local availability.

@@ -25,6 +25,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[013-centralized-grafana-dashboards]] - Centralized Grafana Dashboards and Redis Monitoring
 - [[014-mcp-tool-server]] - MCP Tool Server for Open WebUI
 - [[015-open-webui-pgvector-rag]] - Open WebUI RAG Architecture (PGVector & OIKB)
+- [[016-add-litellm-proxy]] - LiteLLM Proxy for Cost Routing
 
 ## Workloads & Services
 - Traefik (Ingress)

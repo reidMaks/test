@@ -11,9 +11,8 @@ resource "helm_release" "open_webui" {
 
   values = [
     templatefile("${path.module}/helm_values/open-webui.yaml", {
-      openrouter_api_key = data.bitwarden-secrets_secret.open_router_api_key.value
-      db_password        = random_password.openwebui_db_password.result
-      redis_password     = data.bitwarden-secrets_secret.shared_redis.value
+      db_password    = random_password.openwebui_db_password.result
+      redis_password = data.bitwarden-secrets_secret.shared_redis.value
     })
   ]
 }
