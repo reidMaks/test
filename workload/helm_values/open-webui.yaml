@@ -1,10 +1,48 @@
+replicaCount: 1
+
+# Back to 1 replica: persistence (below) uses a ReadWriteOnce PV, which
+# can't be mounted by 2 pods on different nodes at once without RWX (which
+# risks concurrent-write races on the shared model cache during cold start).
+# Simpler and safer to trade the 2-node load-spreading we had briefly today
+# for a single pod with reliable persistent storage.
+#
+# Note: with persistence.enabled=true the chart deploys a StatefulSet
+# instead of a Deployment (volumeClaimTemplates need stable pod identity).
+# StatefulSet updateStrategy only accepts RollingUpdate/OnDelete, not
+# Recreate -- but with a single replica, RollingUpdate already terminates
+# the old pod before creating the new one (no surge for StatefulSets), so
+# it behaves the same way Recreate would have. No override needed here.
+
+# Pinned to talos-f9o-10o (Proxmox worker-02): 6 cores vs worker-01's 4
+# (infra/locals.tf) -- with lighter models now, CPU headroom for embedding/
+# reranking throughput matters more than the RAM margin that drove the
+# original worker-01 pin. Also expanded to 12GB RAM. Hosts a CNPG *replica*
+# (shared-db-1), not the primary, so resource pressure here degrades a
+# replica, not the cluster's write path.
+nodeSelector:
+  kubernetes.io/hostname: "talos-f9o-10o"
+
+# Persistent storage for /app/backend/data: model cache (embedding +
+# reranker weights, ~530MB) and uploaded file bytes. Previously stateless,
+# which meant every pod restart wiped uploaded files (breaking in-place
+# reprocessing) and forced a full HuggingFace re-download of models on every
+# cold start. Tried pinning Longhorn replicas to home-only nodes via disk
+# tags (workload/longhorn_home.tf, removed) -- Terraform's kubernetes_manifest
+# couldn't reliably write the tags field onto Longhorn's Node CRD (state
+# kept showing tags=[] after apply), so fell back to the default "longhorn"
+# StorageClass. The pod itself is still pinned to a home node via
+# nodeSelector below; only Longhorn's own replica placement may spread to
+# the OCI nodes. 5Gi covers the corpus (490MB) + models (~530MB) with
+# headroom for HF's multi-format download behavior.
+persistence:
+  enabled: true
+  size: 5Gi
+  storageClass: "longhorn"
+
 ingress:
   enabled: true
   class: traefik
   host: "openui.kms-lab.in.ua"
-
-persistence:
-  enabled: false
 
 databaseUrl: "postgresql://openwebui:${db_password}@shared-db-rw.cnpg-system.svc.cluster.local:5432/openwebui"
 
@@ -19,10 +57,49 @@ ollama:
 resources:
   requests:
     cpu: 100m
-    memory: 512Mi
+    memory: 1024Mi
   limits:
-    memory: 2048Mi
+    # multilingual-e5-base (~1.1GB weights) OOMKilled repeatedly at 3Gi and
+    # 5Gi during load -- the sentence-transformers loader appears to fetch
+    # and hold multiple backend format variants (onnx + openvino) in memory
+    # simultaneously while resolving the best one, well beyond the raw
+    # weight size. 9Gi is the empirically-needed headroom on this node.
+    memory: 9216Mi
 
 extraEnvVars:
   - name: VECTOR_DB
     value: "pgvector"
+  # Shared JWT signing key across replicas -- see comment in open-webui.tf.
+  - name: WEBUI_SECRET_KEY
+    valueFrom:
+      secretKeyRef:
+        name: open-webui-secret-key
+        key: WEBUI_SECRET_KEY
+  # multilingual-e5-base gave poor retrieval discrimination on this narrow
+  # technical corpus (cosine distances compressed to ~0.91-0.94 regardless of
+  # true relevance -- confirmed via A/B testing that this wasn't a
+  # cross-lingual issue: English-native queries scored just as poorly as
+  # Ukrainian ones against the same English corpus). Query-side UA->EN
+  # translation is handled separately by a prompt filter, so the embedder no
+  # longer needs multilingual capability -- switched to a smaller
+  # English-only model to free memory budget for a reranker (below), which
+  # targets the actual observed problem (poor top-K ranking) more directly
+  # than embedding model choice alone.
+  - name: RAG_EMBEDDING_MODEL
+    value: "BAAI/bge-base-en-v1.5"
+  # Cross-encoder reranker: re-scores the TOP_K vector-search candidates with
+  # full attention over query+document pairs, which discriminates relevance
+  # far better than raw embedding cosine similarity on this corpus.
+  - name: RAG_RERANKING_MODEL
+    value: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  # Default SQLAlchemy pool (size=5, max_overflow=10) was too small during
+  # bulk document ingestion -- requests queued for the full 30s pool timeout
+  # and failed client-side. Raised to 10+10; shared-db's max_connections=100
+  # is shared with 6+ other apps, so keep this well under half even for a
+  # single replica.
+  - name: DATABASE_POOL_SIZE
+    value: "10"
+  - name: DATABASE_POOL_MAX_OVERFLOW
+    value: "10"
+  - name: DATABASE_POOL_TIMEOUT
+    value: "30"

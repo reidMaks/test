@@ -22,6 +22,30 @@ resource "random_password" "openwebui_db_password" {
   special = false
 }
 
+# WEBUI_SECRET_KEY: with replicaCount > 1 and persistence disabled, each pod would
+# otherwise generate its own random JWT signing key at startup, causing "Session
+# expired" whenever Traefik routes a request to a different pod than the one that
+# issued the session. Must be identical and stable across all replicas.
+# NOTE: a secret named "open-webui-secret-key" with the same key/value shape was
+# already created manually in-cluster (kubectl) to unblock replicaCount=2 before
+# this Terraform change could be applied (no Bitwarden token available in that
+# session). Reconcile by importing it or letting this resource replace it:
+#   terraform import kubernetes_secret.openwebui_secret_key default/open-webui-secret-key
+resource "random_password" "openwebui_secret_key" {
+  length  = 64
+  special = false
+}
+
+resource "kubernetes_secret" "openwebui_secret_key" {
+  metadata {
+    name      = "open-webui-secret-key"
+    namespace = "default"
+  }
+  data = {
+    WEBUI_SECRET_KEY = random_password.openwebui_secret_key.result
+  }
+}
+
 resource "kubernetes_secret" "openwebui_db_password_cnpg" {
   metadata {
     name      = "openwebui-db-password"
