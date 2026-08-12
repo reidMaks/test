@@ -8,7 +8,7 @@ controllers:
           repository: ghcr.io/artcc/freelingo-backend
           tag: "latest"
         env:
-          DATABASE_URL: "postgresql+asyncpg://freelingo:freelingo_password123@shared-db-rw.cnpg-system.svc.cluster.local:5432/freelingo"
+          DATABASE_URL: "postgresql+asyncpg://freelingo:${db_password}@shared-db-rw.cnpg-system.svc.cluster.local:5432/freelingo"
           REDIS_URL: "redis://:${redis_password}@shared-redis:6379/0"
 
           # LLM Config (OpenRouter)
