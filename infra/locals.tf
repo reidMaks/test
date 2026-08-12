@@ -28,8 +28,8 @@ locals {
       description     = "Kubernetes worker 01 (Talos)"
       node_name       = "proxmox-1"
       cores           = 4
-      memory          = 10240
-      disk_size       = 60
+      memory          = 12288
+      disk_size       = 90
       ip              = "192.168.0.41"
       machine_type    = "worker"
       hostpci_mapping = "intel_gpu"
@@ -39,8 +39,8 @@ locals {
       description  = "Kubernetes worker 02 (Talos)"
       node_name    = "proxmox-2"
       cores        = 6
-      memory       = 8192
-      disk_size    = 60
+      memory       = 12288
+      disk_size    = 90
       ip           = "192.168.0.42"
       machine_type = "worker"
     }
