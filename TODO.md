@@ -4,9 +4,6 @@
 - [ ] **Open WebUI: LLM Model Selection & Cost Routing**:
   - Investigate solutions for displaying model prices or implementing an automated routing proxy (e.g., LiteLLM) to select the best OpenRouter model within specific price ranges automatically.
   - Evaluate and select default models for different sub-agents based on cost/performance tradeoffs.
-- [ ] **Open WebUI: Cross-lingual RAG & Vector Search Optimization**:
-  - Investigate embedding models (e.g., multilingual embeddings) to improve vector search when querying an English knowledge base using Ukrainian prompts.
-  - Research options for tuning vector search mechanisms in Open WebUI to return more relevant and less limited context.
-- [ ] **Open WebUI: Prompt Translation & Enhancement Adapter**:
-  - Create a custom Filter Function in Open WebUI to automatically translate and enhance Ukrainian user prompts into high-quality English before executing the RAG vector search, ensuring perfect alignment with the English documentation.
+- [x] **Open WebUI: Cross-lingual RAG & Vector Search Optimization**: Largely done — embedding model switched to `BAAI/bge-base-en-v1.5`, `cross-encoder/ms-marco-MiniLM-L-6-v2` reranker added, `TOP_K=50`/`TOP_K_RERANKER=10`, `CHUNK_SIZE=500`/`CHUNK_OVERLAP=75`, full reindex done (Mercedes WIS knowledge base build session). Remaining known gap: `POST /api/v1/retrieval/query/collection` (used by direct tool access, e.g. the `openwebui-knowledge` MCP server) does not apply the reranker — only the chat RAG pipeline does.
+- [ ] **Open WebUI: Prompt Translation & Enhancement Adapter**: Filter Function `ukrainian_to_english_prompt_enhancer` already exists (v1.5.2, `is_active=true`, `is_global=true`) — confirmed via `/api/v1/functions/`. Its `translator_model` valve defaults to `openrouter/openrouter/free`, which showed broken/inconsistent output in testing; consider reassigning to `openrouter/auto`. Not changed yet — only OpenWebUI reads were done, no valve writes.
 - [ ] **Documentation Alignment**: Ensure all project documentation is fully translated/maintained in English (as required by project rules) to maximize RAG effectiveness.
