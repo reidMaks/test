@@ -17,6 +17,18 @@
                 "SEARXNG_URL": "https://searxng.kms-lab.in.ua"
             },
             "trust": true
+        },
+        "openwebui-knowledge": {
+            "command": "uvx",
+            "args": [
+                "--from",
+                "https://github.com/reidMaks/test/releases/latest/download/openwebui_knowledge_mcp-0.1.0-py3-none-any.whl",
+                "openwebui-knowledge-mcp"
+            ],
+            "env": {
+                "OPENWEBUI_BASE_URL": "https://openui.kms-lab.in.ua",
+                "OPENWEBUI_API_KEY_FILE": "/home/max/pet/w245/teamwork/.secrets/openwebui_api_key"
+            }
         }
     }
 }
