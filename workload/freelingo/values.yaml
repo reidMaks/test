@@ -71,20 +71,28 @@ controllers:
             memory: 4Gi
 
   whisper:
+    pod:
+      # Keep transcription on the home nodes: the oci zone is arm64 with 2
+      # cores already at ~98% CPU requests, and medium needs real headroom.
+      # The home control-plane node carries a NoSchedule taint, so this
+      # selector effectively pins to talos-f9o-10o / talos-wfh-33w.
+      nodeSelector:
+        topology.kubernetes.io/zone: home
     containers:
       main:
         image:
           repository: onerahmet/openai-whisper-asr-webservice
           tag: "latest"
         env:
-          ASR_MODEL: "base"
+          ASR_MODEL: "medium"
           ASR_ENGINE: "faster_whisper"
         resources:
           requests:
-            cpu: 500m
-            memory: 1Gi
-          limits:
+            cpu: 2000m
             memory: 2Gi
+          limits:
+            cpu: 4000m
+            memory: 4Gi
 
 
 
@@ -128,6 +136,15 @@ ingress:
           - path: /
             service:
               identifier: frontend
+              port: http
+      # Exposed so Bazarr on the QNAP can use it as a subtitle ASR backend.
+      # Per ADR 002 this host is intentionally absent from cloudflare.tf, so
+      # the wildcard A-record keeps it on the WG-only address.
+      - host: whisper.kms-lab.in.ua
+        paths:
+          - path: /
+            service:
+              identifier: whisper
               port: http
 
 persistence:
