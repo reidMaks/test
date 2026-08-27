@@ -143,6 +143,10 @@ resource "kubernetes_deployment" "litellm" {
             name  = "OPENROUTER_API_KEY"
             value = data.bitwarden-secrets_secret.open_router_api_key.value
           }
+          env {
+            name  = "OPENROUTER_API_BASE"
+            value = "http://headroom.default.svc.cluster.local:8787/v1"
+          }
 
           volume_mount {
             name       = "config-volume"
