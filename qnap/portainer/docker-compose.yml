@@ -117,6 +117,28 @@ services:
       - "traefik.http.routers.lidarr.rule=Host(`lidarr.home.arpa`)"
       - "traefik.http.services.lidarr.loadbalancer.server.port=80"
 
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    dns:
+      - 192.168.0.1
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ=Europe/Kyiv
+    volumes:
+      - /share/CACHEDEV2_DATA/appdata/arr-stack/config/bazarr:/config
+      - /share/CACHEDEV1_DATA/torrent:/torrent
+    ports:
+      - 6767:6767
+    networks:
+      - proxy
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bazarr.rule=Host(`bazarr.home.arpa`)"
+      - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
+
   seerr:
     image: ghcr.io/seerr-team/seerr:latest
     container_name: seerr
