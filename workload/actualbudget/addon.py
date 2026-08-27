@@ -11,8 +11,25 @@ from mitmproxy import ctx
 
 log_level_str = os.environ.get("LOG_LEVEL", "INFO").upper()
 log_level = getattr(logging, log_level_str, logging.INFO)
-logging.basicConfig(level=log_level, format='%(levelname)s: %(message)s')
+
+# mitmproxy installs its own handler on the root logger before addons are
+# loaded, and `mitmdump -q` mutes it (termlog_verbosity=error), which makes
+# logging.basicConfig() a no-op (root logger already has handlers) and
+# swallows all our INFO/DEBUG output silently. Attach our own handler
+# directly to this module's logger, don't propagate to root, and write to a
+# file on the shared /certs emptyDir so logs survive regardless of
+# mitmdump's own verbosity settings and can be read with `kubectl exec ...
+# cat /certs/addon.log`.
 logger = logging.getLogger(__name__)
+logger.setLevel(log_level)
+logger.propagate = False
+_formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+_file_handler = logging.FileHandler("/certs/addon.log")
+_file_handler.setFormatter(_formatter)
+logger.addHandler(_file_handler)
+_stream_handler = logging.StreamHandler(sys.stdout)
+_stream_handler.setFormatter(_formatter)
+logger.addHandler(_stream_handler)
 
 class MonobankInjector:
     def __init__(self):
@@ -229,35 +246,46 @@ class MonobankInjector:
                         from_unix = now - 30 * 24 * 3600
 
                     endpoint = f"https://api.monobank.ua/personal/statement/{acc_id}/{from_unix}"
+                    logger.info(f"[tx-fetch] acc={acc_id} date_from_param={date_from} from_unix={from_unix} ({datetime.fromtimestamp(from_unix, tz=timezone.utc).isoformat()}) endpoint={endpoint}")
                     req = urllib.request.Request(endpoint)
                     token = self.get_token_from_flow(flow)
                     req.add_header("X-Token", token)
 
                     try:
                         with urllib.request.urlopen(req) as response:
-                            txs = json.loads(response.read().decode())
+                            raw = response.read().decode()
+                            txs = json.loads(raw)
+                            logger.info(f"[tx-fetch] acc={acc_id} monobank_status={response.status} raw_count={len(txs)}")
                     except urllib.error.URLError as e:
-                        logger.error(f"Error fetching txs: {e}")
+                        logger.error(f"[tx-fetch] acc={acc_id} Error fetching txs: {e}")
                         if hasattr(e, 'read'):
-                            logger.error(f"Response: {e.read().decode()}")
+                            logger.error(f"[tx-fetch] acc={acc_id} Response: {e.read().decode()}")
+                        txs = []
+                    except Exception as e:
+                        logger.error(f"[tx-fetch] acc={acc_id} Unexpected error fetching/parsing txs: {e}", exc_info=True)
                         txs = []
 
                     booked = []
                     for t in txs:
-                        amt = t.get("amount", 0) / 100.0
-                        dt_str = datetime.fromtimestamp(t.get("time", 0), tz=timezone.utc).strftime("%Y-%m-%d")
-                        tx_obj = {
-                            "transactionId": str(t.get("id", "")),
-                            "bookingDate": dt_str,
-                            "valueDate": dt_str,
-                            "transactionAmount": {
-                                "amount": str(amt),
-                                "currency": "UAH"
-                            },
-                            "remittanceInformationUnstructured": t.get("description", ""),
-                            "remittanceInformationStructured": t.get("comment", "")
-                        }
-                        booked.append(tx_obj)
+                        try:
+                            amt = t.get("amount", 0) / 100.0
+                            dt_str = datetime.fromtimestamp(t.get("time", 0), tz=timezone.utc).strftime("%Y-%m-%d")
+                            tx_obj = {
+                                "transactionId": str(t.get("id", "")),
+                                "bookingDate": dt_str,
+                                "valueDate": dt_str,
+                                "transactionAmount": {
+                                    "amount": str(amt),
+                                    "currency": "UAH"
+                                },
+                                "remittanceInformationUnstructured": t.get("description", ""),
+                                "remittanceInformationStructured": t.get("comment", "")
+                            }
+                            booked.append(tx_obj)
+                        except Exception as e:
+                            logger.error(f"[tx-fetch] acc={acc_id} Failed to convert tx {t}: {e}", exc_info=True)
+
+                    logger.info(f"[tx-fetch] acc={acc_id} returning {len(booked)} booked txs to actual-server: " + json.dumps([{"id": b["transactionId"], "date": b["bookingDate"], "amount": b["transactionAmount"]["amount"]} for b in booked]))
 
                     res = {"transactions": {"booked": booked, "pending": []}}
                     flow.response = http.Response.make(200, json.dumps(res), {"Content-Type": "application/json"})
