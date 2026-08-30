@@ -32,7 +32,10 @@ resource "helm_release" "shared_redis" {
                 repository = "redis"
                 tag        = "7-alpine"
               }
-              command = ["sh", "-c", "redis-server --requirepass $REDIS_PASSWORD"]
+              # maxmemory прив'язаний до нашого cgroup-ліміту (256Mi) нижче:
+              # без нього Redis виділяє пам'ять без обмежень, доки cgroup
+              # не вб'є процес, замість керованого evict по allkeys-lru.
+              command = ["sh", "-c", "redis-server --requirepass $REDIS_PASSWORD --maxmemory 200mb --maxmemory-policy allkeys-lru"]
               envFrom = [
                 { secretRef = { name = kubernetes_secret.shared_redis.metadata[0].name } }
               ]
