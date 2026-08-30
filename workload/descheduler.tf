@@ -11,6 +11,13 @@ resource "helm_release" "descheduler" {
       kind     = "CronJob"
       schedule = "*/15 * * * *"
 
+      # Чарт вже задає requests за замовчуванням (500m/256Mi) -- явно фіксуємо
+      # їх тут і додаємо memory limit, якого за замовчуванням немає.
+      resources = {
+        requests = { cpu = "500m", memory = "256Mi" }
+        limits   = { memory = "512Mi" }
+      }
+
       deschedulerPolicy = {
         apiVersion = "descheduler/v1alpha2"
         kind       = "DeschedulerPolicy"

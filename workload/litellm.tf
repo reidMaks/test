@@ -127,6 +127,19 @@ resource "kubernetes_deployment" "litellm" {
             container_port = 4000
           }
 
+          # Виміряно через kubectl top: усталене споживання ~1.1-1.2Gi
+          # (кеш моделей + пул з'єднань до Postgres), тож request виставлено
+          # на реальний baseline, а limit -- з запасом на сплески.
+          resources {
+            requests = {
+              cpu    = "100m"
+              memory = "768Mi"
+            }
+            limits = {
+              memory = "2Gi"
+            }
+          }
+
           env {
             name  = "LITELLM_MASTER_KEY"
             value = random_password.litellm_master_key.result

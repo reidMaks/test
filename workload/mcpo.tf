@@ -124,6 +124,19 @@ resource "kubernetes_deployment" "mcpo" {
             container_port = 8000
           }
 
+          # На старті контейнер тягне kubectl і 3x `npx -y ...` (kubernetes,
+          # prometheus, github MCP-сервери) без кешування образу -- це і мережеві,
+          # і CPU сплески при кожному рестарті. kubectl top показав усталені ~600Mi.
+          resources {
+            requests = {
+              cpu    = "100m"
+              memory = "512Mi"
+            }
+            limits = {
+              memory = "1536Mi"
+            }
+          }
+
           env {
             name = "GITHUB_PERSONAL_ACCESS_TOKEN"
             value_from {

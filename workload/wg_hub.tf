@@ -87,6 +87,16 @@ resource "kubernetes_deployment" "wg_hub" {
             mount_path = "/etc/wireguard-secret"
             read_only  = true
           }
+
+          resources {
+            requests = {
+              cpu    = "10m"
+              memory = "16Mi"
+            }
+            limits = {
+              memory = "64Mi"
+            }
+          }
         }
 
         # 2. Внутрішній DNS для VPN клієнтів
@@ -110,6 +120,16 @@ resource "kubernetes_deployment" "wg_hub" {
             exec dnsmasq -k
             EOF
           ]
+
+          resources {
+            requests = {
+              cpu    = "10m"
+              memory = "16Mi"
+            }
+            limits = {
+              memory = "64Mi"
+            }
+          }
         }
 
         # 3. Вхідний проксі (Port 80)
@@ -117,6 +137,16 @@ resource "kubernetes_deployment" "wg_hub" {
           name  = "ingress-80"
           image = "alpine/socat:latest"
           args  = ["TCP4-LISTEN:80,fork,reuseaddr", "TCP4:traefik.traefik-system.svc.cluster.local:80"]
+
+          resources {
+            requests = {
+              cpu    = "10m"
+              memory = "16Mi"
+            }
+            limits = {
+              memory = "32Mi"
+            }
+          }
         }
 
         # 4. Вхідний проксі (Port 443)
@@ -124,6 +154,16 @@ resource "kubernetes_deployment" "wg_hub" {
           name  = "ingress-443"
           image = "alpine/socat:latest"
           args  = ["TCP4-LISTEN:443,fork,reuseaddr", "TCP4:traefik.traefik-system.svc.cluster.local:443"]
+
+          resources {
+            requests = {
+              cpu    = "10m"
+              memory = "16Mi"
+            }
+            limits = {
+              memory = "32Mi"
+            }
+          }
         }
 
         # 5. Вихідний проксі (Squid) для доступу в дім (Gatus)
@@ -145,6 +185,19 @@ resource "kubernetes_deployment" "wg_hub" {
             exec squid -N
             EOF
           ]
+
+          # kubectl top показав ~162Mi вже на холостому ходу (squid тримає
+          # власний диск-кеш і буфери з'єднань) -- request/limit піднято
+          # відповідно, інші 4 контейнери хаба залишаються майже без навантаження.
+          resources {
+            requests = {
+              cpu    = "20m"
+              memory = "128Mi"
+            }
+            limits = {
+              memory = "384Mi"
+            }
+          }
         }
 
         volume {

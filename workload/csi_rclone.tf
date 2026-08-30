@@ -83,6 +83,42 @@ resource "helm_release" "csi_rclone" {
         "s3-secret-access-key" = data.bitwarden-secrets_secret.minio_s3_secret_key.value
         "s3-acl"               = "private"
       }
+      # DaemonSet -- працює на кожній ноді, включно з маленькими OCI arm64.
+      # kubectl top: rclone-контейнер зазвичай 3-30Mi, один вузол сплеснув до 115Mi.
+      nodePlugin = {
+        registrar = {
+          resources = {
+            requests = { cpu = "10m", memory = "16Mi" }
+            limits   = { memory = "64Mi" }
+          }
+        }
+        rclone = {
+          resources = {
+            requests = { cpu = "20m", memory = "32Mi" }
+            limits   = { memory = "256Mi" }
+          }
+        }
+      }
+      controller = {
+        provisioner = {
+          resources = {
+            requests = { cpu = "10m", memory = "16Mi" }
+            limits   = { memory = "64Mi" }
+          }
+        }
+        attacher = {
+          resources = {
+            requests = { cpu = "10m", memory = "16Mi" }
+            limits   = { memory = "64Mi" }
+          }
+        }
+        rclone = {
+          resources = {
+            requests = { cpu = "10m", memory = "16Mi" }
+            limits   = { memory = "128Mi" }
+          }
+        }
+      }
     })
   ]
 }

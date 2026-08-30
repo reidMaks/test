@@ -72,6 +72,16 @@ resource "kubernetes_deployment" "oikb" {
           image   = "ghcr.io/open-webui/oikb:latest"
           command = ["oikb", "daemon"]
 
+          resources {
+            requests = {
+              cpu    = "20m"
+              memory = "128Mi"
+            }
+            limits = {
+              memory = "256Mi"
+            }
+          }
+
           env {
             name = "OPEN_WEBUI_URL"
             # Вказуємо внутрішню DNS-адресу Open WebUI в кластері

@@ -13,6 +13,23 @@ resource "helm_release" "cert_manager" {
   values = [
     yamlencode({
       installCRDs = true
+      # kubectl top: controller ~32Mi, cainjector ~84Mi, webhook ~17Mi усталено
+      resources = {
+        requests = { cpu = "10m", memory = "32Mi" }
+        limits   = { memory = "128Mi" }
+      }
+      webhook = {
+        resources = {
+          requests = { cpu = "10m", memory = "32Mi" }
+          limits   = { memory = "64Mi" }
+        }
+      }
+      cainjector = {
+        resources = {
+          requests = { cpu = "10m", memory = "64Mi" }
+          limits   = { memory = "256Mi" }
+        }
+      }
     })
   ]
 }

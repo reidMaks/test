@@ -20,6 +20,58 @@ resource "helm_release" "metallb" {
   version         = "0.16.1"
   upgrade_install = true
   depends_on      = [kubernetes_namespace.metallb_system]
+
+  # Значення нижче виміряні через `kubectl top pod --containers -n metallb-system`
+  # (frrk8s.enabled=true за замовчуванням -- саме frr-k8s DaemonSet, а не
+  # legacy speaker.frr, несе основне навантаження BGP-стеку).
+  values = [
+    yamlencode({
+      controller = {
+        resources = {
+          requests = { cpu = "20m", memory = "64Mi" }
+          limits   = { memory = "128Mi" }
+        }
+      }
+      speaker = {
+        resources = {
+          requests = { cpu = "10m", memory = "32Mi" }
+          limits   = { memory = "128Mi" }
+        }
+      }
+      "frr-k8s" = {
+        frrk8s = {
+          resources = {
+            requests = { cpu = "20m", memory = "64Mi" }
+            limits   = { memory = "160Mi" }
+          }
+          frr = {
+            resources = {
+              requests = { cpu = "10m", memory = "32Mi" }
+              limits   = { memory = "128Mi" }
+            }
+          }
+          frrMetrics = {
+            resources = {
+              requests = { cpu = "10m", memory = "16Mi" }
+              limits   = { memory = "64Mi" }
+            }
+          }
+          frrStatus = {
+            resources = {
+              requests = { cpu = "10m", memory = "16Mi" }
+              limits   = { memory = "64Mi" }
+            }
+          }
+          reloader = {
+            resources = {
+              requests = { cpu = "10m", memory = "16Mi" }
+              limits   = { memory = "32Mi" }
+            }
+          }
+        }
+      }
+    })
+  ]
 }
 
 # Застосовуємо наш локальний чарт з IP-пулами ПІСЛЯ встановлення MetalLB
@@ -195,6 +247,12 @@ resource "helm_release" "metrics_server" {
   values = [
     yamlencode({
       args = ["--kubelet-insecure-tls"]
+      # Чарт вже задає request 100m/200Mi за замовчуванням (kubectl top: ~51Mi
+      # реально) -- фіксуємо явно і додаємо відсутній memory limit.
+      resources = {
+        requests = { cpu = "100m", memory = "200Mi" }
+        limits   = { memory = "400Mi" }
+      }
     })
   ]
 }

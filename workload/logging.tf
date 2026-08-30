@@ -18,6 +18,11 @@ resource "helm_release" "victorialogs" {
           size             = "2Gi"
           storageClassName = "longhorn"
         }
+        # kubectl top: ~103Mi усталено при 3-денному retention
+        resources = {
+          requests = { cpu = "50m", memory = "128Mi" }
+          limits   = { memory = "512Mi" }
+        }
       }
     })
   ]
@@ -32,6 +37,12 @@ resource "helm_release" "promtail" {
 
   values = [
     yamlencode({
+      # DaemonSet на кожній ноді -- kubectl top показав розкид 36-153Mi
+      # залежно від обсягу логів на вузлі, тож limit з запасом над найгіршим.
+      resources = {
+        requests = { cpu = "20m", memory = "64Mi" }
+        limits   = { memory = "384Mi" }
+      }
       config = {
         clients = [
           {
