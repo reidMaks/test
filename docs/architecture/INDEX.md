@@ -27,6 +27,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[015-open-webui-pgvector-rag]] - Open WebUI RAG Architecture (PGVector & OIKB)
 - [[016-add-litellm-proxy]] - LiteLLM Proxy for Cost Routing
 - [[018-add-headroom-proxy]] - Headroom Context-Compression Proxy for Claude Code & LiteLLM
+- [[019-cnpg-memory-limits]] - CNPG Memory Limits and PostgreSQL Tuning (OOM fix)
 
 ## Workloads & Services
 - Traefik (Ingress)

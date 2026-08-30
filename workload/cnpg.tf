@@ -85,6 +85,23 @@ resource "kubernetes_manifest" "cnpg_cluster" {
         storageClass = kubernetes_storage_class.longhorn_postgres.metadata[0].name
       }
 
+      # Memory guard: without resource limits the PG pod runs as
+      # BestEffort QoS -- Linux page-caches the entire dataset (especially
+      # the 2.4 GB IVFFlat vector index for OpenWebUI's document_chunk
+      # table) and eventually OOM-kills the pod, cascading into kubelet
+      # and containerd failures.  The 2 Gi limit is sized for a 12 GB
+      # Proxmox worker node that also hosts Open WebUI (9 Gi limit) and
+      # Whisper (4 Gi limit).
+      resources = {
+        requests = {
+          memory = "512Mi"
+          cpu    = "100m"
+        }
+        limits = {
+          memory = "2Gi"
+        }
+      }
+
       postgresql = {
         # NOTE: setting spec.postgresql.parameters at all triggers CNPG's
         # mutating webhook to inject its own inferred defaults (archive_mode,
@@ -119,15 +136,26 @@ resource "kubernetes_manifest" "cnpg_cluster" {
           max_parallel_workers                = "32"
           max_replication_slots               = "32"
           max_worker_processes                = "32"
-          shared_memory_type                  = "mmap"
-          shared_preload_libraries            = ""
-          ssl_max_protocol_version            = "TLSv1.3"
-          ssl_min_protocol_version            = "TLSv1.3"
-          wal_keep_size                       = "512MB"
-          wal_level                           = "logical"
-          wal_log_hints                       = "on"
-          wal_receiver_timeout                = "5s"
-          wal_sender_timeout                  = "5s"
+          # Memory tuning: PG defaults (shared_buffers=128MB,
+          # effective_cache_size=4GB) let the planner assume abundant
+          # cache and encourage sequential scans over huge tables, which
+          # combined with BestEffort QoS caused the OS to page-cache
+          # the entire 4.7 GB openwebui dataset into RAM. Explicit
+          # limits here keep PG's own allocations bounded and tell the
+          # planner to prefer index scans.
+          shared_buffers           = "256MB"
+          work_mem                 = "8MB"
+          effective_cache_size     = "512MB"
+          maintenance_work_mem     = "128MB"
+          shared_memory_type       = "mmap"
+          shared_preload_libraries = ""
+          ssl_max_protocol_version = "TLSv1.3"
+          ssl_min_protocol_version = "TLSv1.3"
+          wal_keep_size            = "512MB"
+          wal_level                = "logical"
+          wal_log_hints            = "on"
+          wal_receiver_timeout     = "5s"
+          wal_sender_timeout       = "5s"
         }
       }
 
