@@ -28,10 +28,12 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[016-add-litellm-proxy]] - LiteLLM Proxy for Cost Routing
 - [[018-add-headroom-proxy]] - Headroom Context-Compression Proxy for Claude Code & LiteLLM
 - [[019-cnpg-memory-limits]] - CNPG Memory Limits and PostgreSQL Tuning (OOM fix)
+- [[020-mqtt-broker]] - Edge Mosquitto for the HTRAM CO2 monitor, bridged into the Mosquitto add-on
 
 ## Workloads & Services
 - Traefik (Ingress)
 - MetalLB (LoadBalancer)
+- Mosquitto edge broker (HTRAM CO2 monitor, 192.168.0.46)
 - Longhorn (Storage)
 - Cloudflared (Tunnels)
 - WireGuard Hub
