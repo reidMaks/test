@@ -6,6 +6,11 @@ controllers:
     pod:
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
+      # ESP devices live on the home LAN (192.168.0.0/24) and are discovered via
+      # mDNS, which is link-local multicast and never crosses the OCI tunnel.
+      # The pod must sit on a home node or every device shows up as offline.
+      nodeSelector:
+        topology.kubernetes.io/zone: home
     containers:
       main:
         image:
@@ -18,7 +23,7 @@ controllers:
             cpu: 100m
             memory: 256Mi
           limits:
-            memory: 2Gi
+            memory: 4Gi
             # CPU is uncapped intentionally to allow fast compilation
 
 service:
@@ -58,7 +63,7 @@ persistence:
     type: persistentVolumeClaim
     storageClass: "longhorn"
     accessMode: ReadWriteOnce
-    size: 6Gi
+    size: 12Gi
     advancedMounts:
       main:
         main:
