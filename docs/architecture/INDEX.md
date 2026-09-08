@@ -29,6 +29,9 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[018-add-headroom-proxy]] - Headroom Context-Compression Proxy for Claude Code & LiteLLM
 - [[019-cnpg-memory-limits]] - CNPG Memory Limits and PostgreSQL Tuning (OOM fix)
 - [[020-mqtt-broker]] - Edge Mosquitto for the HTRAM CO2 monitor, bridged into the Mosquitto add-on
+- [[021-esphome-home-zone-pinning]] - Pin ESPHome to the `home` zone so mDNS device discovery works
+- [[022-intel-gpu-plugin-watchdog]] - External liveness check for the Intel GPU device plugin (4.5-day Immich outage)
+- [[023-immich-openvino-ml]] - Immich ML on the Intel iGPU via the OpenVINO build
 
 ## Workloads & Services
 - Traefik (Ingress)

@@ -44,14 +44,18 @@ machine-learning:
           env: *shared-env
           image:
             repository: ghcr.io/immich-app/immich-machine-learning
-            tag: release
+            # OpenVINO build: uses the Intel iGPU via /dev/dri/renderD128, which the
+            # Intel device plugin injects together with the gpu.intel.com/i915 share.
+            # The plain "release" tag is CPU-only and ignores the GPU request.
+            tag: release-openvino
           resources:
             requests:
               cpu: 100m
               memory: 250Mi
               gpu.intel.com/i915: 1
             limits:
-              memory: 2Gi
+              # OpenVINO runtime + models need more headroom than the CPU build
+              memory: 3Gi
               gpu.intel.com/i915: 1
 
 immich:
