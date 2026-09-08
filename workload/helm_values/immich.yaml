@@ -57,6 +57,36 @@ machine-learning:
               # OpenVINO runtime + models need more headroom than the CPU build
               memory: 3Gi
               gpu.intel.com/i915: 1
+          # The chart hardcodes timeoutSeconds: 1 on all three probes. That is
+          # fine for the CPU build, but OpenVINO compiles each model for the iGPU
+          # on first use and blocks /ping well past a second, so kubelet SIGTERMs
+          # the container mid-load and it restarts into the same load forever.
+          # Chart values win over immich.machine-learning.hardcodedValues
+          # (merge $ctx.Values hardcoded), so overriding spec here is enough.
+          probes:
+            liveness:
+              spec:
+                periodSeconds: 30
+                timeoutSeconds: 10
+                failureThreshold: 10
+            readiness:
+              spec:
+                periodSeconds: 15
+                timeoutSeconds: 5
+                failureThreshold: 6
+            startup:
+              spec:
+                timeoutSeconds: 10
+                failureThreshold: 120
+  persistence:
+    # Chart default is an emptyDir, so every pod restart re-downloads the full
+    # model set -- exactly the traffic and memory churn that hurts while the
+    # container is looping. Keep the cache on disk instead.
+    cache:
+      type: persistentVolumeClaim
+      storageClass: "longhorn"
+      accessMode: ReadWriteOnce
+      size: 10Gi
 
 immich:
   persistence:
