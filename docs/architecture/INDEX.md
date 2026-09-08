@@ -28,7 +28,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[016-add-litellm-proxy]] - LiteLLM Proxy for Cost Routing
 - [[018-add-headroom-proxy]] - Headroom Context-Compression Proxy for Claude Code & LiteLLM
 - [[019-cnpg-memory-limits]] - CNPG Memory Limits and PostgreSQL Tuning (OOM fix)
-- [[020-mqtt-broker]] - Edge Mosquitto for the HTRAM CO2 monitor, bridged into the Mosquitto add-on
+- [[020-mqtt-broker]] - Edge Mosquitto for the HTRAM CO2 monitor (superseded, scaled to zero; config retained)
 - [[021-esphome-home-zone-pinning]] - Pin ESPHome to the `home` zone so mDNS device discovery works
 - [[022-intel-gpu-plugin-watchdog]] - External liveness check for the Intel GPU device plugin (4.5-day Immich outage)
 - [[023-immich-openvino-ml]] - Immich ML on the Intel iGPU via the OpenVINO build
@@ -36,7 +36,7 @@ All documentation here should be maintained in English and linked using Obsidian
 ## Workloads & Services
 - Traefik (Ingress)
 - MetalLB (LoadBalancer)
-- Mosquitto edge broker (HTRAM CO2 monitor, 192.168.0.46)
+- Mosquitto edge broker (HTRAM CO2 monitor) — retired, scaled to zero
 - Longhorn (Storage)
 - Cloudflared (Tunnels)
 - WireGuard Hub

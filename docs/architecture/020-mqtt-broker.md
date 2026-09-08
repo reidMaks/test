@@ -2,7 +2,18 @@
 
 ## Status
 
-Accepted — deployed and carrying telemetry end to end.
+Superseded — 2026-09-08. The broker is no longer needed and its Deployment is
+scaled to `replicas = 0`.
+
+Nothing was deleted. The ConfigMap, the `mosquitto-data` PVC, both Services and
+the Ingress all remain, and `workload/mosquitto.tf` keeps the full reasoning
+below. Setting `replicas = 1` brings the broker back exactly as it was.
+
+The record is kept because the analysis it contains — why the HTRAM firmware
+cannot authenticate against the Mosquitto add-on, and why TLS is terminated at
+Traefik — stays true and would otherwise have to be reconstructed from scratch.
+
+Originally: Accepted — deployed and carrying telemetry end to end.
 
 ## Context
 
