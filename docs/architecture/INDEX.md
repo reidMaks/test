@@ -33,6 +33,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[022-intel-gpu-plugin-watchdog]] - External liveness check for the Intel GPU device plugin (4.5-day Immich outage)
 - [[023-immich-openvino-ml]] - Immich ML on the Intel iGPU via the OpenVINO build
 - [[024-itsaplan-ai-issue-tracker]] - Deploy "It's a Plan" AI-native issue tracker and MCP server
+- [[025-apn-public-ingress-and-dns]] - Production Public Ingress, TLS, and DNS for APN Educational Platform
 
 ## Workloads & Services
 - Traefik (Ingress)
@@ -45,3 +46,4 @@ All documentation here should be maintained in English and linked using Obsidian
 - FreeLingo (AI Language Learning)
 - Open WebUI (LLM Chat)
 - It's a Plan (AI-Native Issue Tracker)
+- APN (Educational Platform - WordPress, MariaDB, TutorLMS)
