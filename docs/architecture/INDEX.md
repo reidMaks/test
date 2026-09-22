@@ -32,6 +32,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[021-esphome-home-zone-pinning]] - Pin ESPHome to the `home` zone so mDNS device discovery works
 - [[022-intel-gpu-plugin-watchdog]] - External liveness check for the Intel GPU device plugin (4.5-day Immich outage)
 - [[023-immich-openvino-ml]] - Immich ML on the Intel iGPU via the OpenVINO build
+- [[024-itsaplan-ai-issue-tracker]] - Deploy "It's a Plan" AI-native issue tracker and MCP server
 
 ## Workloads & Services
 - Traefik (Ingress)
@@ -43,3 +44,4 @@ All documentation here should be maintained in English and linked using Obsidian
 - QNAP NAS (Jellyfin, Arr-stack, Portainer)
 - FreeLingo (AI Language Learning)
 - Open WebUI (LLM Chat)
+- It's a Plan (AI-Native Issue Tracker)
