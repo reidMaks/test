@@ -65,3 +65,19 @@ resource "cloudflare_record" "wishlist" {
   type    = "CNAME"
   proxied = true
 }
+
+resource "cloudflare_record" "plan" {
+  zone_id = data.cloudflare_zone.main.id
+  name    = "plan"
+  content = local.cf_tunnel_cname
+  type    = "CNAME"
+  proxied = true
+}
+
+resource "cloudflare_record" "plan_api" {
+  zone_id = data.cloudflare_zone.main.id
+  name    = "plan-api"
+  content = local.cf_tunnel_cname
+  type    = "CNAME"
+  proxied = true
+}
