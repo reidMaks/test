@@ -5,6 +5,16 @@ resource "helm_release" "intel_device_plugins_operator" {
   namespace        = "kube-system"
   create_namespace = false
   version          = "0.37.0"
+
+  values = [
+    yamlencode({
+      manager = {
+        devices = {
+          gpu = true
+        }
+      }
+    })
+  ]
 }
 
 resource "helm_release" "intel_gpu_plugin" {
