@@ -52,7 +52,7 @@ resource "helm_release" "shared_redis" {
             exporter = {
               image = {
                 repository = "oliver006/redis_exporter"
-                tag        = "v1.61.0"
+                tag        = "v1.92.0"
               }
               env = [
                 {

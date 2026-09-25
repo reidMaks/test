@@ -57,7 +57,7 @@ resource "kubernetes_deployment" "wg_hub" {
         # 1. WireGuard Server (Тільки піднімає інтерфейс)
         container {
           name  = "wg-server"
-          image = "alpine:3.19"
+          image = "alpine:3.22"
           security_context {
             privileged = false
             capabilities {
@@ -102,7 +102,7 @@ resource "kubernetes_deployment" "wg_hub" {
         # 2. Внутрішній DNS для VPN клієнтів
         container {
           name    = "dns-server"
-          image   = "alpine:3.19"
+          image   = "alpine:3.22"
           command = ["/bin/sh", "-c"]
           args = [
             <<-EOF
@@ -169,7 +169,7 @@ resource "kubernetes_deployment" "wg_hub" {
         # 5. Вихідний проксі (Squid) для доступу в дім (Gatus)
         container {
           name    = "egress-squid"
-          image   = "alpine:3.19"
+          image   = "alpine:3.22"
           command = ["/bin/sh", "-c"]
           args = [
             <<-EOF

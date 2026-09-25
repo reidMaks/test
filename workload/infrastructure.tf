@@ -170,7 +170,7 @@ resource "helm_release" "longhorn" {
   repository      = "https://charts.longhorn.io"
   chart           = "longhorn"
   namespace       = "longhorn-system"
-  version         = "1.12.0"
+  version         = "1.12.1"
   upgrade_install = true
 
   depends_on = [
@@ -241,7 +241,7 @@ resource "helm_release" "metrics_server" {
   repository      = "https://kubernetes-sigs.github.io/metrics-server/"
   chart           = "metrics-server"
   namespace       = "kube-system"
-  version         = "3.12.1"
+  version         = "3.14.0"
   upgrade_install = true
 
   values = [

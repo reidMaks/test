@@ -1,7 +1,7 @@
 # 024 Deploy "It's a Plan" AI-Native Issue Tracker
 
-**Status:** Proposed / Ready for Apply
-**Date:** 2026-09-22
+**Status:** Implemented
+**Date:** 2026-09-25
 
 ## Context
 
@@ -64,6 +64,7 @@ flowchart TD
    - Dedicated database `itsaplan` and user `itsaplan` are provisioned declaratively in `cnpg-system` using `DatabaseRole` and `Database` custom resources.
    - Connection URL: `postgresql://itsaplan:<PASSWORD>@shared-db-rw.cnpg-system.svc.cluster.local:5432/itsaplan`.
    - Database migrations run automatically during `itsaplan-api` container initialization.
+   - `SKIP_PRE_MIGRATION_BACKUP` is set to `"1"` because the application image bundles PostgreSQL 17 `pg_dump` tools while our CloudNativePG cluster is PostgreSQL 18. Continuous database protection and WAL archiving are already managed by CNPG at the cluster level.
 
 3. **Local Object Storage (MinIO):**
    - Attachments are stored in the cluster's high-performance local MinIO (`http://minio.default.svc.cluster.local:9000`) in bucket `itsaplan-attachments`.
@@ -71,7 +72,7 @@ flowchart TD
    - A declarative one-off `kubernetes_job_v1` ensures the `itsaplan-attachments` bucket exists prior to application startup.
 
 4. **Multi-Arch Container Images from GHCR:**
-   - Official images are pulled from GitHub Container Registry (`ghcr.io/croffasia/itsaplan-*`), pinned to release tag `1.0.0`.
+   - Official images are pulled from GitHub Container Registry (`ghcr.io/croffasia/itsaplan-*`), pinned to release tag `1.1.0`.
    - Images provide native multi-architecture support (`linux/amd64` for Proxmox workers and `linux/arm64` for OCI nodes).
 
 5. **Resource Efficiency & Omission of `itsaplan-bot`:**

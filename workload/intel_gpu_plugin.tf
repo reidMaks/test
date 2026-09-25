@@ -4,7 +4,7 @@ resource "helm_release" "intel_device_plugins_operator" {
   chart            = "intel-device-plugins-operator"
   namespace        = "kube-system"
   create_namespace = false
-  version          = "0.30.0"
+  version          = "0.37.0"
 }
 
 resource "helm_release" "intel_gpu_plugin" {
@@ -13,7 +13,7 @@ resource "helm_release" "intel_gpu_plugin" {
   chart            = "intel-device-plugins-gpu"
   namespace        = "kube-system"
   create_namespace = false
-  version          = "0.30.0"
+  version          = "0.37.0"
 
   depends_on = [helm_release.intel_device_plugins_operator]
 

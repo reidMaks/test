@@ -6,7 +6,7 @@ controllers:
       main:
         image:
           repository: ghcr.io/hargata/lubelogger
-          tag: "v1.6.8"
+          tag: "v1.7.3"
         resources:
           requests:
             cpu: 10m

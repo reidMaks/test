@@ -14,7 +14,8 @@ The sidecar scans the `default` namespace (and other specified ones) and dynamic
 
 1. **Auto-Discovery Configuration:**
    - The sidecar container runs alongside Gatus.
-   - It is configured with `--auto-service` and `--auto-ingress` arguments to discover `Service` (generates TCP checks) and `Ingress` (generates HTTP checks) resources.
+   - It is configured with `--auto-service`, `--auto-ingress`, and `--prefix-service=svc-` arguments to discover `Service` (generates TCP checks with `svc-` prefix) and `Ingress` (generates HTTP checks) resources.
+   - Starting with Gatus v5.20+, duplicate `(name, group)` combinations across endpoints are strictly rejected by configuration validation. The `--prefix-service=svc-` flag prevents collisions between services and ingresses that share the same name (e.g. `actualbudget`).
    - It outputs the generated configuration to `/config/endpoints.yaml`.
 
 2. **Gatus Configuration Merging:**

@@ -6,13 +6,16 @@ resource "helm_release" "cert_manager" {
   name             = "cert-manager"
   repository       = "https://charts.jetstack.io"
   chart            = "cert-manager"
-  version          = "v1.14.4"
+  version          = "v1.21.2"
   namespace        = "cert-manager"
   create_namespace = true
 
   values = [
     yamlencode({
-      installCRDs = true
+      crds = {
+        enabled = true
+        keep    = true
+      }
       # kubectl top: controller ~32Mi, cainjector ~84Mi, webhook ~17Mi усталено
       resources = {
         requests = { cpu = "10m", memory = "32Mi" }

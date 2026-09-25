@@ -6,6 +6,7 @@ resource "helm_release" "searxng" {
   name            = "searxng"
   repository      = "https://charts.kubito.dev"
   chart           = "searxng"
+  version         = "1.1.4"
   namespace       = "default"
   upgrade_install = true
 

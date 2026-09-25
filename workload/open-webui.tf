@@ -6,8 +6,10 @@ resource "helm_release" "open_webui" {
   name            = "open-webui"
   repository      = "https://helm.openwebui.com/"
   chart           = "open-webui"
+  version         = "16.6.0"
   namespace       = "default"
   upgrade_install = true
+  timeout         = 600
 
   values = [
     templatefile("${path.module}/helm_values/open-webui.yaml", {

@@ -6,7 +6,7 @@ controllers:
       main:
         image:
           repository: vabene1111/recipes
-          tag: "2.6.11"
+          tag: "2.6.15"
         env:
           DB_ENGINE: "django.db.backends.postgresql"
           POSTGRES_HOST: "shared-db-rw.cnpg-system.svc.cluster.local"

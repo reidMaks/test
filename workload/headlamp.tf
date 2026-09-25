@@ -11,6 +11,7 @@ resource "helm_release" "headlamp" {
   name            = "headlamp"
   repository      = "https://kubernetes-sigs.github.io/headlamp/"
   chart           = "headlamp"
+  version         = "0.45.0"
   namespace       = kubernetes_namespace.headlamp.metadata[0].name
   upgrade_install = true
 

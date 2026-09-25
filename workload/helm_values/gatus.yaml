@@ -9,7 +9,7 @@ controllers:
       main:
         image:
           repository: twinproduction/gatus
-          tag: v5.7.0
+          tag: v5.37.0
         env:
           GATUS_CONFIG_PATH: /config
           HTTP_PROXY: "http://wg-hub-proxy.wg-hub.svc.cluster.local:3128"
@@ -31,6 +31,7 @@ controllers:
         args:
           - --auto-service
           - --auto-ingress
+          - --prefix-service=svc-
           - --output=/config/endpoints.yaml
           - --namespace=default
         resources:

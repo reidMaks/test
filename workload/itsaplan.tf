@@ -138,7 +138,7 @@ resource "helm_release" "itsaplan" {
     yamlencode({
       api = {
         image = {
-          tag = "1.0.0"
+          tag = "1.1.0"
         }
         resources = {
           requests = {
@@ -150,18 +150,19 @@ resource "helm_release" "itsaplan" {
           }
         }
         env = {
-          API_URL             = "https://plan-api.kms-lab.in.ua"
-          APP_URL             = "https://plan.kms-lab.in.ua"
-          COOKIE_DOMAIN       = ".kms-lab.in.ua"
-          S3_BUCKET           = "itsaplan-attachments"
-          S3_REGION           = "us-east-1"
-          S3_FORCE_PATH_STYLE = "true"
-          TELEMETRY_DISABLED  = "1"
+          API_URL                   = "https://plan-api.kms-lab.in.ua"
+          APP_URL                   = "https://plan.kms-lab.in.ua"
+          COOKIE_DOMAIN             = ".kms-lab.in.ua"
+          S3_BUCKET                 = "itsaplan-attachments"
+          S3_REGION                 = "us-east-1"
+          S3_FORCE_PATH_STYLE       = "true"
+          TELEMETRY_DISABLED        = "1"
+          SKIP_PRE_MIGRATION_BACKUP = "1"
         }
       }
       web = {
         image = {
-          tag = "1.0.0"
+          tag = "1.1.0"
         }
         resources = {
           requests = {
@@ -175,7 +176,7 @@ resource "helm_release" "itsaplan" {
       }
       worker = {
         image = {
-          tag = "1.0.0"
+          tag = "1.1.0"
         }
         resources = {
           requests = {

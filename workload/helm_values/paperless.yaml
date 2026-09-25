@@ -6,7 +6,7 @@ controllers:
       main:
         image:
           repository: ghcr.io/paperless-ngx/paperless-ngx
-          tag: "3.0.4"
+          tag: "3.2.1"
         env:
           PAPERLESS_URL: 'https://{{ (first .Values.ingress.main.hosts).host }}'
           PAPERLESS_REDIS: "redis://:${redis_password}@shared-redis:6379/1"

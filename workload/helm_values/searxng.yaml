@@ -1,7 +1,7 @@
 replicaCount: 2
 image:
   repository: searxng/searxng
-  tag: "latest"
+  tag: "2026.9.25-487f51922"
   imagePullPolicy: Always
 
 

@@ -3,7 +3,7 @@ resource "helm_release" "descheduler" {
   repository      = "https://kubernetes-sigs.github.io/descheduler/"
   chart           = "descheduler"
   namespace       = "kube-system"
-  version         = "0.30.1"
+  version         = "0.36.0"
   upgrade_install = true
 
   values = [
