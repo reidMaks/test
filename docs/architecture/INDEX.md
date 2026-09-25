@@ -34,10 +34,12 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[023-immich-openvino-ml]] - Immich ML on the Intel iGPU via the OpenVINO build
 - [[024-itsaplan-ai-issue-tracker]] - Deploy "It's a Plan" AI-native issue tracker and MCP server
 - [[025-apn-public-ingress-and-dns]] - Production Public Ingress, TLS, and DNS for APN Educational Platform
+- [[026-keel-image-automation]] - Automated Workload Updates via Keel (Image Registry Polling)
 
 ## Workloads & Services
 - Traefik (Ingress)
 - MetalLB (LoadBalancer)
+- Keel (Automated Image Update Operator)
 - Mosquitto edge broker (HTRAM CO2 monitor) — retired, scaled to zero
 - Longhorn (Storage)
 - Cloudflared (Tunnels)

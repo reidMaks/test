@@ -268,6 +268,12 @@ resource "kubernetes_service" "mosquitto_mqtt" {
       "metallb.universe.tf/loadBalancerIPs" = "192.168.0.48"
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      metadata[0].annotations["metallb.io/ip-allocated-from-pool"],
+    ]
+  }
   spec {
     type = "LoadBalancer"
     selector = {

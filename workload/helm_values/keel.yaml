@@ -1,0 +1,33 @@
+# Keel Helm Chart Values
+# Documentation: https://keel.sh/docs/
+
+# Polling configuration
+polling:
+  enabled: true
+  defaultSchedule: "@every 1m"
+
+# Helm provider support: disabled as workloads are managed directly via native Kubernetes Deployments
+helmProvider:
+  enabled: false
+
+# Notification delivery via Shoutrrr to ntfy
+shoutrrr:
+  enabled: true
+  urls:
+    - "ntfy://ntfy.sh/TusHLjYwah424h"
+
+# Resource requests & limits for lightweight operation
+resources:
+  requests:
+    cpu: 20m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+
+# RBAC settings
+rbac:
+  enabled: true
+  serviceAccount:
+    create: true
+  clusterRole:
+    create: true

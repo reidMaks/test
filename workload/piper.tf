@@ -142,6 +142,12 @@ resource "kubernetes_service" "piper" {
       "metallb.universe.tf/loadBalancerIPs" = "192.168.0.47"
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      metadata[0].annotations["metallb.io/ip-allocated-from-pool"],
+    ]
+  }
   spec {
     type = "LoadBalancer"
     selector = {
