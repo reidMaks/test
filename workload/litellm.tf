@@ -102,7 +102,7 @@ resource "kubernetes_deployment" "litellm" {
   }
 
   spec {
-    replicas = 1
+    replicas = 0
 
     selector {
       match_labels = {

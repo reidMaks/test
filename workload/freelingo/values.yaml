@@ -2,6 +2,7 @@
 
 controllers:
   backend:
+    replicas: 0
     containers:
       main:
         image:
@@ -41,6 +42,7 @@ controllers:
             memory: 512Mi
 
   frontend:
+    replicas: 0
     containers:
       main:
         image:
@@ -56,6 +58,7 @@ controllers:
             memory: 256Mi
 
   kokoro:
+    replicas: 0
     containers:
       main:
         image:
@@ -71,6 +74,7 @@ controllers:
             memory: 4Gi
 
   whisper:
+    replicas: 0
     pod:
       # Keep transcription on the home nodes: the oci zone is arm64 with 2
       # cores already at ~98% CPU requests, and medium needs real headroom.

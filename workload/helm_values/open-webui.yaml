@@ -1,4 +1,7 @@
-replicaCount: 1
+replicaCount: 0
+
+pipelines:
+  enabled: false
 
 # Back to 1 replica: persistence (below) uses a ReadWriteOnce PV, which
 # can't be mounted by 2 pods on different nodes at once without RWX (which
