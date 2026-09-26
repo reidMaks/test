@@ -43,7 +43,7 @@ flowchart TD
     Keel -->|2. Poll registry digest using ghcr-secret| GHCR
     Keel -->|3. Trigger rolling restart on digest change| Deployment
     Deployment -->|4. Pull fresh image & recreate pod| Pod
-    Keel -->|5. Send notification via Shoutrrr| Ntfy
+    Keel -->|5. Send notification via Webhook| Ntfy
 ```
 
 ## Architectural Decisions
@@ -71,7 +71,10 @@ annotations:
 ```
 
 ### 4. Notifications
-Keel integrates with **Shoutrrr** to dispatch deployment notifications directly to the existing cluster `ntfy` topic (`ntfy://ntfy.sh/TusHLjYwah424h`), ensuring full visibility when automated rollouts occur.
+Keel utilizes its native **Webhook** notification sender (`WEBHOOK_ENDPOINT: "https://ntfy.sh/TusHLjYwah424h"`) to dispatch deployment notifications directly to the existing cluster `ntfy` topic.
+
+> [!NOTE]
+> Shoutrrr's `ntfy` service is disabled because Keel unconditionally sets `params.SetLevel(...)`, which is rejected as an invalid config key by Shoutrrr's ntfy configuration parser. Native Webhook delivers clean, reliable HTTP POSTs to ntfy without schema rejection.
 
 ## References
 - [[025-apn-public-ingress-and-dns]]

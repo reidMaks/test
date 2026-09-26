@@ -10,11 +10,15 @@ polling:
 helmProvider:
   enabled: false
 
-# Notification delivery via Shoutrrr to ntfy
-shoutrrr:
+# Notification delivery via native Webhook to ntfy
+# (Shoutrrr's ntfy service rejects Keel's 'level' parameter as invalid key, native Webhook posts directly to ntfy endpoint)
+webhook:
   enabled: true
-  urls:
-    - "ntfy://ntfy.sh/TusHLjYwah424h"
+  endpoint: "https://ntfy.sh/TusHLjYwah424h"
+
+shoutrrr:
+  enabled: false
+  urls: []
 
 # Resource requests & limits for lightweight operation
 resources:
