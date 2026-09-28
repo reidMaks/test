@@ -1,0 +1,6 @@
+apiVersion: v2
+name: apn-preview
+description: Ephemeral PR Preview Stack for APN Educational Platform (WordPress + MariaDB + Traefik Ingress)
+type: application
+version: 0.1.0
+appVersion: "6.7"

@@ -35,11 +35,15 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[024-itsaplan-ai-issue-tracker]] - Deploy "It's a Plan" AI-native issue tracker and MCP server
 - [[025-apn-public-ingress-and-dns]] - Production Public Ingress, TLS, and DNS for APN Educational Platform
 - [[026-keel-image-automation]] - Automated Workload Updates via Keel (Image Registry Polling)
+- [[027-apn-pr-preview-and-ci-runner]] - Self-Hosted GitHub Actions Runner & Ephemeral PR Preview Pods for APN
+- [[028-mailpit-email-testing]] - Mailpit SMTP Catcher and Email Testing Service
 
 ## Workloads & Services
 - Traefik (Ingress)
 - MetalLB (LoadBalancer)
 - Keel (Automated Image Update Operator)
+- GitHub Actions CI Runner (APN PR Previews & E2E)
+- Mailpit (SMTP Catcher & Email Testing)
 - Mosquitto edge broker (HTRAM CO2 monitor) — retired, scaled to zero
 - Longhorn (Storage)
 - Cloudflared (Tunnels)

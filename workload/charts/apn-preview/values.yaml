@@ -1,0 +1,43 @@
+# Default values for apn-preview.
+pr: 1
+domainSuffix: "kms-lab.in.ua"
+
+adminUser: "apn_admin"
+adminPassword: "test-admin-preview-password"
+adminEmail: "dev@kms-lab.in.ua"
+
+wordpress:
+  image:
+    repository: ghcr.io/reidmaks/apn
+    tag: "staging"
+    pullPolicy: Always
+  imagePullSecrets:
+    - name: ghcr-secret
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 768Mi
+  env:
+    WORDPRESS_DB_NAME: "apn_wordpress"
+    WORDPRESS_DB_USER: "apn_user"
+    WORDPRESS_TABLE_PREFIX: "apn_"
+
+mariadb:
+  image:
+    repository: mariadb
+    tag: "11.4"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+ingress:
+  enabled: true
+  className: "traefik"
