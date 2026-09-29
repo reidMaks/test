@@ -138,7 +138,7 @@ resource "helm_release" "itsaplan" {
     yamlencode({
       api = {
         image = {
-          tag = "1.1.0"
+          tag = "1.2.1"
         }
         resources = {
           requests = {
@@ -162,7 +162,7 @@ resource "helm_release" "itsaplan" {
       }
       web = {
         image = {
-          tag = "1.1.0"
+          tag = "1.2.1"
         }
         resources = {
           requests = {
@@ -176,7 +176,7 @@ resource "helm_release" "itsaplan" {
       }
       worker = {
         image = {
-          tag = "1.1.0"
+          tag = "1.2.1"
         }
         resources = {
           requests = {

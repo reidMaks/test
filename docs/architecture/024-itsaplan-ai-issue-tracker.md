@@ -1,7 +1,7 @@
 # 024 Deploy "It's a Plan" AI-Native Issue Tracker
 
-**Status:** Implemented
-**Date:** 2026-09-25
+**Status:** Implemented (Updated to v1.2.1)
+**Date:** 2026-09-29
 
 ## Context
 
@@ -26,8 +26,8 @@ flowchart TD
 
     subgraph ManagementNS["Namespace: management"]
         WebPod["itsaplan-web:3001<br/>(Next.js SSR Frontend)"]
-        APIPod["itsaplan-api:3000<br/>(Bun + Elysia REST & MCP Server)"]
-        WorkerPod["itsaplan-worker<br/>(Task Scheduler & Webhook Runner)"]
+        APIPod["itsaplan-api:3000<br/>init: migrate<br/>app: Bun + Elysia REST & MCP"]
+        WorkerPod["itsaplan-worker<br/>init: wait-for-migrations<br/>app: Task Scheduler & Webhooks"]
         InitJob["itsaplan-minio-bucket-init<br/>(One-off MinIO mc Job)"]
     end
 
@@ -60,19 +60,21 @@ flowchart TD
    - Single-level subdomains are natively protected by our cluster-wide Let's Encrypt wildcard certificate (`*.kms-lab.in.ua`) and Cloudflare Universal SSL (which does not support multi-level subdomains like `api.plan.kms-lab.in.ua` on the free tier).
    - `COOKIE_DOMAIN` is set to `.kms-lab.in.ua` to allow seamless session sharing between `plan` and `plan-api`.
 
-2. **CloudNativePG (`shared-db`) Integration:**
+2. **CloudNativePG (`shared-db`) & Decoupled Migration Lifecycle:**
    - Dedicated database `itsaplan` and user `itsaplan` are provisioned declaratively in `cnpg-system` using `DatabaseRole` and `Database` custom resources.
    - Connection URL: `postgresql://itsaplan:<PASSWORD>@shared-db-rw.cnpg-system.svc.cluster.local:5432/itsaplan`.
-   - Database migrations run automatically during `itsaplan-api` container initialization.
+   - In `v1.2.0+`, migrations are completely decoupled from runtime containers:
+     - `itsaplan-api` runs an `initContainers` named `migrate` (`bun run packages/db/src/migrate.ts`) coordinating via PostgreSQL advisory lock `804216551`.
+     - `itsaplan-worker` runs an `initContainers` named `wait-for-migrations` (`bun run packages/db/src/wait-for-migrations.ts`) polling `drizzle.__drizzle_migrations` until schema updates complete.
    - `SKIP_PRE_MIGRATION_BACKUP` is set to `"1"` because the application image bundles PostgreSQL 17 `pg_dump` tools while our CloudNativePG cluster is PostgreSQL 18. Continuous database protection and WAL archiving are already managed by CNPG at the cluster level.
 
 3. **Local Object Storage (MinIO):**
-   - Attachments are stored in the cluster's high-performance local MinIO (`http://minio.default.svc.cluster.local:9000`) in bucket `itsaplan-attachments`.
+   - Attachments are stored in the cluster's high-performance local MinIO (`http://minio.default.svc.cluster.local:9000`) in bucket `itsaplan-attachments`. While upstream v1.2.x uses RustFS as its default in-chart store, our deployment sets `minio.enabled: false` and connects to our cluster-wide MinIO via `externalS3`.
    - `S3_FORCE_PATH_STYLE: "true"` is explicitly configured for MinIO compatibility.
    - A declarative one-off `kubernetes_job_v1` ensures the `itsaplan-attachments` bucket exists prior to application startup.
 
 4. **Multi-Arch Container Images from GHCR:**
-   - Official images are pulled from GitHub Container Registry (`ghcr.io/croffasia/itsaplan-*`), pinned to release tag `1.1.0`.
+   - Official images are pulled from GitHub Container Registry (`ghcr.io/croffasia/itsaplan-*`), pinned to release tag `1.2.1`.
    - Images provide native multi-architecture support (`linux/amd64` for Proxmox workers and `linux/arm64` for OCI nodes).
 
 5. **Resource Efficiency & Omission of `itsaplan-bot`:**
