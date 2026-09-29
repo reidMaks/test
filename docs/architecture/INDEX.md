@@ -37,6 +37,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[026-keel-image-automation]] - Automated Workload Updates via Keel (Image Registry Polling)
 - [[027-apn-pr-preview-and-ci-runner]] - Self-Hosted GitHub Actions Runner & Ephemeral PR Preview Pods for APN
 - [[028-mailpit-email-testing]] - Mailpit SMTP Catcher and Email Testing Service
+- [[029-apn-performance-optimization-redis-mariadb]] - APN Performance Optimization: Persistent Object Cache & MariaDB Tuning
 
 ## Workloads & Services
 - Traefik (Ingress)

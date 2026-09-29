@@ -33,6 +33,19 @@ spec:
                 sleep 1
               done
               echo "MariaDB is ready!"
+        {{- if .Values.redis.enabled }}
+        - name: wait-for-redis
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for Redis at {{ include "apn-preview.fullname" . }}-redis:6379..."
+              until nc -z -w 2 {{ include "apn-preview.fullname" . }}-redis 6379; do
+                sleep 1
+              done
+              echo "Redis is ready!"
+        {{- end }}
       containers:
         - name: wordpress
           image: "{{ .Values.wordpress.image.repository }}:{{ .Values.wordpress.image.tag }}"
@@ -65,6 +78,15 @@ spec:
                 define('DISALLOW_FILE_MODS', true);
                 define('AUTOMATIC_UPDATER_DISABLED', true);
                 define('WP_AUTO_UPDATE_CORE', false);
+                {{- if .Values.redis.enabled }}
+                /* Redis Persistent Object Cache (isolated preview instance) */
+                define('WP_REDIS_HOST', '{{ include "apn-preview.fullname" . }}-redis');
+                define('WP_REDIS_PORT', 6379);
+                define('WP_REDIS_PREFIX', 'apn_pr_{{ .Values.pr }}_');
+                define('WP_CACHE_KEY_SALT', 'apn_pr_{{ .Values.pr }}_');
+                define('WP_REDIS_TIMEOUT', 1);
+                define('WP_REDIS_READ_TIMEOUT', 1);
+                {{- end }}
           ports:
             - name: http
               containerPort: 80
@@ -94,6 +116,12 @@ spec:
                         --allow-root || true
                       wp theme activate astra --path=/var/www/html --allow-root || true
                       wp plugin activate woocommerce tutor cache-enabler --path=/var/www/html --allow-root || true
+                      {{- if .Values.redis.enabled }}
+                      if wp plugin is-installed redis-cache --path=/var/www/html --allow-root 2>/dev/null; then
+                        wp plugin activate redis-cache --path=/var/www/html --allow-root || true
+                        wp redis enable --path=/var/www/html --allow-root || true
+                      fi
+                      {{- end }}
                     fi
           readinessProbe:
             httpGet:

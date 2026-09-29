@@ -31,6 +31,7 @@ flowchart TD
         subgraph Preview_NS["Namespace: apn-preview"]
             PreviewWP["Deployment: apn-pr-NUM-wordpress\n(WordPress 6.7)"]
             PreviewDB[("Deployment: apn-pr-NUM-mariadb\n(MariaDB 11.4 + emptyDir)")]
+            PreviewRedis[("Deployment: apn-pr-NUM-redis\n(Redis 7-alpine + emptyDir)")]
             PreviewIngress["Ingress: apn-pr-NUM\n(apn-pr-NUM.kms-lab.in.ua)"]
         end
 
@@ -82,3 +83,4 @@ flowchart TD
 - [[002-networking-and-ingress]] - Networking, Ingress, WG Hub, and Cloudflare
 - [[025-apn-public-ingress-and-dns]] - Production Public Ingress, TLS, and DNS for APN Educational Platform
 - [[026-keel-image-automation]] - Automated Workload Updates via Keel
+- [[029-apn-performance-optimization-redis-mariadb]] - APN Performance Optimization: Persistent Object Cache & MariaDB Tuning
