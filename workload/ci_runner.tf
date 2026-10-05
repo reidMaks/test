@@ -81,6 +81,57 @@ resource "kubernetes_role_binding" "github_runner_preview_binding" {
   }
 }
 
+# 3.1 RBAC: Scoped Staging Deployment Role in "apn" (APN-134 CD)
+resource "kubernetes_role" "github_runner_apn_staging" {
+  metadata {
+    name      = "github-runner-apn-staging"
+    namespace = kubernetes_namespace.apn.metadata[0].name
+  }
+
+  rule {
+    api_groups = ["apps"]
+    resources  = ["deployments"]
+    verbs      = ["get", "list", "watch", "patch", "update"]
+  }
+
+  rule {
+    api_groups = ["apps"]
+    resources  = ["replicasets"]
+    verbs      = ["get", "list", "watch"]
+  }
+
+  rule {
+    api_groups = [""]
+    resources  = ["pods", "pods/log"]
+    verbs      = ["get", "list"]
+  }
+
+  rule {
+    api_groups = [""]
+    resources  = ["pods/exec"]
+    verbs      = ["create", "get"]
+  }
+}
+
+resource "kubernetes_role_binding" "github_runner_apn_staging_binding" {
+  metadata {
+    name      = "github-runner-apn-staging-binding"
+    namespace = kubernetes_namespace.apn.metadata[0].name
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "Role"
+    name      = kubernetes_role.github_runner_apn_staging.metadata[0].name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = kubernetes_service_account.github_runner.metadata[0].name
+    namespace = kubernetes_service_account.github_runner.metadata[0].namespace
+  }
+}
+
 # 4. GitHub Runner Secret (Uses Bitwarden Secret github_token)
 resource "kubernetes_secret" "github_runner_token" {
   metadata {

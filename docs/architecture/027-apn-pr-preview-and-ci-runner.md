@@ -59,7 +59,8 @@ flowchart TD
 ### 2. Principle of Least Privilege (PoLP) RBAC
 - Security is critical: the runner pod must not possess cluster-admin privileges.
 - The `github-runner` `ServiceAccount` in namespace `ci` is bound via `RoleBinding` to a `Role` strictly confined to the `apn-preview` namespace (`kubernetes_role.apn_preview_deployer`).
-- The runner has complete CRUD permissions over Deployments, Pods, Services, Ingresses, Secrets, and ConfigMaps inside `apn-preview`, but zero access to `apn` (staging), `production`, `kube-system`, `default`, or `management`.
+- With the introduction of the automated Staging CD pipeline (APN-134, [[030-apn-environment-segregation-and-symlinks]]), the runner is also granted scoped, least-privilege permissions in namespace `apn` (`kubernetes_role.github_runner_apn_staging`) strictly limited to deployment rollout restart/status (`deployments: get, list, watch, patch, update`, `replicasets: get, list, watch`) and pod command execution (`pods/exec: create, get`, `pods: get, list`) for database snapshot synchronization and site options.
+- The runner retains zero access to production (`apn-prod`), persistent volume claim management, or secrets modification.
 
 ### 3. Ephemeral Storage (`emptyDir: {}`)
 - Preview environments are short-lived (hours or days). Provisioning persistent distributed block volumes via Longhorn creates unnecessary storage attachment churn and volume fragmentation.
