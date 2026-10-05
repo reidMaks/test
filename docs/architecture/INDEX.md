@@ -39,6 +39,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[028-mailpit-email-testing]] - Mailpit SMTP Catcher and Email Testing Service
 - [[029-apn-performance-optimization-redis-mariadb]] - APN Performance Optimization: Persistent Object Cache & MariaDB Tuning
 - [[030-apn-environment-segregation-and-symlinks]] - APN Environment Segregation and Hybrid Symlink Realignment
+- [[031-pin-apn-staging-preview-runners-to-home-zone]] - Pin APN Staging, Preview, and CI Runners to Home Zone
 
 ## Workloads & Services
 - Traefik (Ingress)

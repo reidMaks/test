@@ -17,6 +17,8 @@ spec:
         app.kubernetes.io/component: database
         app.kubernetes.io/instance: {{ include "apn-preview.fullname" . }}
     spec:
+      nodeSelector:
+        topology.kubernetes.io/zone: home
       containers:
         - name: mariadb
           image: "{{ .Values.mariadb.image.repository }}:{{ .Values.mariadb.image.tag }}"

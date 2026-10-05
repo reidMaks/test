@@ -174,7 +174,8 @@ resource "kubernetes_deployment" "github_runner" {
         service_account_name = kubernetes_service_account.github_runner.metadata[0].name
 
         node_selector = {
-          "kubernetes.io/arch" = "amd64"
+          "topology.kubernetes.io/zone" = "home"
+          "kubernetes.io/arch"          = "amd64"
         }
 
         topology_spread_constraint {

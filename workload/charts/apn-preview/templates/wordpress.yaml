@@ -17,6 +17,8 @@ spec:
         app.kubernetes.io/component: web
         app.kubernetes.io/instance: {{ include "apn-preview.fullname" . }}
     spec:
+      nodeSelector:
+        topology.kubernetes.io/zone: home
       {{- with .Values.wordpress.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}

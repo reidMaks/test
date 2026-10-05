@@ -18,6 +18,8 @@ spec:
         app.kubernetes.io/component: cache
         app.kubernetes.io/instance: {{ include "apn-preview.fullname" . }}
     spec:
+      nodeSelector:
+        topology.kubernetes.io/zone: home
       containers:
         - name: redis
           image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}"
