@@ -38,6 +38,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[027-apn-pr-preview-and-ci-runner]] - Self-Hosted GitHub Actions Runner & Ephemeral PR Preview Pods for APN
 - [[028-mailpit-email-testing]] - Mailpit SMTP Catcher and Email Testing Service
 - [[029-apn-performance-optimization-redis-mariadb]] - APN Performance Optimization: Persistent Object Cache & MariaDB Tuning
+- [[030-apn-environment-segregation-and-symlinks]] - APN Environment Segregation and Hybrid Symlink Realignment
 
 ## Workloads & Services
 - Traefik (Ingress)
