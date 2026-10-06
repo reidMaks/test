@@ -40,6 +40,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[029-apn-performance-optimization-redis-mariadb]] - APN Performance Optimization: Persistent Object Cache & MariaDB Tuning
 - [[030-apn-environment-segregation-and-symlinks]] - APN Environment Segregation and Hybrid Symlink Realignment
 - [[031-pin-apn-staging-preview-runners-to-home-zone]] - Pin APN Staging, Preview, and CI Runners to Home Zone
+- [[032-in-cluster-mcp-servers]] - In-Cluster Remote MCP Servers for Network AI Agents
 
 ## Workloads & Services
 - Traefik (Ingress)
@@ -56,3 +57,4 @@ All documentation here should be maintained in English and linked using Obsidian
 - Open WebUI (LLM Chat)
 - It's a Plan (AI-Native Issue Tracker)
 - APN (Educational Platform - WordPress, MariaDB, TutorLMS)
+- In-Cluster MCP Servers (Kubernetes & Tool Servers for Network Agents)

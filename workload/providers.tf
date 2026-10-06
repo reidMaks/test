@@ -23,6 +23,10 @@ terraform {
       source  = "hashicorp/tls"
       version = "~> 4.0"
     }
+    grafana = {
+      source  = "grafana/grafana"
+      version = "~> 3.0"
+    }
   }
 }
 
@@ -34,6 +38,11 @@ provider "helm" {
 
 provider "kubernetes" {
   config_path = "../infra/kubeconfig"
+}
+
+provider "grafana" {
+  url  = "https://grafana.kms-lab.in.ua"
+  auth = "admin:${data.bitwarden-secrets_secret.grafana_admin_password.value}"
 }
 
 data "bitwarden-secrets_secret" "cloudflare_api_token" {
