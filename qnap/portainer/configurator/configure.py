@@ -39,6 +39,10 @@ TEMPLATES = [
     ("radarr/config.xml.template", "radarr/config.xml"),
     ("prowlarr/config.xml.template", "prowlarr/config.xml"),
     ("lidarr/config.xml.template", "lidarr/config.xml"),
+    ("bazarr/config.yaml.template", "bazarr/config/config.yaml"),
+    ("jellyfin/network.xml.template", "jellyfin/network.xml"),
+    ("jellyfin/system.xml.template", "jellyfin/system.xml"),
+    ("jellyfin/encoding.xml.template", "jellyfin/encoding.xml"),
     ("seerr/settings.json.template", "seerr/settings.json"),
 ]
 
