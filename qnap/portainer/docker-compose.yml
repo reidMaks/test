@@ -201,3 +201,18 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.home.arpa`)"
       - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"
+
+  arr-configurator:
+    image: python:3.11-alpine
+    container_name: arr-configurator
+    restart: "no"
+    networks:
+      - proxy
+    volumes:
+      - ./configurator/configure.py:/app/configure.py:ro
+      - ./templates:/templates:ro
+      - /share/CACHEDEV2_DATA/appdata/arr-stack/config:/config
+    env_file:
+      - path: .env
+        required: false
+    command: ["python", "/app/configure.py", "--phase", "all"]

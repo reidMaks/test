@@ -41,6 +41,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[030-apn-environment-segregation-and-symlinks]] - APN Environment Segregation and Hybrid Symlink Realignment
 - [[031-pin-apn-staging-preview-runners-to-home-zone]] - Pin APN Staging, Preview, and CI Runners to Home Zone
 - [[032-in-cluster-mcp-servers]] - In-Cluster Remote MCP Servers for Network AI Agents
+- [[033-media-stack-configuration-as-code]] - Media Stack Configuration as Code & Auto-Wiring
 
 ## Workloads & Services
 - Traefik (Ingress)

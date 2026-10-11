@@ -1,0 +1,81 @@
+{
+  "general": {
+    "apiKey": "${SEERR_API_KEY}",
+    "applicationTitle": "Seerr",
+    "applicationUrl": "https://seerr.home.arpa",
+    "mediaServerType": 2,
+    "partialRequestsEnabled": true,
+    "enableSpecialEpisodes": false,
+    "locale": "uk"
+  },
+  "jellyfin": {
+    "name": "nas-jellyfin",
+    "ip": "jellyfin",
+    "port": 8096,
+    "useSsl": false,
+    "urlBase": "",
+    "apiKey": "${JELLYFIN_API_KEY}"
+  },
+  "radarr": [
+    {
+      "name": "radarr",
+      "hostname": "radarr",
+      "port": 80,
+      "apiKey": "${RADARR_API_KEY}",
+      "useSsl": false,
+      "baseUrl": "",
+      "activeProfileId": 1,
+      "activeProfileName": "Any",
+      "activeDirectory": "/torrent/movies",
+      "is4k": false,
+      "minimumAvailability": "released",
+      "tags": [],
+      "isDefault": true,
+      "syncEnabled": true,
+      "preventSearch": false,
+      "tagRequests": false,
+      "id": 0
+    }
+  ],
+  "sonarr": [
+    {
+      "name": "sonarr",
+      "hostname": "sonarr",
+      "port": 80,
+      "apiKey": "${SONARR_API_KEY}",
+      "useSsl": false,
+      "baseUrl": "",
+      "activeProfileId": 1,
+      "activeProfileName": "Any",
+      "activeDirectory": "/torrent/tv-sonarr",
+      "activeAnimeProfileId": 1,
+      "activeAnimeProfileName": "Any",
+      "activeAnimeDirectory": "/torrent/tv-sonarr",
+      "tags": [],
+      "animeTags": [],
+      "is4k": false,
+      "isDefault": true,
+      "enableSeasonFolders": false,
+      "syncEnabled": true,
+      "preventSearch": false,
+      "tagRequests": false,
+      "monitorNewItems": "all",
+      "id": 0
+    }
+  ],
+  "notifications": {
+    "agents": {
+      "telegram": {
+        "enabled": true,
+        "embedPoster": true,
+        "types": 280,
+        "options": {
+          "botAPI": "${TELEGRAM_BOT_TOKEN}",
+          "chatId": "${TELEGRAM_CHAT_ID}",
+          "sendSilently": false,
+          "botUsername": "${TELEGRAM_BOT_USERNAME}"
+        }
+      }
+    }
+  }
+}

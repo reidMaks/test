@@ -1,0 +1,65 @@
+"use strict";
+
+module.exports = {
+    /**
+     * ПАУЗА ТА ЗАТРИМКИ
+     */
+    delay: 30,
+    rssCadence: "30 minutes",
+    searchCadence: "1 day",
+    excludeOlder: "450d",
+    excludeRecentSearch: "90d",
+
+    /**
+     * ІНТЕГРАЦІЯ З ARR (ДЛЯ ПОКРАЩЕННЯ ПОШУКУ ЗА ID)
+     * Використовуємо порт 80, як вказано в compose
+     */
+    sonarr: ["http://sonarr:80?apikey=${SONARR_API_KEY}"],
+    radarr: ["http://radarr:80?apikey=${RADARR_API_KEY}"],
+
+    /**
+     * МЕРЕЖЕВІ НАЛАШТУВАННЯ
+     */
+    host: "0.0.0.0",
+    port: 2468,
+
+    /**
+     * ТОРРЕНТ-КЛІЄНТ
+     */
+    torrentClients: ["qbittorrent:http://${QBITTORRENT_USER}:${QBITTORRENT_PASSWORD}@qbittorrent:8085"],
+
+    /**
+     * ДЖЕРЕЛА ДЛЯ ПОШУКУ
+     */
+    useClientTorrents: true,
+    dataDirs: [],
+
+    /**
+     * ТРЕКЕРИ (PROWLARR TORZNAB)
+     * Prowlarr всередині контейнера слухає порт 80
+     */
+    torznab: [
+        "http://prowlarr:80/1/api?apikey=${PROWLARR_API_KEY}",
+        "http://prowlarr:80/2/api?apikey=${PROWLARR_API_KEY}",
+        "http://prowlarr:80/3/api?apikey=${PROWLARR_API_KEY}"
+    ],
+
+    /**
+     * ЛІНКУВАННЯ ТА ІН'ЄКЦІЯ (V6 СТАНДАРТ)
+     */
+    linkCategory: "cross-seed",
+    linkDirs: ["/torrent/cross-seed"],
+    linkType: "hardlink",
+    flatLinking: false,
+
+    /**
+     * ЛОГІКА МАТЧИНГУ (БЕЗПЕЧНА ДЛЯ HARDLINK)
+     */
+    matchMode: "safe",
+    skipRecheck: false,
+    autoResumeMaxDownload: 0,
+    action: "inject",
+    duplicateCategories: true,
+    includeSingleEpisodes: true,
+    seasonFromEpisodes: 1,
+};

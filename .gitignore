@@ -17,6 +17,7 @@ kubeconfig
 talosconfig
 
 .env*
+!.env.example
 
 tmp/*
 .bw-provider*
