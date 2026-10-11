@@ -14,16 +14,18 @@ Previously, initial bootstrapping required manual browser-based configuration:
    - All credentials, API keys, password hashes, and notification tokens are abstracted into environment variables (e.g. `${SONARR_API_KEY}`, `${RADARR_API_KEY}`, `${QBITTORRENT_WEBUI_HASH}`).
    - An environment file template (`qnap/portainer/.env.example`) is provided; production secrets are supplied out-of-band via `.env` (fetched from Bitwarden).
 
-2. **One-Shot Bootstrapper (`arr-configurator`)**:
+2. **One-Shot Bootstrapper & Drift Reconciler (`arr-configurator`)**:
    - Introduce an `arr-configurator` service (`python:3.11-alpine`) running `configure.py`.
-   - **Phase 1 (Pre-flight / Template Rendering)**:
-     - Non-destructive: If configuration files already exist on the target storage, it leaves them untouched (`[SKIP]`).
-     - On a fresh deploy, it substitutes environment variables into the templates and writes ready-to-run configs with appropriate permissions.
-     - Automatically validates and corrects known discrepancies (e.g. cleans erroneous `baseUrl` in Seerr).
-   - **Phase 2 (Auto-Wiring via REST API)**:
+   - **Phase 1 (Pre-flight / Template & Drift Reconciliation)**:
+     - Renders configuration templates using environment variables supplied via `.env`.
+     - Compares rendered templates against existing files on disk.
+     - If in sync: logs `[IN_SYNC]` and proceeds without mutation.
+     - If drift is detected: preserves the existing file with a `.bak` backup copy and updates the configuration to enforce the declared code state (`[RECONCILED]`).
+     - Automatically parses and reconciles JSON/XML settings (e.g. cleans erroneous `baseUrl` and enforces direct container DNS hostnames in Seerr).
+   - **Phase 2 (Active REST API Reconciliation)**:
      - Waits for services to become healthy.
-     - Idempotently adds `qbittorrent` as the Download Client in Sonarr, Radarr, and Lidarr if missing.
-     - Idempotently links Sonarr, Radarr, and Lidarr into Prowlarr for automatic indexer synchronization.
+     - Reconciles `qbittorrent` as the Download Client in Sonarr and Radarr (creates if missing, or updates via `PUT` if credentials/categories drifted).
+     - Reconciles Sonarr and Radarr integration into Prowlarr for automatic indexer synchronization (creates if missing, or updates via `PUT` if API keys drifted).
 
 ```mermaid
 flowchart TD
@@ -44,9 +46,9 @@ flowchart TD
     Env --> Init
     Configurator --> Init
 
-    Init -- "Phase 1: Render missing configs" --> Configs
+    Init -- "Phase 1: Drift Reconciliation & Backups" --> Configs
     Configs --> Services
-    Init -- "Phase 2: REST API Auto-wire" --> Services
+    Init -- "Phase 2: REST API Reconciliation" --> Services
 ```
 
 ## Consequences
