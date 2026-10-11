@@ -30,3 +30,7 @@ image_metadata.json*.raw.tar.gz
 *.raw
 !.envrc
 infra/image_metadata.json
+
+# Python
+__pycache__/
+*.py[cod]
