@@ -121,11 +121,19 @@ def reconcile_seerr_config(config_dir: str, allow_overwrite: bool = False) -> li
             data = json.load(f)
 
         modified = False
-        # Check Radarr baseUrl and hostname
+        # Check Radarr baseUrl, hostname, and user-facing externalUrl
         if "radarr" in data and isinstance(data["radarr"], list):
             for radarr in data["radarr"]:
-                if radarr.get("baseUrl") != "" or radarr.get("hostname") != "radarr":
-                    diff_msg = f"Seerr Radarr setting drift: hostname='{radarr.get('hostname')}' (expected 'radarr'), baseUrl='{radarr.get('baseUrl')}' (expected '')"
+                mismatches = []
+                if radarr.get("baseUrl") != "":
+                    mismatches.append(f"baseUrl='{radarr.get('baseUrl')}' (expected '')")
+                if radarr.get("hostname") != "radarr":
+                    mismatches.append(f"hostname='{radarr.get('hostname')}' (expected 'radarr')")
+                if radarr.get("externalUrl") != "https://radarr.home.arpa":
+                    mismatches.append(f"externalUrl='{radarr.get('externalUrl')}' (expected 'https://radarr.home.arpa')")
+
+                if mismatches:
+                    diff_msg = f"Seerr Radarr setting drift: {', '.join(mismatches)}"
                     logger.warning(f"  [DRIFT DETECTED] {diff_msg}")
                     if not allow_overwrite:
                         drifts.append(diff_msg)
@@ -134,13 +142,22 @@ def reconcile_seerr_config(config_dir: str, allow_overwrite: bool = False) -> li
                         radarr["hostname"] = "radarr"
                         radarr["port"] = 80
                         radarr["useSsl"] = False
+                        radarr["externalUrl"] = "https://radarr.home.arpa"
                         modified = True
 
-        # Check Sonarr baseUrl and hostname
+        # Check Sonarr baseUrl, hostname, and user-facing externalUrl
         if "sonarr" in data and isinstance(data["sonarr"], list):
             for sonarr in data["sonarr"]:
-                if sonarr.get("baseUrl") != "" or sonarr.get("hostname") != "sonarr":
-                    diff_msg = f"Seerr Sonarr setting drift: hostname='{sonarr.get('hostname')}' (expected 'sonarr'), baseUrl='{sonarr.get('baseUrl')}' (expected '')"
+                mismatches = []
+                if sonarr.get("baseUrl") != "":
+                    mismatches.append(f"baseUrl='{sonarr.get('baseUrl')}' (expected '')")
+                if sonarr.get("hostname") != "sonarr":
+                    mismatches.append(f"hostname='{sonarr.get('hostname')}' (expected 'sonarr')")
+                if sonarr.get("externalUrl") != "https://sonarr.home.arpa":
+                    mismatches.append(f"externalUrl='{sonarr.get('externalUrl')}' (expected 'https://sonarr.home.arpa')")
+
+                if mismatches:
+                    diff_msg = f"Seerr Sonarr setting drift: {', '.join(mismatches)}"
                     logger.warning(f"  [DRIFT DETECTED] {diff_msg}")
                     if not allow_overwrite:
                         drifts.append(diff_msg)
@@ -149,13 +166,24 @@ def reconcile_seerr_config(config_dir: str, allow_overwrite: bool = False) -> li
                         sonarr["hostname"] = "sonarr"
                         sonarr["port"] = 80
                         sonarr["useSsl"] = False
+                        sonarr["externalUrl"] = "https://sonarr.home.arpa"
                         modified = True
 
-        # Check Jellyfin direct internal networking
+        # Check Jellyfin direct internal networking & user-facing externalHostname
         if "jellyfin" in data and isinstance(data["jellyfin"], dict):
             jf = data["jellyfin"]
-            if jf.get("ip") != "jellyfin" or jf.get("port") != 8096 or jf.get("useSsl") is not False:
-                diff_msg = f"Seerr Jellyfin setting drift: ip='{jf.get('ip')}' (expected 'jellyfin'), port={jf.get('port')} (expected 8096)"
+            mismatches = []
+            if jf.get("ip") != "jellyfin":
+                mismatches.append(f"ip='{jf.get('ip')}' (expected 'jellyfin')")
+            if jf.get("port") != 8096:
+                mismatches.append(f"port={jf.get('port')} (expected 8096)")
+            if jf.get("useSsl") is not False:
+                mismatches.append(f"useSsl={jf.get('useSsl')} (expected False)")
+            if jf.get("externalHostname") != "https://jellyfin.home.arpa":
+                mismatches.append(f"externalHostname='{jf.get('externalHostname')}' (expected 'https://jellyfin.home.arpa')")
+
+            if mismatches:
+                diff_msg = f"Seerr Jellyfin setting drift: {', '.join(mismatches)}"
                 logger.warning(f"  [DRIFT DETECTED] {diff_msg}")
                 if not allow_overwrite:
                     drifts.append(diff_msg)
@@ -164,6 +192,7 @@ def reconcile_seerr_config(config_dir: str, allow_overwrite: bool = False) -> li
                     jf["port"] = 8096
                     jf["useSsl"] = False
                     jf["urlBase"] = ""
+                    jf["externalHostname"] = "https://jellyfin.home.arpa"
                     modified = True
 
         if modified and allow_overwrite:
@@ -174,6 +203,7 @@ def reconcile_seerr_config(config_dir: str, allow_overwrite: bool = False) -> li
         logger.warning(f"Could not check Seerr settings: {e}")
 
     return drifts
+
 
 def wait_for_api(url: str, timeout: int = 30) -> bool:
     """Waits for an API endpoint to become reachable."""

@@ -14,6 +14,7 @@
     "port": 8096,
     "useSsl": false,
     "urlBase": "",
+    "externalHostname": "https://jellyfin.home.arpa",
     "apiKey": "${JELLYFIN_API_KEY}"
   },
   "radarr": [
@@ -24,6 +25,7 @@
       "apiKey": "${RADARR_API_KEY}",
       "useSsl": false,
       "baseUrl": "",
+      "externalUrl": "https://radarr.home.arpa",
       "activeProfileId": 1,
       "activeProfileName": "Any",
       "activeDirectory": "/torrent/movies",
@@ -45,6 +47,7 @@
       "apiKey": "${SONARR_API_KEY}",
       "useSsl": false,
       "baseUrl": "",
+      "externalUrl": "https://sonarr.home.arpa",
       "activeProfileId": 1,
       "activeProfileName": "Any",
       "activeDirectory": "/torrent/tv-sonarr",
