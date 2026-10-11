@@ -253,6 +253,15 @@ def reconcile_download_client(service_name: str, base_url: str, api_key: str, ca
 
     return drifts
 
+def normalize_url(u: str) -> str:
+    """Normalizes HTTP URLs by removing default port and trailing slashes."""
+    if not u:
+        return ""
+    u = u.rstrip("/")
+    if u.endswith(":80"):
+        u = u[:-3]
+    return u
+
 def reconcile_prowlarr_apps(prowlarr_key: str, sonarr_key: str, radarr_key: str, allow_overwrite: bool = False) -> list[str]:
     """Ensures Prowlarr application sync is in sync with declared services."""
     drifts = []
@@ -262,8 +271,8 @@ def reconcile_prowlarr_apps(prowlarr_key: str, sonarr_key: str, radarr_key: str,
         app_map = {a.get("name", "").lower(): a for a in apps}
 
         targets = [
-            ("Sonarr", "http://sonarr:80", sonarr_key, "SonarrSettings"),
-            ("Radarr", "http://radarr:80", radarr_key, "RadarrSettings"),
+            ("Sonarr", "http://sonarr", sonarr_key, "SonarrSettings"),
+            ("Radarr", "http://radarr", radarr_key, "RadarrSettings"),
         ]
 
         for name, svc_url, key, contract in targets:
@@ -271,7 +280,7 @@ def reconcile_prowlarr_apps(prowlarr_key: str, sonarr_key: str, radarr_key: str,
                 continue
             existing = app_map.get(name.lower())
             expected_fields = [
-                {"name": "prowlarrUrl", "value": "http://prowlarr:80"},
+                {"name": "prowlarrUrl", "value": "http://prowlarr"},
                 {"name": "baseUrl", "value": svc_url},
                 {"name": "apiKey", "value": key}
             ]
@@ -292,8 +301,10 @@ def reconcile_prowlarr_apps(prowlarr_key: str, sonarr_key: str, radarr_key: str,
                 field_diffs = []
                 if curr_fields.get("apiKey") != key:
                     field_diffs.append("apiKey differs")
-                if curr_fields.get("baseUrl") != svc_url:
+                if normalize_url(curr_fields.get("baseUrl")) != normalize_url(svc_url):
                     field_diffs.append(f"baseUrl: live='{curr_fields.get('baseUrl')}', code='{svc_url}'")
+                if normalize_url(curr_fields.get("prowlarrUrl")) != normalize_url("http://prowlarr"):
+                    field_diffs.append(f"prowlarrUrl: live='{curr_fields.get('prowlarrUrl')}', code='http://prowlarr'")
 
                 if field_diffs:
                     diff_msg = f"Prowlarr application '{name}' drift: {', '.join(field_diffs)}"
@@ -306,6 +317,7 @@ def reconcile_prowlarr_apps(prowlarr_key: str, sonarr_key: str, radarr_key: str,
                         logger.info(f"  [OVERWRITTEN] Updated {name} in Prowlarr.")
                 else:
                     logger.info(f"  [IN_SYNC] {name} integration in Prowlarr matches code.")
+
     except Exception as e:
         logger.warning(f"  [WARN] Could not check Prowlarr applications: {e}")
 
