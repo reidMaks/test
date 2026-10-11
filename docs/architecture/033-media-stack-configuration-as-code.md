@@ -20,12 +20,17 @@ Previously, initial bootstrapping required manual browser-based configuration:
      - Renders configuration templates using environment variables supplied via `.env`.
      - Compares rendered templates against existing files on disk.
      - If in sync: logs `[IN_SYNC]` and proceeds without mutation.
-     - If drift is detected: preserves the existing file with a `.bak` backup copy and updates the configuration to enforce the declared code state (`[RECONCILED]`).
+     - If drift is detected: logs a unified diff showing exact differences. By default, it raises `DriftDetectedError` and halts with non-zero exit code to prevent accidental overwrites.
      - Automatically parses and reconciles JSON/XML settings (e.g. cleans erroneous `baseUrl` and enforces direct container DNS hostnames in Seerr).
    - **Phase 2 (Active REST API Reconciliation)**:
      - Waits for services to become healthy.
-     - Reconciles `qbittorrent` as the Download Client in Sonarr and Radarr (creates if missing, or updates via `PUT` if credentials/categories drifted).
-     - Reconciles Sonarr and Radarr integration into Prowlarr for automatic indexer synchronization (creates if missing, or updates via `PUT` if API keys drifted).
+     - Reconciles `qbittorrent` as the Download Client in Sonarr and Radarr (creates if missing, or checks fields for drift).
+     - Reconciles Sonarr and Radarr integration into Prowlarr for automatic indexer synchronization (creates if missing, or checks fields for drift).
+   - **Drift Safety & Resolution Workflow**:
+     - By default (`OVERWRITE_DRIFT=false`), any detected drift raises `DriftDetectedError` with a complete diff report.
+     - This requires an explicit decision from the operator:
+       1. **Adopt into Code**: Update templates or variables in Git to match the live environment.
+       2. **Enforce Code**: Set `OVERWRITE_DRIFT=true` in `.env` (or pass `--overwrite-drift`) to overwrite running state with code (timestamped `.bak` files are automatically created).
 
 ```mermaid
 flowchart TD
@@ -46,8 +51,10 @@ flowchart TD
     Env --> Init
     Configurator --> Init
 
-    Init -- "Phase 1: Drift Reconciliation & Backups" --> Configs
-    Configs --> Services
+    Init -- "Compare & Check Drift" --> Configs
+    Init -- "Diff detected & OVERWRITE_DRIFT=false" --> Err["Raise DriftDetectedError & Exit(1)"]
+    Init -- "Diff detected & OVERWRITE_DRIFT=true" --> Overwrite["Backup (.bak) & Reconcile"]
+    Overwrite --> Configs
     Init -- "Phase 2: REST API Reconciliation" --> Services
 ```
 
@@ -55,6 +62,7 @@ flowchart TD
 - **Pros**:
   - Full reproducible disaster recovery from scratch with zero manual UI copy-pasting.
   - Zero secrets in Git (100% compliant with project security policies).
-  - Safe and idempotent on existing running deployments without risk of overwriting active state or tokens.
+  - Strict GitOps safety: detects configuration drift without silent overwrites, demanding explicit operator choice.
+  - Clear unified diff output directly in container/deployment logs.
 - **Cons**:
   - Requires maintaining templates in sync with major upstream configuration schema changes.
