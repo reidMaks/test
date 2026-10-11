@@ -53,7 +53,7 @@ module.exports = {
     flatLinking: false,
 
     /**
-     * ЛОГІКА МАТЧИНГУ (БЕЗПЕЧНА ДЛЯ HARDLINK)
+     * ЛОГІКА МАТЧИНГУ
      */
     matchMode: "safe",
     skipRecheck: false,
