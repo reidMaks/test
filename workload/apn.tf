@@ -1,1 +1,0 @@
-/home/max/APN/infra/environments/staging/apn_staging.tf
