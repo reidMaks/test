@@ -54,7 +54,8 @@ resource "kubernetes_deployment" "oikb" {
   }
 
   spec {
-    replicas = 1
+    # Масштабовано в 0, оскільки Open WebUI наразі вимкнений (replicaCount: 0)
+    replicas = 0
     selector {
       match_labels = {
         app = "oikb"

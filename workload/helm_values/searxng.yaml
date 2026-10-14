@@ -1,4 +1,4 @@
-replicaCount: 2
+replicaCount: 1
 image:
   repository: searxng/searxng
   tag: "2026.9.25-487f51922"

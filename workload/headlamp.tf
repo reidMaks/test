@@ -17,7 +17,7 @@ resource "helm_release" "headlamp" {
 
   values = [
     yamlencode({
-      replicaCount = 2
+      replicaCount = 1
       # kubectl top: ~32-35Mi на під (має право cluster-admin через окремий SA)
       resources = {
         requests = { cpu = "20m", memory = "64Mi" }
