@@ -1,0 +1,80 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "timezone": "Europe/Kyiv",
+  "schedule": [
+    "before 9am on monday"
+  ],
+  "dependencyDashboard": true,
+  "labels": [
+    "dependencies",
+    "renovate"
+  ],
+  "terraform": {
+    "fileMatch": [
+      "(^|/)infra/.*\\.tf$",
+      "(^|/)workload/.*\\.tf$",
+      "(^|/)qnap/.*\\.tf$"
+    ]
+  },
+  "helm-values": {
+    "fileMatch": [
+      "(^|/)workload/helm_values/.*\\.ya?ml$",
+      "(^|/)workload/charts/.*/values\\.ya?ml$"
+    ]
+  },
+  "docker-compose": {
+    "fileMatch": [
+      "(^|/)qnap/.*docker-compose.*\\.ya?ml$"
+    ]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track container images inside Terraform resources (kubernetes_deployment, kubernetes_job_v1, yamlencode)",
+      "fileMatch": [
+        "(^|/)workload/.*\\.tf$"
+      ],
+      "matchStrings": [
+        "image\\s*=\\s*\"(?<depName>[a-zA-Z0-9._/-]+):(?<currentValue>[a-zA-Z0-9._-]+)\""
+      ],
+      "datasourceTemplate": "docker"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Group Terraform providers into a single weekly PR",
+      "matchManagers": [
+        "terraform"
+      ],
+      "matchDepTypes": [
+        "provider"
+      ],
+      "groupName": "Terraform providers"
+    },
+    {
+      "description": "Group Helm chart updates",
+      "matchDatasources": [
+        "helm"
+      ],
+      "groupName": "Helm charts"
+    },
+    {
+      "description": "Group container image updates",
+      "matchDatasources": [
+        "docker"
+      ],
+      "groupName": "Container images"
+    },
+    {
+      "description": "Ignore mutable tags like latest or staging that do not follow semver/digest",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchCurrentValue": "/^(latest|staging|main|master)$/",
+      "enabled": false
+    }
+  ]
+}

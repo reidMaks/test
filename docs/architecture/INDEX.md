@@ -34,7 +34,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[023-immich-openvino-ml]] - Immich ML on the Intel iGPU via the OpenVINO build
 - [[024-itsaplan-ai-issue-tracker]] - Deploy "It's a Plan" AI-native issue tracker and MCP server
 - [[025-apn-public-ingress-and-dns]] - Production Public Ingress, TLS, and DNS for APN Educational Platform
-- [[026-keel-image-automation]] - Automated Workload Updates via Keel (Image Registry Polling)
+- [[026-keel-image-automation]] - Automated Workload Updates via Keel (superseded by [[034-renovate-gitops-updates]])
 - [[027-apn-pr-preview-and-ci-runner]] - Self-Hosted GitHub Actions Runner & Ephemeral PR Preview Pods for APN
 - [[028-mailpit-email-testing]] - Mailpit SMTP Catcher and Email Testing Service
 - [[029-apn-performance-optimization-redis-mariadb]] - APN Performance Optimization: Persistent Object Cache & MariaDB Tuning
@@ -42,11 +42,12 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[031-pin-apn-staging-preview-runners-to-home-zone]] - Pin APN Staging, Preview, and CI Runners to Home Zone
 - [[032-in-cluster-mcp-servers]] - In-Cluster Remote MCP Servers for Network AI Agents
 - [[033-media-stack-configuration-as-code]] - Media Stack Configuration as Code & Auto-Wiring
+- [[034-renovate-gitops-updates]] - Declarative Dependency & Image Updates via Renovate Bot (replaces Keel & Diun)
 
 ## Workloads & Services
 - Traefik (Ingress)
 - MetalLB (LoadBalancer)
-- Keel (Automated Image Update Operator)
+- Renovate Bot (Declarative GitOps Dependency & Image Updates — replaced Keel & Diun)
 - GitHub Actions CI Runner (APN PR Previews & E2E)
 - Mailpit (SMTP Catcher & Email Testing)
 - Mosquitto edge broker (HTRAM CO2 monitor) — retired, scaled to zero
