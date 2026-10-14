@@ -8,14 +8,16 @@ resource "helm_release" "descheduler" {
 
   values = [
     yamlencode({
-      kind     = "CronJob"
-      schedule = "*/15 * * * *"
+      kind                       = "CronJob"
+      schedule                   = "*/15 * * * *"
+      successfulJobsHistoryLimit = 1
+      failedJobsHistoryLimit     = 1
 
-      # Чарт вже задає requests за замовчуванням (500m/256Mi) -- явно фіксуємо
-      # їх тут і додаємо memory limit, якого за замовчуванням немає.
+      # Зменшуємо requests для короткоживучого CronJob (реальне споживання мінімальне),
+      # щоб сам Descheduler не завищував CPU requests на вузлі під час запуску.
       resources = {
-        requests = { cpu = "500m", memory = "256Mi" }
-        limits   = { memory = "512Mi" }
+        requests = { cpu = "50m", memory = "64Mi" }
+        limits   = { memory = "128Mi" }
       }
 
       deschedulerPolicy = {
@@ -28,16 +30,19 @@ resource "helm_release" "descheduler" {
               {
                 name = "LowNodeUtilization"
                 args = {
-                  useDeviationThresholds = true
+                  # Використовуємо абсолютні пороги замість відхилення від середнього,
+                  # оскільки при useDeviationThresholds = true поріг pods (середнє 26.5% - 20% = 6.5%)
+                  # був меншим за кількість DaemonSet-подів на вузлі (~9-15%), що блокувало балансування.
+                  useDeviationThresholds = false
                   thresholds = {
-                    cpu    = 20
-                    memory = 20
-                    pods   = 20
+                    cpu    = 35
+                    memory = 35
+                    pods   = 50
                   }
                   targetThresholds = {
-                    cpu    = 20
-                    memory = 20
-                    pods   = 20
+                    cpu    = 65
+                    memory = 65
+                    pods   = 75
                   }
                 }
               }
