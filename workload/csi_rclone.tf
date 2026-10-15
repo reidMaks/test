@@ -1,19 +1,3 @@
-data "terraform_remote_state" "infra" {
-  backend = "gcs"
-  config = {
-    bucket = "terraform-state-actual-budget-server-502619"
-    prefix = "terraform/state/infra"
-  }
-}
-
-data "bitwarden-secrets_secret" "oci_s3_access_key" {
-  id = "65cca481-871b-43af-93e0-b49701635b29"
-}
-
-data "bitwarden-secrets_secret" "oci_s3_secret_key" {
-  id = "6106b013-4724-4c3e-af8e-b4970162dc38"
-}
-
 data "bitwarden-secrets_secret" "minio_s3_access_key" {
   id = "b90365b3-63c8-41db-9103-b49e00b2a745"
 }

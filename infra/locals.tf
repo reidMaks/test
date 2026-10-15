@@ -6,7 +6,6 @@ locals {
   talos_oci_schematic_id = "b2c39cfaec0508c46e30a90dc10041c3cd6942bed31654e43933f8c0e6b0e428"
 
   talos_image     = "https://factory.talos.dev/image/${local.talos_schematic_id}/${local.talos_version}/metal-amd64.iso"
-  talos_gcp_image = "https://factory.talos.dev/image/${local.talos_schematic_id}/${local.talos_version}/gcp-amd64.raw.tar.gz"
   talos_oci_image = "https://factory.talos.dev/image/${local.talos_oci_schematic_id}/${local.talos_version}/oracle-arm64.raw.xz"
   talos_installer = "factory.talos.dev/metal-installer/${local.talos_schematic_id}:${local.talos_version}"
 

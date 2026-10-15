@@ -53,3 +53,34 @@ jobs:
       - name: Terraform Validate (workload)
         run: terraform validate
         working-directory: workload
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: Init TFLint
+        run: tflint --init --config "$GITHUB_WORKSPACE/.tflint.hcl"
+
+      - name: Run TFLint (infra)
+        run: tflint --config "$GITHUB_WORKSPACE/.tflint.hcl"
+        working-directory: infra
+
+      - name: Run TFLint (workload)
+        run: tflint --config "$GITHUB_WORKSPACE/.tflint.hcl" --recursive
+        working-directory: workload
+
+  # 3. Статичний аналіз конфігурацій на критичні помилки (Trivy IaC)
+  iac-security:
+    name: Trivy IaC Config Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy Config Scanner
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: "config"
+          scan-ref: "."
+          severity: "CRITICAL,HIGH"
+          trivyignores: ".trivyignore"
+          exit-code: "0"

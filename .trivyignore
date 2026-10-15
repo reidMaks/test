@@ -1,0 +1,25 @@
+# ==============================================================================
+# Trivy Misconfiguration Ignore List (Homelab / Hybrid K8s pragmatic profile)
+# ==============================================================================
+# Ignore non-critical pod security hardening warnings (readOnlyRootFilesystem,
+# drop ALL capabilities, non-root UID > 10000, seccomp profile, CPU limits)
+# as many upstream self-hosted images (LinuxServer.io, WordPress, Litestream)
+# require root initialization or writable paths.
+AVD-KSV-0001
+AVD-KSV-0003
+AVD-KSV-0005
+AVD-KSV-0006
+AVD-KSV-0011
+AVD-KSV-0012
+AVD-KSV-0014
+AVD-KSV-0015
+AVD-KSV-0016
+AVD-KSV-0018
+AVD-KSV-0020
+AVD-KSV-0021
+AVD-KSV-0022
+AVD-KSV-0030
+AVD-KSV-0104
+AVD-KSV-0106
+AVD-KSV-0110
+AVD-KSV-0118
