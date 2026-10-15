@@ -123,7 +123,12 @@ resource "kubernetes_deployment" "k8s_mcp" {
     name      = "kubernetes-mcp"
     namespace = kubernetes_namespace.mcp.metadata[0].name
     labels = {
-      app = "kubernetes-mcp"
+      app                         = "kubernetes-mcp"
+      stack                       = "ai"
+      "app.kubernetes.io/part-of" = "ai-stack"
+    }
+    annotations = {
+      "kubernetes.io/description" = "AI Stack: In-cluster remote Kubernetes MCP server for Antigravity & Claude Code (ADR-032)"
     }
   }
 
@@ -139,7 +144,9 @@ resource "kubernetes_deployment" "k8s_mcp" {
     template {
       metadata {
         labels = {
-          app = "kubernetes-mcp"
+          app                         = "kubernetes-mcp"
+          stack                       = "ai"
+          "app.kubernetes.io/part-of" = "ai-stack"
         }
       }
 

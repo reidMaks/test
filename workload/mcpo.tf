@@ -90,11 +90,17 @@ resource "kubernetes_deployment" "mcpo" {
     name      = "mcpo"
     namespace = "default"
     labels = {
-      app = "mcpo"
+      app                         = "mcpo"
+      stack                       = "ai"
+      "app.kubernetes.io/part-of" = "ai-stack"
+    }
+    annotations = {
+      "kubernetes.io/description" = "AI Stack: MCP-to-OpenAPI bridge for Open WebUI tool calling (ADR-014)"
     }
   }
 
   spec {
+    # Масштабовано в 0, поки вимкнений Open WebUI
     replicas = 0
     selector {
       match_labels = {
@@ -104,7 +110,9 @@ resource "kubernetes_deployment" "mcpo" {
     template {
       metadata {
         labels = {
-          app = "mcpo"
+          app                         = "mcpo"
+          stack                       = "ai"
+          "app.kubernetes.io/part-of" = "ai-stack"
         }
       }
       spec {

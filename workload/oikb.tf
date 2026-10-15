@@ -49,7 +49,12 @@ resource "kubernetes_deployment" "oikb" {
     name      = "oikb"
     namespace = "default"
     labels = {
-      app = "oikb"
+      app                         = "oikb"
+      stack                       = "ai"
+      "app.kubernetes.io/part-of" = "ai-stack"
+    }
+    annotations = {
+      "kubernetes.io/description" = "AI Stack: Daemon syncing GitHub repo docs into Open WebUI RAG Knowledge Base (ADR-015)"
     }
   }
 
@@ -64,7 +69,9 @@ resource "kubernetes_deployment" "oikb" {
     template {
       metadata {
         labels = {
-          app = "oikb"
+          app                         = "oikb"
+          stack                       = "ai"
+          "app.kubernetes.io/part-of" = "ai-stack"
         }
       }
       spec {

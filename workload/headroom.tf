@@ -1,5 +1,8 @@
 # ==========================================
-# Headroom Proxy (LLM context compression)
+# [AI STACK] Headroom Proxy (LLM context compression)
+# Статус: Вимкнено (replicas = 0).
+# Призначення: Проксі між клієнтом (LiteLLM / Claude Code) та API (Anthropic / OpenRouter)
+# для стиснення великих JSON/логів у промптах для економії токенів (див. ADR-018).
 # ==========================================
 
 resource "kubernetes_deployment" "headroom" {
@@ -7,12 +10,18 @@ resource "kubernetes_deployment" "headroom" {
     name      = "headroom"
     namespace = "default"
     labels = {
-      app = "headroom"
+      app                         = "headroom"
+      stack                       = "ai"
+      "app.kubernetes.io/part-of" = "ai-stack"
+    }
+    annotations = {
+      "kubernetes.io/description" = "AI Stack: Context-compression proxy for Claude Code & LiteLLM -> Anthropic/OpenRouter (ADR-018)"
     }
   }
 
   spec {
-    replicas = 1
+    # Масштабовано в 0 (разом із Open WebUI та LiteLLM)
+    replicas = 0
 
     selector {
       match_labels = {
@@ -23,7 +32,9 @@ resource "kubernetes_deployment" "headroom" {
     template {
       metadata {
         labels = {
-          app = "headroom"
+          app                         = "headroom"
+          stack                       = "ai"
+          "app.kubernetes.io/part-of" = "ai-stack"
         }
       }
 

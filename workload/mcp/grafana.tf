@@ -36,7 +36,12 @@ resource "kubernetes_deployment" "grafana_mcp" {
     name      = "grafana-mcp"
     namespace = kubernetes_namespace.mcp.metadata[0].name
     labels = {
-      app = "grafana-mcp"
+      app                         = "grafana-mcp"
+      stack                       = "ai"
+      "app.kubernetes.io/part-of" = "ai-stack"
+    }
+    annotations = {
+      "kubernetes.io/description" = "AI Stack: In-cluster remote Grafana MCP server for Antigravity & Claude Code (ADR-032)"
     }
   }
 
@@ -52,7 +57,9 @@ resource "kubernetes_deployment" "grafana_mcp" {
     template {
       metadata {
         labels = {
-          app = "grafana-mcp"
+          app                         = "grafana-mcp"
+          stack                       = "ai"
+          "app.kubernetes.io/part-of" = "ai-stack"
         }
       }
 

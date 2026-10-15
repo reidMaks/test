@@ -8,7 +8,12 @@ resource "kubernetes_deployment" "prom_mcp" {
     name      = "prometheus-mcp"
     namespace = kubernetes_namespace.mcp.metadata[0].name
     labels = {
-      app = "prometheus-mcp"
+      app                         = "prometheus-mcp"
+      stack                       = "ai"
+      "app.kubernetes.io/part-of" = "ai-stack"
+    }
+    annotations = {
+      "kubernetes.io/description" = "AI Stack: In-cluster remote Prometheus/VictoriaMetrics MCP server for Antigravity & Claude Code (ADR-032)"
     }
   }
 
@@ -24,7 +29,9 @@ resource "kubernetes_deployment" "prom_mcp" {
     template {
       metadata {
         labels = {
-          app = "prometheus-mcp"
+          app                         = "prometheus-mcp"
+          stack                       = "ai"
+          "app.kubernetes.io/part-of" = "ai-stack"
         }
       }
 

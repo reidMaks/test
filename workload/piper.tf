@@ -32,7 +32,12 @@ resource "kubernetes_deployment" "piper" {
     name      = "piper"
     namespace = "default"
     labels = {
-      app = "piper"
+      app                         = "piper"
+      stack                       = "ai"
+      "app.kubernetes.io/part-of" = "ai-stack"
+    }
+    annotations = {
+      "kubernetes.io/description" = "AI Stack: Ukrainian TTS voice engine (Wyoming TCP:10200) for Home Assistant Assist"
     }
   }
 
@@ -48,7 +53,9 @@ resource "kubernetes_deployment" "piper" {
     template {
       metadata {
         labels = {
-          app = "piper"
+          app                         = "piper"
+          stack                       = "ai"
+          "app.kubernetes.io/part-of" = "ai-stack"
         }
       }
 

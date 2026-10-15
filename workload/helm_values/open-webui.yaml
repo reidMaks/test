@@ -1,5 +1,12 @@
 replicaCount: 0
 
+podLabels:
+  stack: "ai"
+  app.kubernetes.io/part-of: "ai-stack"
+
+annotations:
+  kubernetes.io/description: "AI Stack: Self-hosted LLM Web UI with PGVector RAG (ADR-012, ADR-015)"
+
 pipelines:
   enabled: false
 

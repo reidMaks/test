@@ -97,11 +97,17 @@ resource "kubernetes_deployment" "litellm" {
     name      = "litellm"
     namespace = "default"
     labels = {
-      app = "litellm"
+      app                         = "litellm"
+      stack                       = "ai"
+      "app.kubernetes.io/part-of" = "ai-stack"
+    }
+    annotations = {
+      "kubernetes.io/description" = "AI Stack: OpenAI-compatible LLM cost-routing proxy for Open WebUI -> OpenRouter (ADR-016)"
     }
   }
 
   spec {
+    # Масштабовано в 0, поки вимкнений Open WebUI
     replicas = 0
 
     selector {
@@ -113,7 +119,9 @@ resource "kubernetes_deployment" "litellm" {
     template {
       metadata {
         labels = {
-          app = "litellm"
+          app                         = "litellm"
+          stack                       = "ai"
+          "app.kubernetes.io/part-of" = "ai-stack"
         }
       }
 
