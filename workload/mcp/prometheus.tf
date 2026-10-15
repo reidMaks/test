@@ -39,8 +39,11 @@ resource "kubernetes_deployment" "prom_mcp" {
         automount_service_account_token = false
 
         container {
-          name  = "prometheus-mcp-server"
-          image = "ghcr.io/pab1it0/prometheus-mcp-server:1.4.2"
+          name = "prometheus-mcp-server"
+          # Версія v1.6.2 (має ендпоінт /health). Зафіксовано за sha256-дайджестом,
+          # оскільки автор репозиторію припинив пушити семвер-теги в GHCR після 1.4.2
+          # і публікує нові релізи лише під тегом :latest.
+          image = "ghcr.io/pab1it0/prometheus-mcp-server:latest@sha256:3c3921301229618d0b00a46a06e3b0c25745b31855f16919cf7b4fa040d47ec6"
 
           env {
             name  = "PROMETHEUS_URL"
