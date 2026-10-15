@@ -19,7 +19,7 @@ controllers:
       01-litestream-restore:
         image:
           repository: alpine
-          tag: latest
+          tag: "3.22"
         securityContext:
           runAsUser: 0
         command:
@@ -52,7 +52,7 @@ controllers:
       backup-files:
         image:
           repository: alpine
-          tag: latest
+          tag: "3.22"
         securityContext:
           runAsUser: 0
         command:
@@ -103,15 +103,22 @@ configMaps:
     data:
       restore.sh: |
         #!/bin/sh
+        set -eu
         apk add --no-cache wget tar rsync
+        LITESTREAM_VERSION="0.5.17"
         ARCH=$(uname -m)
         if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then
           LITESTREAM_ARCH="arm64"
+          LITESTREAM_SHA256="f8ca4a050095c1efbda2c4365172e61bf9d955ea0d9ac42f448b52e51819baa5"
         else
           LITESTREAM_ARCH="x86_64"
+          LITESTREAM_SHA256="cfb371176d164437ae869f8351cfde49bd1804ae71c61923f75c9cba9c9c006d"
         fi
-        LATEST_VERSION=$(wget -qO- "https://api.github.com/repos/benbjohnson/litestream/releases/latest" | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
-        wget -qO- "https://github.com/benbjohnson/litestream/releases/download/v$${LATEST_VERSION}/litestream-$${LATEST_VERSION}-linux-$${LITESTREAM_ARCH}.tar.gz" | tar -xz -C /usr/local/bin
+        TARBALL="/tmp/litestream.tar.gz"
+        wget -q "https://github.com/benbjohnson/litestream/releases/download/v$${LITESTREAM_VERSION}/litestream-$${LITESTREAM_VERSION}-linux-$${LITESTREAM_ARCH}.tar.gz" -O "$TARBALL"
+        echo "$${LITESTREAM_SHA256}  $${TARBALL}" | sha256sum -c -
+        tar -xzf "$TARBALL" -C /usr/local/bin
+        rm -f "$TARBALL"
 
         export LITESTREAM_ACCESS_KEY_ID=$MINIO_ACCESS_KEY
         export LITESTREAM_SECRET_ACCESS_KEY=$MINIO_SECRET_KEY

@@ -33,7 +33,7 @@ resource "kubernetes_deployment" "prom_mcp" {
 
         container {
           name  = "prometheus-mcp-server"
-          image = "ghcr.io/pab1it0/prometheus-mcp-server:latest"
+          image = "ghcr.io/pab1it0/prometheus-mcp-server:1.4.2"
 
           env {
             name  = "PROMETHEUS_URL"

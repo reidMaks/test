@@ -62,7 +62,7 @@ resource "kubernetes_deployment" "piper" {
 
         container {
           name  = "piper"
-          image = "lscr.io/linuxserver/piper:latest"
+          image = "lscr.io/linuxserver/piper:2.5.2"
 
           env {
             name  = "PIPER_VOICE"

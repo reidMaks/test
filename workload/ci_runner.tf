@@ -189,18 +189,17 @@ resource "kubernetes_deployment" "github_runner" {
           }
         }
 
-        # Init container to install kubectl and helm into shared volume
+        # Init container to copy kubectl and helm from alpine/k8s image into shared volume
         init_container {
           name    = "install-k8s-tools"
-          image   = "alpine/helm:3.17.1"
+          image   = "alpine/k8s:1.36.1"
           command = ["/bin/sh", "-c"]
           args = [
             <<-EOT
             set -e
             mkdir -p /tools
-            cp /usr/bin/helm /tools/helm
-            # Download matching kubectl
-            wget -q https://dl.k8s.io/release/v1.31.0/bin/linux/amd64/kubectl -O /tools/kubectl
+            cp "$(command -v helm)" /tools/helm
+            cp "$(command -v kubectl)" /tools/kubectl
             chmod +x /tools/kubectl /tools/helm
             EOT
           ]

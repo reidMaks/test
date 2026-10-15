@@ -47,7 +47,7 @@ resource "kubernetes_deployment" "rclone_s3_gateway" {
         # Копіюємо конфіг з read-only Secret у записувану папку
         init_container {
           name    = "init-config"
-          image   = "alpine:latest"
+          image   = "alpine:3.22"
           command = ["sh", "-c", "cp /tmp/secret/rclone.conf /config/rclone/rclone.conf"]
           volume_mount {
             name       = "secret-volume"
@@ -61,7 +61,7 @@ resource "kubernetes_deployment" "rclone_s3_gateway" {
 
         container {
           name  = "rclone"
-          image = "rclone/rclone:latest"
+          image = "rclone/rclone:1.75.2"
           command = [
             "rclone",
             "serve",

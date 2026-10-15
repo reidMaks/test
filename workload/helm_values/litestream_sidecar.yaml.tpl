@@ -4,7 +4,7 @@ controllers:
       litestream:
         image:
           repository: litestream/litestream
-          tag: latest
+          tag: "0.5.17"
         securityContext:
           runAsUser: 0
           runAsGroup: 0
@@ -30,7 +30,7 @@ controllers:
       01-litestream-restore:
         image:
           repository: litestream/litestream
-          tag: latest
+          tag: "0.5.17"
         securityContext:
           runAsUser: 0
           runAsGroup: 0

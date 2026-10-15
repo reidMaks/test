@@ -135,7 +135,7 @@ resource "kubernetes_deployment" "wg_hub" {
         # 3. Вхідний проксі (Port 80)
         container {
           name  = "ingress-80"
-          image = "alpine/socat:latest"
+          image = "alpine/socat:1.8.1.3"
           args  = ["TCP4-LISTEN:80,fork,reuseaddr", "TCP4:traefik.traefik-system.svc.cluster.local:80"]
 
           resources {
@@ -152,7 +152,7 @@ resource "kubernetes_deployment" "wg_hub" {
         # 4. Вхідний проксі (Port 443)
         container {
           name  = "ingress-443"
-          image = "alpine/socat:latest"
+          image = "alpine/socat:1.8.1.3"
           args  = ["TCP4-LISTEN:443,fork,reuseaddr", "TCP4:traefik.traefik-system.svc.cluster.local:443"]
 
           resources {
