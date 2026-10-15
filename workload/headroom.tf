@@ -30,7 +30,7 @@ resource "kubernetes_deployment" "headroom" {
       spec {
         container {
           name  = "headroom"
-          image = "ghcr.io/headroomlabs-ai/headroom:latest"
+          image = "ghcr.io/headroomlabs-ai/headroom:sha-85786b3"
           args  = ["--host", "0.0.0.0", "--port", "8787", "--log-file", "/dev/stdout"]
 
           port {
@@ -55,6 +55,10 @@ resource "kubernetes_deployment" "headroom" {
           env {
             name  = "OPENAI_TARGET_API_URL"
             value = "https://openrouter.ai/api/v1"
+          }
+          env {
+            name  = "HEADROOM_ALLOW_UNAUTHENTICATED_BIND"
+            value = "1"
           }
 
           readiness_probe {
