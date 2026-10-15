@@ -43,6 +43,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[032-in-cluster-mcp-servers]] - In-Cluster Remote MCP Servers for Network AI Agents
 - [[033-media-stack-configuration-as-code]] - Media Stack Configuration as Code & Auto-Wiring
 - [[034-renovate-gitops-updates]] - Declarative Dependency & Image Updates via Renovate Bot (replaces Keel & Diun)
+- [[035-hybrid-zone-workload-policy]] - Hybrid Zone Workload Placement Policy (`oci` Always-On Public Tier vs `home` Private/Heavy Tier)
 
 ## Workloads & Services
 - Traefik (Ingress)

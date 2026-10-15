@@ -12,6 +12,9 @@ resource "helm_release" "victorialogs" {
   values = [
     yamlencode({
       server = {
+        nodeSelector = {
+          "topology.kubernetes.io/zone" = "home"
+        }
         retentionPeriod = "3d" # Зберігати логи 3 дні (замість 7)
         persistentVolume = {
           enabled          = true

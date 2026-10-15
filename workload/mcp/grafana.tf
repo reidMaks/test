@@ -65,6 +65,9 @@ resource "kubernetes_deployment" "grafana_mcp" {
 
       spec {
         automount_service_account_token = false
+        node_selector = {
+          "topology.kubernetes.io/zone" = "home"
+        }
 
         container {
           name  = "grafana-mcp-server"

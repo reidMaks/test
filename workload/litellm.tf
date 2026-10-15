@@ -126,6 +126,10 @@ resource "kubernetes_deployment" "litellm" {
       }
 
       spec {
+        node_selector = {
+          "topology.kubernetes.io/zone" = "home"
+        }
+
         container {
           name  = "litellm"
           image = "ghcr.io/berriai/litellm:main-latest"

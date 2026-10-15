@@ -1,8 +1,18 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/app-template-5.0.1/charts/other/app-template/values.schema.json
 
+defaultPodOptions:
+  nodeSelector:
+    topology.kubernetes.io/zone: oci
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+      labelSelector:
+        matchLabels:
+          app.kubernetes.io/name: cloudflared
+
 controllers:
   main:
-
     replicas: 2
     containers:
       main:

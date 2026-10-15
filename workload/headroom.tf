@@ -39,6 +39,10 @@ resource "kubernetes_deployment" "headroom" {
       }
 
       spec {
+        node_selector = {
+          "topology.kubernetes.io/zone" = "home"
+        }
+
         container {
           name  = "headroom"
           image = "ghcr.io/headroomlabs-ai/headroom:sha-85786b3"

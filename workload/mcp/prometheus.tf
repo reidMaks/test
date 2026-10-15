@@ -37,6 +37,9 @@ resource "kubernetes_deployment" "prom_mcp" {
 
       spec {
         automount_service_account_token = false
+        node_selector = {
+          "topology.kubernetes.io/zone" = "home"
+        }
 
         container {
           name = "prometheus-mcp-server"

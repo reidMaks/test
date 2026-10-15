@@ -144,7 +144,7 @@ resource "kubernetes_deployment" "wg_hub" {
               memory = "16Mi"
             }
             limits = {
-              memory = "32Mi"
+              memory = "128Mi"
             }
           }
         }
@@ -161,7 +161,7 @@ resource "kubernetes_deployment" "wg_hub" {
               memory = "16Mi"
             }
             limits = {
-              memory = "32Mi"
+              memory = "128Mi"
             }
           }
         }

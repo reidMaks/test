@@ -75,6 +75,9 @@ resource "kubernetes_deployment" "oikb" {
         }
       }
       spec {
+        node_selector = {
+          "topology.kubernetes.io/zone" = "home"
+        }
         container {
           name    = "oikb"
           image   = "ghcr.io/open-webui/oikb:latest"

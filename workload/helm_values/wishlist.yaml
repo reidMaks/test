@@ -2,6 +2,10 @@
 
 
 
+defaultPodOptions:
+  nodeSelector:
+    topology.kubernetes.io/zone: oci
+
 controllers:
   main:
     pod:

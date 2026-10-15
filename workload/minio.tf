@@ -73,7 +73,7 @@ resource "helm_release" "minio" {
                   memory = "128Mi"
                 }
                 limits = {
-                  memory = "512Mi"
+                  memory = "768Mi"
                 }
               }
             }

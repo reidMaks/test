@@ -23,6 +23,11 @@ resource "helm_release" "shared_redis" {
 
   values = [
     yamlencode({
+      defaultPodOptions = {
+        nodeSelector = {
+          "topology.kubernetes.io/zone" = "home"
+        }
+      }
       controllers = {
         main = {
           type = "statefulset"

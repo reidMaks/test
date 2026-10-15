@@ -152,6 +152,9 @@ resource "kubernetes_deployment" "k8s_mcp" {
 
       spec {
         service_account_name = kubernetes_service_account.k8s_mcp.metadata[0].name
+        node_selector = {
+          "topology.kubernetes.io/zone" = "home"
+        }
 
         container {
           name  = "kubernetes-mcp-server"

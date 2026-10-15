@@ -1,4 +1,6 @@
 replicaCount: 1
+nodeSelector:
+  topology.kubernetes.io/zone: home
 image:
   repository: searxng/searxng
   tag: "2026.9.25-487f51922"

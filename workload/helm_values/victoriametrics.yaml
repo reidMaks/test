@@ -3,6 +3,8 @@ defaultDashboardsEnabled: true
 # Налаштування Grafana
 grafana:
   enabled: true
+  nodeSelector:
+    topology.kubernetes.io/zone: home
   admin:
     existingSecret: "grafana-secrets"
     userKey: admin-user
@@ -29,17 +31,21 @@ defaultDatasources:
 vmsingle:
   enabled: true
   spec:
+    nodeSelector:
+      topology.kubernetes.io/zone: home
     retentionPeriod: "7d"
     storage:
       resources:
         requests:
-          storage: 1Gi
+          storage: 2Gi
       storageClassName: "longhorn-postgres"
 
 # Налаштування збирачів метрик
 vmagent:
   enabled: true
   spec:
+    nodeSelector:
+      topology.kubernetes.io/zone: home
     scrapeInterval: "60s" # Опитуємо раз на хвилину замість 10-15 сек
     inlineRelabelConfig:
       # Викидаємо метрики Go та процесів (внутрішня статистика програм)
@@ -71,10 +77,39 @@ vmagent:
         sourceLabels: [__name__]
         regex: "^(apiserver_.*|etcd_.*|rest_client_.*|scheduler_.*|workqueue_.*)$"
 
+vmalert:
+  enabled: true
+  spec:
+    nodeSelector:
+      topology.kubernetes.io/zone: home
+
+alertmanager:
+  enabled: true
+  spec:
+    nodeSelector:
+      topology.kubernetes.io/zone: home
+
+victoria-metrics-operator:
+  nodeSelector:
+    topology.kubernetes.io/zone: home
+
 # Вбудовані exporters для Kubernetes
 kubeStateMetrics:
   enabled: true
+kube-state-metrics:
+  nodeSelector:
+    topology.kubernetes.io/zone: home
 nodeExporter:
   enabled: true
 prometheus-node-exporter:
   enabled: true
+
+# У Talos Linux kube-controller-manager, kube-scheduler та etcd слухають лише 127.0.0.1
+# (а їхні метрики все одно відкидаються в inlineRelabelConfig вище), тому вимикаємо
+# порожні ServiceScrape, щоб не генерувати постійні помилки скрейпінгу та фантомні алерти.
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false

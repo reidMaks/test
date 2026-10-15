@@ -18,6 +18,9 @@ resource "helm_release" "headlamp" {
   values = [
     yamlencode({
       replicaCount = 1
+      nodeSelector = {
+        "topology.kubernetes.io/zone" = "home"
+      }
       # kubectl top: ~32-35Mi на під (має право cluster-admin через окремий SA)
       resources = {
         requests = { cpu = "20m", memory = "64Mi" }

@@ -1,3 +1,6 @@
+nodeSelector:
+  topology.kubernetes.io/zone: home
+
 ingressRoute:
   create: true
   entryPoints: ["web", "websecure"]

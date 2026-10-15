@@ -104,6 +104,9 @@ resource "kubernetes_job_v1" "itsaplan_minio_bucket_init" {
       }
       spec {
         restart_policy = "OnFailure"
+        node_selector = {
+          "topology.kubernetes.io/zone" = "oci"
+        }
         container {
           name    = "mc"
           image   = "quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z"
@@ -136,6 +139,9 @@ resource "helm_release" "itsaplan" {
 
   values = [
     yamlencode({
+      nodeSelector = {
+        "topology.kubernetes.io/zone" = "oci"
+      }
       api = {
         image = {
           tag = "1.2.1"
@@ -146,7 +152,7 @@ resource "helm_release" "itsaplan" {
             memory = "128Mi"
           }
           limits = {
-            memory = "512Mi"
+            memory = "768Mi"
           }
         }
         env = {

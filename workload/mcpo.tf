@@ -117,6 +117,9 @@ resource "kubernetes_deployment" "mcpo" {
       }
       spec {
         service_account_name = kubernetes_service_account.mcpo.metadata[0].name
+        node_selector = {
+          "topology.kubernetes.io/zone" = "home"
+        }
 
         container {
           name  = "mcpo"

@@ -111,6 +111,9 @@ resource "helm_release" "traefik" {
           memory = "300Mi"
         }
       }
+      nodeSelector = {
+        "topology.kubernetes.io/zone" = "oci"
+      }
       service = {
         type = "LoadBalancer"
         annotations = {
@@ -180,12 +183,13 @@ resource "helm_release" "longhorn" {
   values = [
     yamlencode({
       defaultSettings = {
-        storageMinimalAvailablePercentage = 15
-        defaultDataPath                   = "/var/lib/longhorn"
-        backupTargetCredentialSecret      = "longhorn-backup-credential-v2"
-        backupTarget                      = "s3://s3-like-bucket@us-east-1/"
-        nodeDownPodDeletionPolicy         = "delete-pod-when-node-down"
-        replicaZoneSoftAntiAffinity       = "true"
+        storageMinimalAvailablePercentage            = 15
+        defaultDataPath                              = "/var/lib/longhorn"
+        backupTargetCredentialSecret                 = "longhorn-backup-credential-v2"
+        backupTarget                                 = "s3://s3-like-bucket@us-east-1/"
+        nodeDownPodDeletionPolicy                    = "delete-pod-when-node-down"
+        replicaZoneSoftAntiAffinity                  = "true"
+        concurrentAutomaticEngineUpgradePerNodeLimit = 1
       }
       persistence = {
         defaultClassReplicaCount = 2
