@@ -183,12 +183,16 @@ resource "helm_release" "longhorn" {
   values = [
     yamlencode({
       defaultSettings = {
-        storageMinimalAvailablePercentage            = 15
-        defaultDataPath                              = "/var/lib/longhorn"
-        backupTargetCredentialSecret                 = "longhorn-backup-credential-v2"
-        backupTarget                                 = "s3://s3-like-bucket@us-east-1/"
-        nodeDownPodDeletionPolicy                    = "delete-pod-when-node-down"
-        replicaZoneSoftAntiAffinity                  = "false"
+        storageMinimalAvailablePercentage = 15
+        defaultDataPath                   = "/var/lib/longhorn"
+        backupTargetCredentialSecret      = "longhorn-backup-credential-v2"
+        backupTarget                      = "s3://s3-like-bucket@us-east-1/"
+        nodeDownPodDeletionPolicy         = "delete-pod-when-node-down"
+        # У термінології Longhorn "Soft Anti-Affinity = true" означає ДОЗВОЛИТИ
+        # розміщення кількох реплік в одній зоні (home), коли в іншій зоні (oci)
+        # шедулінг вимкнено (allowScheduling: false). Значення "false" умикає
+        # ЖОРСТКУ (Hard) анти-афінність і забороняє 2 репліки всередині home!
+        replicaZoneSoftAntiAffinity                  = "true"
         defaultDataLocality                          = "best-effort"
         replicaAutoBalance                           = "best-effort"
         concurrentAutomaticEngineUpgradePerNodeLimit = 1

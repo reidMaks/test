@@ -8,9 +8,9 @@ Stateful workloads in our hybrid Talos Kubernetes cluster (`home` Proxmox + `oci
 ## Decision
 - **Provider:** We use **Longhorn** (`v1.12.1`) for block storage and **CSI Rclone** (`s3-rclone`) + **Litestream** for S3-backed cloud persistence.
 - **No Synchronous WAN Block Replication (`IAAC-9`):**
-  - `replicaZoneSoftAntiAffinity = "false"` (previously `"true"`, which forced `home` volume replicas onto `oci` boot disks over the WAN).
+  - General replica scheduling (`allowScheduling: false`) is disabled on OCI nodes (`talos-cp-oci` and `talos-cp-oci-2`), confining default `longhorn` (`numberOfReplicas = 2`) replicas strictly to the two `home` worker nodes (`talos-f9o-10o` and `talos-wfh-33w`).
+  - `replicaZoneSoftAntiAffinity = "true"` (in Longhorn's terminology, `true` means *soft* zone anti-affinity, allowing both replicas to be scheduled within the `home` zone when `oci` is unschedulable; setting it to `false` enforces *hard* zone anti-affinity and blocks same-zone replica placement).
   - `defaultDataLocality = "best-effort"` and `replicaAutoBalance = "best-effort"`.
-  - General replica scheduling (`allowScheduling`) is disabled on OCI nodes (`talos-cp-oci` and `talos-cp-oci-2`), confining default `longhorn` (`numberOfReplicas = 2`) replicas strictly to the two `home` worker nodes (`talos-f9o-10o` and `talos-wfh-33w`).
 - **Storage Classes:**
   1. `longhorn` (Default): `numberOfReplicas = 2`, `dataLocality = best-effort`. Replicated exclusively across the two `home` worker nodes (`talos-f9o-10o` and `talos-wfh-33w`).
   2. `longhorn-postgres`: `numberOfReplicas = 1`, `dataLocality = strict-local`, `volumeBindingMode = WaitForFirstConsumer`. Used for CloudNativePG (`shared-db-1`, `shared-db-2`, `shared-db-3`) and `vmsingle` where replication or durability is handled at the application layer or where strict local I/O is required.
