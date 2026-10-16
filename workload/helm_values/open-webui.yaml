@@ -32,14 +32,17 @@ pipelines:
 nodeSelector:
   kubernetes.io/hostname: "talos-f9o-10o"
 
-# Persistent storage for /app/backend/data: model cache (embedding +
-# reranker weights, ~530MB) and uploaded file bytes. Uses longhorn-postgres
-# (strict-local, 1 replica) so that if replicaCount is scaled above 0 on
-# talos-f9o-10o, the volume stays strictly local on that home node.
+# Persistent storage for /app/backend/data: disabled while replicaCount=0
+# (state and RAG vectors live in shared-db PostgreSQL/pgvector per ADR-015).
+# Note: using a WaitForFirstConsumer StorageClass (like longhorn-postgres)
+# with replicaCount=0 causes Helm's readiness check to wait forever for a pod
+# to bind the PVC and fail with "context deadline exceeded". With OCI replica
+# scheduling disabled (IAAC-9), the default "longhorn" class schedules
+# exclusively on the two home worker nodes (talos-f9o-10o and talos-wfh-33w).
 persistence:
-  enabled: true
+  enabled: false
   size: 5Gi
-  storageClass: "longhorn-postgres"
+  storageClass: "longhorn"
 
 ingress:
   enabled: true
