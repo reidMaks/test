@@ -2,18 +2,11 @@
 
 ## Status
 
-Superseded — 2026-09-08. The broker is no longer needed and its Deployment is
-scaled to `replicas = 0`.
+Decommissioned — 2026-10-16 (`IAAC-9`). `workload/mosquitto.tf` and the `mosquitto-data` PVC have been removed from the repository and cluster.
 
-Nothing was deleted. The ConfigMap, the `mosquitto-data` PVC, both Services and
-the Ingress all remain, and `workload/mosquitto.tf` keeps the full reasoning
-below. Setting `replicas = 1` brings the broker back exactly as it was.
+This ADR is retained as historical documentation because the protocol analysis it contains — why the HTRAM firmware cannot authenticate against the Home Assistant Mosquitto add-on, and why TLS is terminated at Traefik — remains a useful technical reference.
 
-The record is kept because the analysis it contains — why the HTRAM firmware
-cannot authenticate against the Mosquitto add-on, and why TLS is terminated at
-Traefik — stays true and would otherwise have to be reconstructed from scratch.
-
-Originally: Accepted — deployed and carrying telemetry end to end.
+Originally: Accepted (deployed and carrying telemetry end to end), then Superseded on 2026-09-08 (`replicas = 0`).
 
 ## Context
 

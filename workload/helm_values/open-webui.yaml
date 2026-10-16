@@ -33,21 +33,13 @@ nodeSelector:
   kubernetes.io/hostname: "talos-f9o-10o"
 
 # Persistent storage for /app/backend/data: model cache (embedding +
-# reranker weights, ~530MB) and uploaded file bytes. Previously stateless,
-# which meant every pod restart wiped uploaded files (breaking in-place
-# reprocessing) and forced a full HuggingFace re-download of models on every
-# cold start. Tried pinning Longhorn replicas to home-only nodes via disk
-# tags (workload/longhorn_home.tf, removed) -- Terraform's kubernetes_manifest
-# couldn't reliably write the tags field onto Longhorn's Node CRD (state
-# kept showing tags=[] after apply), so fell back to the default "longhorn"
-# StorageClass. The pod itself is still pinned to a home node via
-# nodeSelector below; only Longhorn's own replica placement may spread to
-# the OCI nodes. 5Gi covers the corpus (490MB) + models (~530MB) with
-# headroom for HF's multi-format download behavior.
+# reranker weights, ~530MB) and uploaded file bytes. Uses longhorn-postgres
+# (strict-local, 1 replica) so that if replicaCount is scaled above 0 on
+# talos-f9o-10o, the volume stays strictly local on that home node.
 persistence:
   enabled: true
   size: 5Gi
-  storageClass: "longhorn"
+  storageClass: "longhorn-postgres"
 
 ingress:
   enabled: true

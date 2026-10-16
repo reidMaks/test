@@ -1,23 +1,48 @@
 # ADR 003: Storage Strategy
 
+**Status:** Implemented (Updated 2026-10-16 — WAN Block Replication Disabled per [[008-cloudnativepg-migration]] and `IAAC-9`)
+
 ## Context
-Stateful workloads require reliable, distributed storage with automated backups.
+Stateful workloads in our hybrid Talos Kubernetes cluster (`home` Proxmox + `oci` Oracle Cloud) require reliable storage without incurring 30–50ms synchronous WAN block write latency across WireGuard KubeSpan.
 
 ## Decision
-- **Provider**: We use **Longhorn** as the storage class.
-- **Data Path**: Mounted to `/var/lib/longhorn` (using explicit mounts on home nodes, and rootfs on OCI nodes).
-- **Geo-Replication (Active-Active)**:
-  - `defaultClassReplicaCount = 2`.
-  - `replicaZoneSoftAntiAffinity = "true"`.
-  - With nodes labeled by zone (`topology.kubernetes.io/zone: home` and `oci`), Longhorn automatically places 1 replica on a home node and 1 replica on an OCI node. This provides true geo-redundancy.
-- **Backups**: A `RecurringJob` in Kubernetes automatically backs up volumes daily to an S3-compatible storage bucket.
-- **Secrets**: S3 credentials (and all other secrets) are injected dynamically via the `bitwarden-secrets` Terraform provider, keeping Git clean.
+- **Provider:** We use **Longhorn** (`v1.12.1`) for block storage and **CSI Rclone** (`s3-rclone`) + **Litestream** for S3-backed cloud persistence.
+- **No Synchronous WAN Block Replication (`IAAC-9`):**
+  - `replicaZoneSoftAntiAffinity = "false"` (previously `"true"`, which forced `home` volume replicas onto `oci` boot disks over the WAN).
+  - `defaultDataLocality = "best-effort"` and `replicaAutoBalance = "best-effort"`.
+  - General replica scheduling (`allowScheduling`) is disabled on OCI nodes (`talos-cp-oci` and `talos-cp-oci-2`), confining default `longhorn` (`numberOfReplicas = 2`) replicas strictly to the two `home` worker nodes (`talos-f9o-10o` and `talos-wfh-33w`).
+- **Storage Classes:**
+  1. `longhorn` (Default): `numberOfReplicas = 2`, `dataLocality = best-effort`. Replicated exclusively across the two `home` worker nodes (`talos-f9o-10o` and `talos-wfh-33w`).
+  2. `longhorn-postgres`: `numberOfReplicas = 1`, `dataLocality = strict-local`, `volumeBindingMode = WaitForFirstConsumer`. Used for CloudNativePG (`shared-db-1`, `shared-db-2`, `shared-db-3`) and `vmsingle` where replication or durability is handled at the application layer or where strict local I/O is required.
+  3. `longhorn-oci-local`: `numberOfReplicas = 1`, `dataLocality = strict-local`. Used by `minio-0` on `talos-cp-oci` (`/var/mnt/oci-disk`).
+  4. `s3-rclone`: ReadWriteMany object storage mounts backed by local MinIO (`minio.default.svc.cluster.local:9000`), asynchronously synced to QNAP NAS (`[[017-s3-replication-qnap]]`).
+- **Backups:** A Longhorn `RecurringJob` (`daily-backup`) backs up labeled volumes daily to S3, while secrets are injected dynamically via `bitwarden-secrets`.
+
+## Architecture Diagram
+
+```mermaid
+flowchart TD
+    subgraph HomeZone["Zone: home (Proxmox LAN)"]
+        HomePods["Home Workloads<br/>(esphome, immich-ml, piper, vlogs, apn)"]
+        HomeDB["shared-db-1 / shared-db-2 / vmsingle"]
+        LHHome["Longhorn Home Disks<br/>(talos-f9o-10o & talos-wfh-33w)<br/>allowScheduling: true"]
+    end
+
+    subgraph OCIZone["Zone: oci (Oracle Cloud Always-On)"]
+        OCIPods["Always-On Workloads<br/>(actualbudget, wishlist, lubelogger, tandoor)"]
+        MinIOPod["minio-0 (S3 Endpoint)"]
+        OCIDB["shared-db-3 (CNPG Primary/Replica)"]
+        LHOCI["Longhorn OCI Disks (strict-local only)<br/>allowScheduling: false for general replicas"]
+    end
+
+    HomePods -->|"StorageClass: longhorn (2 replicas in home)"| LHHome
+    HomeDB -->|"StorageClass: longhorn-postgres (1 replica strict-local)"| LHHome
+    MinIOPod -->|"StorageClass: longhorn-oci-local (45Gi strict-local)"| LHOCI
+    OCIDB -->|"StorageClass: longhorn-postgres (20Gi strict-local)"| LHOCI
+    OCIPods -->|"Litestream / s3-rclone"| MinIOPod
+    HomeDB <-->|"CNPG Streaming Replication"| OCIDB
+```
 
 ## Consequences
-- **Pros**:
-  - Reliable state recovery and high availability.
-  - If a home node dies or internet is lost, the OCI Control Plane can reschedule stateful pods to the OCI cloud because a synchronous replica exists there.
-- **Cons**:
-  - **Latency**: Synchronous replication to OCI introduces 30-50ms latency for every disk write.
-  - **Architecture constraints**: Failover to OCI only works for pods that support ARM64.
-  - **Split-Brain Mitigation (Network Fencing)**: In a typical setup, a split-brain would occur if local pods kept receiving writes while OCI failed over. However, this is naturally mitigated by the home router's DNS configuration. The router forces all `*.kms-lab.in.ua` traffic through `10.9.0.1` (the WG Hub in OCI). If the internet drops, local users cannot reach the services locally. This acts as a perfect "Kill-switch", preventing local writes during an outage and allowing the OCI replica to safely take over without data conflicts.
+- **Zero WAN Block Latency:** Home workloads (`apn-mariadb`, `vlogs`, `esphome`, `immich-ml`, `piper`) write exclusively to local NVMe/SSD storage in `home` without waiting for WAN round-trips to OCI.
+- **Independent Always-On OCI Tier:** OCI workloads rely on `shared-db-3` (CNPG streaming replication) and `minio-0` (`Litestream` + `s3-rclone`), surviving complete home power/internet outages (`[[035-hybrid-zone-workload-policy]]`).

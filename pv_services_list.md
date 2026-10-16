@@ -22,11 +22,11 @@
 ## 3. ESPHome (`esphome`)
 - **База даних:** Не використовує базу даних.
 - **Навіщо диск:**
-  - `/config`: Зберігання конфігураційних YAML файлів пристроїв.
-  - `/config/.esphome`: Зберігання кешу для пришвидшення компіляції прошивок розумного дому.
+  - `/config`: Зберігання конфігураційних YAML файлів пристроїв (`esphome-config`, 100Mi, бекапиться в S3 через `daily-backups`).
+  - `/config/.esphome`: Зберігання кешу для пришвидшення компіляції прошивок розумного дому (`esphome-cache`, 12Gi).
 - **Готовність до відключення реплікації:** Так (Готово)
 - **План робіт:**
-  - Сервіс наразі вимкнений (`replicas: 0`). Оскільки він компілює прошивки виключно для пристроїв домашньої мережі, за відсутності доступу до дому його робота в хмарі не має сенсу.
+  - Под закріплено в зоні `home` (`topology.kubernetes.io/zone: home`). Репліки томів перенесено виключно на домашні вузли (`talos-f9o-10o` та `talos-wfh-33w`) без WAN-реплікації на OCI.
 
 ## 4. FreeLingo (`freelingo`)
 - **База даних:** Спільна PostgreSQL (через CloudNativePG) та власний Redis (для кешу/брокера).
@@ -51,13 +51,13 @@
   - Повністю усунуто залежність від Longhorn PV. Старі диски `lubelogger-data` та `lubelogger-keys` більше не використовуються.
 
 ## 6. Paperless-ngx (`paperless`)
-- **База даних:** Спільна PostgreSQL (через CloudNativePG) та локальний Redis.
+- **База даних:** Спільна PostgreSQL (через CloudNativePG) та спільний Redis (`shared-redis`).
 - **Навіщо диск:** Папки `data`, `media`, `consume`, `export`.
 - **Готовність до відключення реплікації:** Так (Готово)
 - **План робіт:**
   - **БД:** PostgreSQL вже реплікується через CNPG.
-  - **Файли:** Документи (`media`) перенесено в OCI Object Storage через `s3-rclone` PVC.
-  - **Кеші/Індекси:** `consume`, `export` замінено на `emptyDir`. Диск `data` (з індексом) залишено на локальному `longhorn-postgres` для максимальної швидкості пошуку без мережевих затримок.
+  - **Файли:** Документи (`media`) перенесено в локальний S3 (MinIO) через `s3-rclone` PVC (`paperless-media-s3`).
+  - **Кеші/Індекси:** `consume`, `export` та `data` (`index`) переведено на `emptyDir`, а старий осиротілий PVC `paperless` видалено (`IAAC-9`).
 
 ## 7. Tandoor Recipes (`tandoor`)
 - **База даних:** Спільна PostgreSQL (через CloudNativePG).
@@ -69,19 +69,21 @@
   - Диск `staticfiles` переведено на `emptyDir`, оскільки статика компілюється під час старту.
   - Усі класичні диски Longhorn відв'язані і можуть бути видалені.
 
-## 8. VictoriaMetrics (`victoriametrics`)
-- **База даних:** Власна Time-Series Database (TSDB).
-- **Навіщо диск:** Збереження зібраних метрик.
+## 8. VictoriaMetrics (`victoriametrics`) та VictoriaLogs (`vlogs`)
+- **База даних:** Власна Time-Series / Logs Database.
+- **Навіщо диск:** Збереження зібраних метрик (`2Gi`, `longhorn-postgres`) та логів (`2Gi`, `longhorn` у зоні `home`).
 - **Готовність до відключення реплікації:** Так (Готово)
 - **План робіт:**
-  - Знято реплікацію з Longhorn.
-  - Диск переведено на StorageClass `longhorn-postgres`, який зберігає дані локально без мережевої реплікації (`numberOfReplicas: 1`). Стару історію метрик очищено.
+  - Весь стек моніторингу перенесено в домашню зону (`home`, `IAAC-10`), `vmsingle` працює на `longhorn-postgres` (`strict-local`, `2Gi`), а репліки `vlogs` перенесено виключно на домашні ноди (`IAAC-9`).
 
 ## 9. Wishlist (`wishlist`)
 - **База даних:** Вбудована SQLite.
 - **Навіщо диск:** `/usr/src/app/data` (БД) та `/usr/src/app/uploads` (зображення).
 - **Готовність до відключення реплікації:** Так (Готово)
 - **План робіт:**
-  - **БД:** Налаштовано реплікацію SQLite за допомогою **Litestream** на OCI S3.
+  - **БД:** Налаштовано реплікацію SQLite за допомогою **Litestream** на S3 (MinIO).
   - **Зображення:** S3-бакет успішно змонтовано за допомогою S3 CSI (`s3-rclone`) у директорію `uploads`.
   - Залежність від Longhorn PV повністю усунуто.
+
+## 10. Домашні томи (`immich-machine-learning`, `piper-data`, `apn-mariadb-data`, `apn-wordpress-content`)
+- **Статус (`IAAC-9`):** Вимкнено `replicaZoneSoftAntiAffinity` (`"false"`), увімкнено `defaultDataLocality = "best-effort"`, заборонено планування загальних реплік Longhorn на вузлах OCI (`talos-cp-oci`, `talos-cp-oci-2`), видалено `mosquitto` та очищено всі осиротілі PVC/PV. Усі репліки класу `longhorn` тепер розміщуються виключно між домашніми нодами (`talos-f9o-10o` та `talos-wfh-33w`).
