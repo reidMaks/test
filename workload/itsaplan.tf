@@ -90,7 +90,7 @@ resource "kubernetes_manifest" "itsaplan_database" {
   }
 }
 
-# 4. Declarative MinIO Bucket Initialization (mc Job)
+# 4. Declarative S3 Bucket Initialization (curl --aws-sigv4 via rustfs/rustfs:1.0.0, as in It's a Plan >= 1.2.0)
 resource "kubernetes_job_v1" "itsaplan_minio_bucket_init" {
   metadata {
     name      = "itsaplan-minio-bucket-init"
@@ -108,16 +108,20 @@ resource "kubernetes_job_v1" "itsaplan_minio_bucket_init" {
           "topology.kubernetes.io/zone" = "oci"
         }
         container {
-          name    = "mc"
-          image   = "quay.io/minio/mc:RELEASE.2025-08-13T08-35-41Z"
+          name    = "s3-bucket-init"
+          image   = "rustfs/rustfs:1.0.0"
           command = ["/bin/sh", "-c"]
           args = [
             <<-EOT
-            until mc alias set localminio ${local.minio_s3_endpoint} admin "$MINIO_ROOT_PASSWORD"; do
-              echo "Waiting for MinIO..."
+            until code=$(curl -s -o /dev/null -w "%%{http_code}" -X PUT \
+              --aws-sigv4 aws:amz:us-east-1:s3 \
+              --user "admin:$MINIO_ROOT_PASSWORD" \
+              "${local.minio_s3_endpoint}/itsaplan-attachments") && \
+              { [ "$code" = "200" ] || [ "$code" = "409" ]; }; do
+              echo "Waiting for S3 object store (HTTP $code)..."
               sleep 2
             done
-            mc mb --ignore-existing localminio/itsaplan-attachments
+            echo "Bucket itsaplan-attachments is ready (HTTP $code)"
             EOT
           ]
           env {
@@ -144,7 +148,7 @@ resource "helm_release" "itsaplan" {
       }
       api = {
         image = {
-          tag = "1.2.1"
+          tag = "1.5.0"
         }
         resources = {
           requests = {
@@ -168,7 +172,7 @@ resource "helm_release" "itsaplan" {
       }
       web = {
         image = {
-          tag = "1.2.1"
+          tag = "1.5.0"
         }
         resources = {
           requests = {
@@ -182,7 +186,7 @@ resource "helm_release" "itsaplan" {
       }
       worker = {
         image = {
-          tag = "1.2.1"
+          tag = "1.5.0"
         }
         resources = {
           requests = {

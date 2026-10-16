@@ -1,7 +1,7 @@
 # 024 Deploy "It's a Plan" AI-Native Issue Tracker
 
-**Status:** Implemented (Updated to v1.2.1)
-**Date:** 2026-09-29
+**Status:** Implemented (Updated to v1.5.0)
+**Date:** 2026-09-29 (Updated 2026-10-16)
 
 ## Context
 
@@ -28,7 +28,7 @@ flowchart TD
         WebPod["itsaplan-web:3001<br/>(Next.js SSR Frontend)"]
         APIPod["itsaplan-api:3000<br/>init: migrate<br/>app: Bun + Elysia REST & MCP"]
         WorkerPod["itsaplan-worker<br/>init: wait-for-migrations<br/>app: Task Scheduler & Webhooks"]
-        InitJob["itsaplan-minio-bucket-init<br/>(One-off MinIO mc Job)"]
+        InitJob["itsaplan-minio-bucket-init<br/>(S3 Init Job via rustfs/rustfs:1.0.0)"]
     end
 
     subgraph StorageLayer["Cluster Data & State"]
@@ -47,7 +47,7 @@ flowchart TD
     WorkerPod -->|DB: itsaplan| CNPG
     APIPod -->|S3: itsaplan-attachments| MinIO
     WorkerPod -->|S3: itsaplan-attachments| MinIO
-    InitJob -->|Create bucket| MinIO
+    InitJob -->|PUT bucket (--aws-sigv4)| MinIO
 ```
 
 ## Architectural Decisions & Environment Adaptations
@@ -66,15 +66,15 @@ flowchart TD
    - In `v1.2.0+`, migrations are completely decoupled from runtime containers:
      - `itsaplan-api` runs an `initContainers` named `migrate` (`bun run packages/db/src/migrate.ts`) coordinating via PostgreSQL advisory lock `804216551`.
      - `itsaplan-worker` runs an `initContainers` named `wait-for-migrations` (`bun run packages/db/src/wait-for-migrations.ts`) polling `drizzle.__drizzle_migrations` until schema updates complete.
-   - `SKIP_PRE_MIGRATION_BACKUP` is set to `"1"` because the application image bundles PostgreSQL 17 `pg_dump` tools while our CloudNativePG cluster is PostgreSQL 18. Continuous database protection and WAL archiving are already managed by CNPG at the cluster level.
+   - Starting in `v1.4.0`, the upstream `api` image bundles the PostgreSQL 18 `pg_dump` client (`#492`). `SKIP_PRE_MIGRATION_BACKUP` remains set to `"1"` because we keep `api.backups.persistence.enabled: false` (avoiding an extra PVC on OCI) and delegate database backups to CNPG at the cluster level.
 
-3. **Local Object Storage (MinIO):**
-   - Attachments are stored in the cluster's high-performance local MinIO (`http://minio.default.svc.cluster.local:9000`) in bucket `itsaplan-attachments`. While upstream v1.2.x uses RustFS as its default in-chart store, our deployment sets `minio.enabled: false` and connects to our cluster-wide MinIO via `externalS3`.
-   - `S3_FORCE_PATH_STYLE: "true"` is explicitly configured for MinIO compatibility.
-   - A declarative one-off `kubernetes_job_v1` ensures the `itsaplan-attachments` bucket exists prior to application startup.
+3. **Object Storage & Replacement of `quay.io/minio/mc` with `rustfs/rustfs`:**
+   - Attachments are stored in the cluster's local S3 object store (`http://minio.default.svc.cluster.local:9000`) in bucket `itsaplan-attachments` (`minio.enabled: false`, `externalS3.endpoint` configured, `S3_FORCE_PATH_STYLE: "true"`).
+   - Upstream `v1.2.0` (`#437`) replaced `quay.io/minio/minio` and `quay.io/minio/mc` with `rustfs/rustfs:1.0.0` after MinIO discontinued free public container images on Quay.io (`401 UNAUTHORIZED`).
+   - Following upstream `job-minio-init.yaml`, our declarative `kubernetes_job_v1.itsaplan_minio_bucket_init` now uses `rustfs/rustfs:1.0.0` and initializes the bucket via `curl -X PUT --aws-sigv4 aws:amz:us-east-1:s3` (accepting both HTTP `200` and `409 BucketAlreadyOwnedByYou` for idempotency across MinIO and RustFS).
 
-4. **Multi-Arch Container Images from GHCR:**
-   - Official images are pulled from GitHub Container Registry (`ghcr.io/croffasia/itsaplan-*`), pinned to release tag `1.2.1`.
+4. **Multi-Arch Container Images from GHCR (`v1.5.0`):**
+   - Official images are pulled from GitHub Container Registry (`ghcr.io/croffasia/itsaplan-*`), pinned to release tag `1.5.0` (bringing Workspaces & Project Archiving from `v1.3.0`, status-triggered agent schedules & PG18 client from `v1.4.0`, and encrypted OAuth tokens at rest, account deactivation, workspace model pricing, and PWA support from `v1.5.0`).
    - Images provide native multi-architecture support (`linux/amd64` for Proxmox workers and `linux/arm64` for OCI nodes).
 
 5. **Resource Efficiency & Omission of `itsaplan-bot`:**
