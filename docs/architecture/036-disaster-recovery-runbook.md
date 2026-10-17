@@ -149,9 +149,12 @@ spec:
     major: 18
   postgresUID: 26
   postgresGID: 26
+  affinity:
+    nodeSelector:
+      kubernetes.io/hostname: talos-wfh-33w
   storage:
     storageClass: longhorn-postgres
-    size: 20Gi
+    size: 8Gi # Use 8Gi for side-by-side drills so it fits alongside the live 20Gi instance
   bootstrap:
     recovery:
       source: shared-db-backup
@@ -247,5 +250,5 @@ kubectl create job --from=cronjob/qnap-sync qnap-restore-manual -n default --dry
 | Date | Component | Test Performed | Result |
 | :--- | :--- | :--- | :--- |
 | `2026-10-17` | **Litestream (`wishlist-db`)** | Restored `/usr/src/app/data/prod.db` from `s3://kms-lab-data/wishlist-db` into `/tmp/test_restore.db` | **PASS** (`316 KiB` DB restored in `<1s`) |
-| `2026-10-17` | **CNPG (`shared-db`)** | Verified `base/20261017T064839` (`1.1 GiB` compressed) + continuous 5-min `.gz` WAL segments in MinIO & QNAP | **PASS** (`firstRecoverabilityPoint` active) |
-| `2026-10-17` | **Longhorn (`daily-backup`)** | Verified full backup creation & sync for all 3 volumes (`apn-mariadb-data`, `apn-wordpress-content`, `esphome-config`) to MinIO | **PASS** (`62s` total, `97 MiB` deduplicated) |
+| `2026-10-17` | **Longhorn (`esphome-restore-test`)** | Restored `backup-1e8686bee8fc44b3` from `s3://kms-lab-data/longhorn-backups` into test volume `esphome-restore-test` | **PASS** (`44 MiB` restored in `28s`, `restoreRequired: false`, `robustness: healthy`) |
+| `2026-10-17` | **CNPG (`shared-db-restore-test`)** | Full Barman S3 recovery (`backup-20261017095436` + WAL replay) into 1-node test cluster `shared-db-restore-test` on `talos-wfh-33w` | **PASS** (`Cluster in healthy state` in `2m48s`; all 8 production DBs verified via `psql -c "\l+"`) |
