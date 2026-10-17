@@ -13,8 +13,8 @@ Initially, we explored:
 ## Decision
 We decided to adopt an asynchronous replication strategy using a Kubernetes `CronJob` powered by `rclone`.
 
-1.  **Single Source of Truth:** All applications (CSI Rclone for files, Litestream for SQLite databases) write exclusively to the highly available local MinIO instance.
-2.  **Asynchronous Replication:** A background `CronJob` (`qnap-sync`), deployed via `app-template`, runs every 15 minutes. It executes `rclone sync` to mirror the entire `kms-lab-data` bucket from MinIO to the QNAP NAS.
+1.  **Single Source of Truth:** All applications (CSI Rclone for files, Litestream for SQLite databases, CloudNativePG `barmanObjectStore` for PostgreSQL base backups & WAL archives, Longhorn block backups under `longhorn-backups/`, and It's a Plan attachments) write exclusively to the local S3 instance (`minio-0` in `oci`).
+2.  **Asynchronous Replication:** A background `CronJob` (`qnap-sync`), deployed via `app-template`, runs every 6 hours (`0 */6 * * *`). It executes `rclone sync` to mirror both the `kms-lab-data` bucket (including `cnpg-backups/` and `longhorn-backups/`) and the `itsaplan-attachments` bucket (into `qnap:kms-lab-data/itsaplan-attachments`) from MinIO to the QNAP NAS, which can then sync the local directory to Google Drive.
 3.  **Shared Credentials:** We use a centralized Kubernetes Secret (`litestream-s3`) that securely provides credentials for both MinIO and QNAP via Bitwarden.
 
 ## Consequences

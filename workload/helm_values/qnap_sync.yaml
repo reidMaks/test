@@ -19,13 +19,12 @@ controllers:
           limits:
             memory: 512Mi
         command:
-          - rclone
-          - sync
-          - minio:kms-lab-data
-          - qnap:kms-lab-data
-          - --verbose
-          - --transfers=4
-          - --checkers=8
+          - sh
+          - -c
+          - |
+            set -e
+            rclone sync minio:kms-lab-data qnap:kms-lab-data --exclude "/itsaplan-attachments/**" --verbose --transfers=4 --checkers=8
+            rclone sync minio:itsaplan-attachments qnap:kms-lab-data/itsaplan-attachments --verbose --transfers=4 --checkers=8
         env:
           RCLONE_CONFIG_MINIO_TYPE: s3
           RCLONE_CONFIG_MINIO_PROVIDER: Minio

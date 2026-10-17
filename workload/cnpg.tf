@@ -8,8 +8,21 @@ resource "helm_release" "cnpg" {
   name             = "cnpg"
   repository       = "https://cloudnative-pg.github.io/charts"
   chart            = "cloudnative-pg"
+  version          = "0.29.0"
   namespace        = kubernetes_namespace.cnpg_system.metadata[0].name
   create_namespace = false
+}
+
+resource "kubernetes_secret" "cnpg_minio_s3" {
+  metadata {
+    name      = "cnpg-minio-s3-creds"
+    namespace = kubernetes_namespace.cnpg_system.metadata[0].name
+  }
+
+  data = {
+    ACCESS_KEY_ID     = data.bitwarden-secrets_secret.minio_s3_access_key.value
+    SECRET_ACCESS_KEY = data.bitwarden-secrets_secret.minio_s3_secret_key.value
+  }
 }
 
 resource "kubernetes_storage_class" "longhorn_postgres" {
@@ -57,7 +70,10 @@ resource "kubernetes_manifest" "cnpg_catalog" {
 }
 
 resource "kubernetes_manifest" "cnpg_cluster" {
-  depends_on = [helm_release.cnpg]
+  depends_on = [
+    helm_release.cnpg,
+    kubernetes_secret.cnpg_minio_s3
+  ]
 
   lifecycle {
     prevent_destroy = true
@@ -159,6 +175,31 @@ resource "kubernetes_manifest" "cnpg_cluster" {
         }
       }
 
+      backup = {
+        retentionPolicy = "7d"
+        target          = "prefer-standby"
+        barmanObjectStore = {
+          destinationPath = "s3://kms-lab-data/cnpg-backups"
+          endpointURL     = local.minio_s3_endpoint
+          s3Credentials = {
+            accessKeyId = {
+              name = kubernetes_secret.cnpg_minio_s3.metadata[0].name
+              key  = "ACCESS_KEY_ID"
+            }
+            secretAccessKey = {
+              name = kubernetes_secret.cnpg_minio_s3.metadata[0].name
+              key  = "SECRET_ACCESS_KEY"
+            }
+          }
+          data = {
+            compression = "gzip"
+          }
+          wal = {
+            compression = "gzip"
+          }
+        }
+      }
+
       affinity = {
         podAntiAffinityType = "required"
         nodeAffinity = {
@@ -177,6 +218,30 @@ resource "kubernetes_manifest" "cnpg_cluster" {
             }
           ]
         }
+      }
+    }
+  }
+}
+
+resource "kubernetes_manifest" "cnpg_scheduled_backup" {
+  depends_on = [kubernetes_manifest.cnpg_cluster]
+
+  manifest = {
+    apiVersion = "postgresql.cnpg.io/v1"
+    kind       = "ScheduledBackup"
+    metadata = {
+      name      = "shared-db-daily-backup"
+      namespace = kubernetes_namespace.cnpg_system.metadata[0].name
+    }
+    spec = {
+      # 6-field robfig/cron format (seconds minutes hours day-of-month month day-of-week):
+      # Щоночі о 03:00 UTC
+      schedule             = "0 0 3 * * *"
+      backupOwnerReference = "self"
+      immediate            = true
+      method               = "barmanObjectStore"
+      cluster = {
+        name = "shared-db"
       }
     }
   }

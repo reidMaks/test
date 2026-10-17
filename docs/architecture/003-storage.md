@@ -16,7 +16,9 @@ Stateful workloads in our hybrid Talos Kubernetes cluster (`home` Proxmox + `oci
   2. `longhorn-postgres`: `numberOfReplicas = 1`, `dataLocality = strict-local`, `volumeBindingMode = WaitForFirstConsumer`. Used for CloudNativePG (`shared-db-1`, `shared-db-2`, `shared-db-3`) and `vmsingle` where replication or durability is handled at the application layer or where strict local I/O is required.
   3. `longhorn-oci-local`: `numberOfReplicas = 1`, `dataLocality = strict-local`. Used by `minio-0` on `talos-cp-oci` (`/var/mnt/oci-disk`).
   4. `s3-rclone`: ReadWriteMany object storage mounts backed by local MinIO (`minio.default.svc.cluster.local:9000`), asynchronously synced to QNAP NAS (`[[017-s3-replication-qnap]]`).
-- **Backups:** A Longhorn `RecurringJob` (`daily-backup`) backs up labeled volumes daily to S3, while secrets are injected dynamically via `bitwarden-secrets`.
+- **Backups:**
+  - **Longhorn Block Backups (MinIO $\rightarrow$ QNAP $\rightarrow$ Google Drive):** A Longhorn `RecurringJob` (`daily-backup`, `02:00 UTC`, `retain = 7`) backs up volumes in the `daily-backups` group (`esphome-config`, `apn-mariadb-data`, `apn-wordpress-content`) directly to local MinIO (`s3://kms-lab-data@us-east-1/longhorn-backups`), eliminating `rclone-s3-gateway` and Google Drive API rate limits. `qnap-sync` mirrors `kms-lab-data` to QNAP NAS (`[[017-s3-replication-qnap]]`), which in turn syncs the local backup directory to Google Drive. Because Longhorn CSI does not propagate Kubernetes PVC labels onto `volumes.longhorn.io`, `kubernetes_labels` resources in `workload/infrastructure.tf` attach `recurring-job-group.longhorn.io/daily-backups = "enabled"` directly to the Longhorn `Volume` CRs.
+  - **CloudNativePG Backups (`IAAC-19`):** `shared-db` continuously archives gzip-compressed WAL segments and nightly base backups (`03:00 UTC`, `retentionPolicy = "7d"`) via `barmanObjectStore` to `s3://kms-lab-data/cnpg-backups` in MinIO (`oci`), which `qnap-sync` mirrors to QNAP NAS (`[[008-cloudnativepg-migration]]`, `[[017-s3-replication-qnap]]`).
 
 ## Architecture Diagram
 

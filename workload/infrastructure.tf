@@ -160,9 +160,9 @@ resource "kubernetes_secret" "longhorn_backup" {
   }
 
   data = {
-    AWS_ACCESS_KEY_ID     = data.bitwarden-secrets_secret.qobject_access_key.value
-    AWS_SECRET_ACCESS_KEY = data.bitwarden-secrets_secret.qobject_secret_key.value
-    AWS_ENDPOINTS         = "http://rclone-s3-gateway.longhorn-system.svc.cluster.local:8080"
+    AWS_ACCESS_KEY_ID     = "admin"
+    AWS_SECRET_ACCESS_KEY = data.bitwarden-secrets_secret.minio_root.value
+    AWS_ENDPOINTS         = local.minio_s3_endpoint
     VIRTUAL_HOSTED_STYLE  = "false"
   }
 }
@@ -182,11 +182,15 @@ resource "helm_release" "longhorn" {
   ]
   values = [
     yamlencode({
+      defaultBackupStore = {
+        backupTarget                 = "s3://kms-lab-data@us-east-1/longhorn-backups"
+        backupTargetCredentialSecret = "longhorn-backup-credential-v2"
+      }
       defaultSettings = {
         storageMinimalAvailablePercentage = 15
         defaultDataPath                   = "/var/lib/longhorn"
         backupTargetCredentialSecret      = "longhorn-backup-credential-v2"
-        backupTarget                      = "s3://s3-like-bucket@us-east-1/"
+        backupTarget                      = "s3://kms-lab-data@us-east-1/longhorn-backups"
         nodeDownPodDeletionPolicy         = "delete-pod-when-node-down"
         # У термінології Longhorn "Soft Anti-Affinity = true" означає ДОЗВОЛИТИ
         # розміщення кількох реплік в одній зоні (home), коли в іншій зоні (oci)
@@ -289,4 +293,58 @@ resource "kubernetes_manifest" "longhorn_daily_backup" {
   }
 
   depends_on = [helm_release.longhorn]
+}
+
+# Longhorn CSI не копіює лейбли з Kubernetes PVC на внутрішні об'єкти
+# volumes.longhorn.io, тому навішуємо мітку групи daily-backups напряму
+# на Longhorn Volume CR для томів, які потребують бекапу в Google Drive.
+data "kubernetes_persistent_volume_claim" "esphome_config" {
+  metadata {
+    name      = "esphome-config"
+    namespace = "default"
+  }
+
+  depends_on = [helm_release.esphome]
+}
+
+resource "kubernetes_labels" "longhorn_backup_esphome_config" {
+  api_version = "longhorn.io/v1beta2"
+  kind        = "Volume"
+  metadata {
+    name      = data.kubernetes_persistent_volume_claim.esphome_config.spec[0].volume_name
+    namespace = kubernetes_namespace.longhorn_system.metadata[0].name
+  }
+  labels = {
+    "recurring-job-group.longhorn.io/daily-backups" = "enabled"
+  }
+
+  depends_on = [kubernetes_manifest.longhorn_daily_backup]
+}
+
+resource "kubernetes_labels" "longhorn_backup_apn_mariadb" {
+  api_version = "longhorn.io/v1beta2"
+  kind        = "Volume"
+  metadata {
+    name      = kubernetes_persistent_volume_claim.apn_mariadb_data.spec[0].volume_name
+    namespace = kubernetes_namespace.longhorn_system.metadata[0].name
+  }
+  labels = {
+    "recurring-job-group.longhorn.io/daily-backups" = "enabled"
+  }
+
+  depends_on = [kubernetes_manifest.longhorn_daily_backup]
+}
+
+resource "kubernetes_labels" "longhorn_backup_apn_wordpress" {
+  api_version = "longhorn.io/v1beta2"
+  kind        = "Volume"
+  metadata {
+    name      = kubernetes_persistent_volume_claim.apn_wordpress_content.spec[0].volume_name
+    namespace = kubernetes_namespace.longhorn_system.metadata[0].name
+  }
+  labels = {
+    "recurring-job-group.longhorn.io/daily-backups" = "enabled"
+  }
+
+  depends_on = [kubernetes_manifest.longhorn_daily_backup]
 }

@@ -57,3 +57,15 @@ Because the home lab only has 2 physical `amd64` nodes (`talos-f9o-10o`, `talos-
 CNPG was integrated into the cluster's Grafana and VictoriaMetrics stack:
 - **ServiceMonitor/VMPodScrape:** Added `VMPodScrape` resources for the operator and the cluster pods to scrape metrics via port `9187`.
 - **Grafana Dashboard:** Configured a `ConfigMap` labeled with `grafana_dashboard=1` containing the official CNPG dashboard JSON, allowing the Grafana Sidecar (`grafana-sc-dashboard`) to automatically discover and mount it.
+
+### Automated Backups & Point-in-Time Recovery (`IAAC-19`)
+While streaming replication across 3 instances protects against node/disk failure, it does not protect against logical data loss (accidental `DROP TABLE` / `DELETE` or faulty schema migrations). To achieve a **3-2-1 backup strategy** with Point-in-Time Recovery (PITR):
+1. **Continuous WAL Archiving & Base Backups (`barmanObjectStore`):**
+   - Configured `spec.backup.barmanObjectStore` in `workload/cnpg.tf` targeting `s3://kms-lab-data/cnpg-backups` on the in-cluster S3 endpoint (`http://minio.default.svc.cluster.local:9000` in the `oci` zone).
+   - Both base backups (`data.compression = "gzip"`) and WAL segments (`wal.compression = "gzip"`, `archive_timeout = "5min"`) are compressed and archived automatically.
+   - `retentionPolicy = "7d"` retains 7 days of base backups and WAL history.
+2. **Nightly Scheduled Base Backups (`ScheduledBackup`):**
+   - Resource `shared-db-daily-backup` runs every night at `03:00 UTC` (`schedule: "0 0 3 * * *"`, `target: "prefer-standby"`, `immediate: true`).
+3. **Offsite Replication to QNAP NAS (`[[017-s3-replication-qnap]]`):**
+   - Because backups are stored under the `kms-lab-data/cnpg-backups` prefix in MinIO (`oci` zone), the `qnap-sync` CronJob automatically mirrors them every 15 minutes to the home QNAP NAS (`qnap:kms-lab-data/cnpg-backups`).
+   - During a `home` zone power/internet outage, the `shared-db-3` instance in `oci` continues archiving WALs and performing scheduled backups directly to `minio-0` in `oci`, and `qnap-sync` catches up automatically once `home` returns online.
