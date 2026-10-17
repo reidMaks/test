@@ -13,15 +13,16 @@ terraform {
       version = "~> 2.30.0"
     }
     bitwarden-secrets = {
-      source = "registry.terraform.io/bitwarden/bitwarden-secrets"
+      source  = "registry.terraform.io/bitwarden/bitwarden-secrets"
+      version = "~> 1.0"
     }
     cloudflare = {
       source  = "cloudflare/cloudflare"
       version = "~> 4.0"
     }
-    tls = {
-      source  = "hashicorp/tls"
-      version = "~> 4.0"
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
     }
     grafana = {
       source  = "grafana/grafana"
