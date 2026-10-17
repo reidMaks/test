@@ -74,7 +74,7 @@ resource "helm_release" "minio" {
                 # Empty log directory instructs entrypoint.sh to stream logs to stdout
                 # instead of writing to container-local /logs.
                 RUSTFS_OBS_LOG_DIRECTORY = ""
-                RUSTFS_OBS_LOGGER_LEVEL  = "info"
+                RUSTFS_OBS_LOGGER_LEVEL  = "warn"
               }
               probes = {
                 readiness = {
@@ -109,10 +109,10 @@ resource "helm_release" "minio" {
               resources = {
                 requests = {
                   cpu    = "50m"
-                  memory = "128Mi"
+                  memory = "384Mi"
                 }
                 limits = {
-                  memory = "768Mi"
+                  memory = "1Gi"
                 }
               }
             }
