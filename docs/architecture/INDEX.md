@@ -44,6 +44,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[033-media-stack-configuration-as-code]] - Media Stack Configuration as Code & Auto-Wiring
 - [[034-renovate-gitops-updates]] - Declarative Dependency & Image Updates via Renovate Bot (replaces Keel & Diun)
 - [[035-hybrid-zone-workload-policy]] - Hybrid Zone Workload Placement Policy (`oci` Always-On Public Tier vs `home` Private/Heavy Tier)
+- [[036-disaster-recovery-runbook]] - Disaster Recovery (DR) & 3-2-1 Backup Restore Runbook (MinIO, QNAP NAS, Encrypted Google Drive)
 
 ## Workloads & Services
 - Traefik (Ingress)
