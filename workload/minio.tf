@@ -25,6 +25,8 @@ resource "kubernetes_secret" "minio_secret" {
   data = {
     MINIO_ROOT_USER     = "admin"
     MINIO_ROOT_PASSWORD = data.bitwarden-secrets_secret.minio_root.value
+    RUSTFS_ACCESS_KEY   = "admin"
+    RUSTFS_SECRET_KEY   = data.bitwarden-secrets_secret.minio_root.value
   }
 }
 
@@ -42,11 +44,6 @@ resource "helm_release" "minio" {
         nodeSelector = {
           "kubernetes.io/hostname" = "talos-cp-oci"
         }
-        annotations = {
-          "prometheus.io/scrape" = "true"
-          "prometheus.io/port"   = "9000"
-          "prometheus.io/path"   = "/minio/v2/metrics/cluster"
-        }
       }
       controllers = {
         main = {
@@ -55,17 +52,59 @@ resource "helm_release" "minio" {
           containers = {
             main = {
               image = {
-                repository = "quay.io/minio/minio"
-                tag        = "RELEASE.2024-03-30T09-41-56Z"
+                repository = "rustfs/rustfs"
+                tag        = "1.0.0"
               }
-              command = ["minio", "server", "/data", "--console-address", ":9001"]
+              # The volume holds files and .minio.sys written by MinIO as root (0:0);
+              # RustFS reads them in-place and runs as root to keep them writable.
+              securityContext = {
+                runAsUser  = 0
+                runAsGroup = 0
+              }
               envFrom = [
                 { secretRef = { name = kubernetes_secret.minio_secret.metadata[0].name } }
               ]
               env = {
-                MINIO_PROMETHEUS_URL       = "http://vmsingle-vm-victoria-metrics-k8s-stack.monitoring.svc.cluster.local:8428"
-                MINIO_PROMETHEUS_JOB_ID    = "minio"
-                MINIO_PROMETHEUS_AUTH_TYPE = "public"
+                RUSTFS_VOLUMES                      = "/data"
+                RUSTFS_ADDRESS                      = "0.0.0.0:9000"
+                RUSTFS_CONSOLE_ENABLE               = "true"
+                RUSTFS_CONSOLE_ADDRESS              = "0.0.0.0:9001"
+                RUSTFS_CORS_ALLOWED_ORIGINS         = "*"
+                RUSTFS_CONSOLE_CORS_ALLOWED_ORIGINS = "*"
+                # Empty log directory instructs entrypoint.sh to stream logs to stdout
+                # instead of writing to container-local /logs.
+                RUSTFS_OBS_LOG_DIRECTORY = ""
+                RUSTFS_OBS_LOGGER_LEVEL  = "info"
+              }
+              probes = {
+                readiness = {
+                  enabled = true
+                  custom  = true
+                  spec = {
+                    httpGet = {
+                      path = "/health"
+                      port = 9000
+                    }
+                    initialDelaySeconds = 10
+                    periodSeconds       = 10
+                    timeoutSeconds      = 5
+                    failureThreshold    = 3
+                  }
+                }
+                liveness = {
+                  enabled = true
+                  custom  = true
+                  spec = {
+                    httpGet = {
+                      path = "/health"
+                      port = 9000
+                    }
+                    initialDelaySeconds = 30
+                    periodSeconds       = 15
+                    timeoutSeconds      = 5
+                    failureThreshold    = 3
+                  }
+                }
               }
               resources = {
                 requests = {
@@ -144,32 +183,4 @@ resource "helm_release" "minio" {
       }
     })
   ]
-}
-
-resource "kubernetes_manifest" "vmservicescrape_minio" {
-  manifest = {
-    apiVersion = "operator.victoriametrics.com/v1beta1"
-    kind       = "VMServiceScrape"
-    metadata = {
-      name      = "minio-metrics"
-      namespace = "monitoring"
-    }
-    spec = {
-      namespaceSelector = {
-        matchNames = ["default"]
-      }
-      endpoints = [
-        {
-          port     = "api"
-          path     = "/minio/v2/metrics/cluster"
-          jobLabel = "app.kubernetes.io/name"
-        }
-      ]
-      selector = {
-        matchLabels = {
-          "app.kubernetes.io/name" = "minio"
-        }
-      }
-    }
-  }
 }

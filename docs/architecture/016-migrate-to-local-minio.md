@@ -1,6 +1,6 @@
 # 016 Migrate S3 Workloads to Local MinIO
 
-**Status:** Applied
+**Status:** Applied (Engine migrated in-place to RustFS 1.0 in [[037-rustfs-and-valkey-migration]])
 **Date:** 2026-08-06
 
 **Context:** Our IaaC stack used Oracle Object Storage (OOS) for Litestream database backups (SQLite) and file attachments via CSI Rclone. However, the continuous sync operations of Litestream and other backups exceeded Oracle Cloud's "Always Free" tier limits for API requests, which led to unexpected billing. While we initially tried to mitigate this by limiting Litestream's `sync-interval` to 10 minutes, the fundamental issue remained.

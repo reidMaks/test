@@ -34,8 +34,8 @@ resource "helm_release" "shared_redis" {
           containers = {
             main = {
               image = {
-                repository = "redis"
-                tag        = "7-alpine"
+                repository = "valkey/valkey"
+                tag        = "8-alpine"
               }
               # maxmemory прив'язаний до нашого cgroup-ліміту (256Mi) нижче:
               # без нього Redis виділяє пам'ять без обмежень, доки cgroup
