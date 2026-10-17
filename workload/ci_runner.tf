@@ -1,12 +1,24 @@
 # ==============================================================================
-# GitHub Actions Self-Hosted Runner & Ephemeral Preview Isolation
-# Provides in-cluster CI runner with RBAC strictly scoped to "apn-preview"
+# GitHub Actions Self-Hosted Runner & Isolated APN Sandbox Namespaces
+# Provides in-cluster CI runner & ServiceAccount with full RBAC strictly scoped
+# to APN namespaces ("apn", "apn-preview", "apn-prod") and zero cluster access.
 # ==============================================================================
 
 # 1. Namespaces
 resource "kubernetes_namespace" "ci" {
   metadata {
     name = "ci"
+    labels = {
+      "pod-security.kubernetes.io/enforce" = "baseline"
+      "pod-security.kubernetes.io/audit"   = "baseline"
+      "pod-security.kubernetes.io/warn"    = "baseline"
+    }
+  }
+}
+
+resource "kubernetes_namespace" "apn" {
+  metadata {
+    name = "apn"
     labels = {
       "pod-security.kubernetes.io/enforce" = "baseline"
       "pod-security.kubernetes.io/audit"   = "baseline"
@@ -26,7 +38,18 @@ resource "kubernetes_namespace" "apn_preview" {
   }
 }
 
-# 2. ServiceAccount for GitHub Actions Runner in "ci" namespace
+resource "kubernetes_namespace" "apn_prod" {
+  metadata {
+    name = "apn-prod"
+    labels = {
+      "pod-security.kubernetes.io/enforce" = "baseline"
+      "pod-security.kubernetes.io/audit"   = "baseline"
+      "pod-security.kubernetes.io/warn"    = "baseline"
+    }
+  }
+}
+
+# 2. ServiceAccount & Token for APN Deployer / GitHub Actions Runner in "ci"
 resource "kubernetes_service_account" "github_runner" {
   metadata {
     name      = "github-runner"
@@ -34,7 +57,20 @@ resource "kubernetes_service_account" "github_runner" {
   }
 }
 
-# 3. RBAC: Strict Least-Privilege Role in "apn-preview"
+resource "kubernetes_secret_v1" "apn_deployer_token" {
+  metadata {
+    name      = "apn-deployer-token"
+    namespace = kubernetes_namespace.ci.metadata[0].name
+    annotations = {
+      "kubernetes.io/service-account.name" = kubernetes_service_account.github_runner.metadata[0].name
+    }
+  }
+
+  type                           = "kubernetes.io/service-account-token"
+  wait_for_service_account_token = true
+}
+
+# 3. RBAC: Full Sandbox Autonomy strictly inside "apn-preview"
 resource "kubernetes_role" "apn_preview_deployer" {
   metadata {
     name      = "apn-preview-deployer"
@@ -42,23 +78,9 @@ resource "kubernetes_role" "apn_preview_deployer" {
   }
 
   rule {
-    api_groups = ["", "apps", "batch", "networking.k8s.io"]
-    resources = [
-      "pods",
-      "pods/log",
-      "pods/exec",
-      "services",
-      "endpoints",
-      "persistentvolumeclaims",
-      "configmaps",
-      "secrets",
-      "deployments",
-      "statefulsets",
-      "replicasets",
-      "jobs",
-      "ingresses"
-    ]
-    verbs = ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
+    api_groups = ["*"]
+    resources  = ["*"]
+    verbs      = ["*"]
   }
 }
 
@@ -81,7 +103,7 @@ resource "kubernetes_role_binding" "github_runner_preview_binding" {
   }
 }
 
-# 3.1 RBAC: Scoped Staging Deployment Role in "apn" (APN-134 CD)
+# 3.1 RBAC: Full Sandbox Autonomy strictly inside "apn" (Staging)
 resource "kubernetes_role" "github_runner_apn_staging" {
   metadata {
     name      = "github-runner-apn-staging"
@@ -89,27 +111,9 @@ resource "kubernetes_role" "github_runner_apn_staging" {
   }
 
   rule {
-    api_groups = ["apps"]
-    resources  = ["deployments"]
-    verbs      = ["get", "list", "watch", "patch", "update"]
-  }
-
-  rule {
-    api_groups = ["apps"]
-    resources  = ["replicasets"]
-    verbs      = ["get", "list", "watch"]
-  }
-
-  rule {
-    api_groups = [""]
-    resources  = ["pods", "pods/log"]
-    verbs      = ["get", "list"]
-  }
-
-  rule {
-    api_groups = [""]
-    resources  = ["pods/exec"]
-    verbs      = ["create", "get"]
+    api_groups = ["*"]
+    resources  = ["*"]
+    verbs      = ["*"]
   }
 }
 
@@ -123,6 +127,39 @@ resource "kubernetes_role_binding" "github_runner_apn_staging_binding" {
     api_group = "rbac.authorization.k8s.io"
     kind      = "Role"
     name      = kubernetes_role.github_runner_apn_staging.metadata[0].name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = kubernetes_service_account.github_runner.metadata[0].name
+    namespace = kubernetes_service_account.github_runner.metadata[0].namespace
+  }
+}
+
+# 3.2 RBAC: Full Sandbox Autonomy strictly inside "apn-prod" (Production)
+resource "kubernetes_role" "github_runner_apn_prod" {
+  metadata {
+    name      = "github-runner-apn-prod"
+    namespace = kubernetes_namespace.apn_prod.metadata[0].name
+  }
+
+  rule {
+    api_groups = ["*"]
+    resources  = ["*"]
+    verbs      = ["*"]
+  }
+}
+
+resource "kubernetes_role_binding" "github_runner_apn_prod_binding" {
+  metadata {
+    name      = "github-runner-apn-prod-binding"
+    namespace = kubernetes_namespace.apn_prod.metadata[0].name
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "Role"
+    name      = kubernetes_role.github_runner_apn_prod.metadata[0].name
   }
 
   subject {

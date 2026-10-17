@@ -320,31 +320,3 @@ resource "kubernetes_labels" "longhorn_backup_esphome_config" {
 
   depends_on = [kubernetes_manifest.longhorn_daily_backup]
 }
-
-resource "kubernetes_labels" "longhorn_backup_apn_mariadb" {
-  api_version = "longhorn.io/v1beta2"
-  kind        = "Volume"
-  metadata {
-    name      = kubernetes_persistent_volume_claim.apn_mariadb_data.spec[0].volume_name
-    namespace = kubernetes_namespace.longhorn_system.metadata[0].name
-  }
-  labels = {
-    "recurring-job-group.longhorn.io/daily-backups" = "enabled"
-  }
-
-  depends_on = [kubernetes_manifest.longhorn_daily_backup]
-}
-
-resource "kubernetes_labels" "longhorn_backup_apn_wordpress" {
-  api_version = "longhorn.io/v1beta2"
-  kind        = "Volume"
-  metadata {
-    name      = kubernetes_persistent_volume_claim.apn_wordpress_content.spec[0].volume_name
-    namespace = kubernetes_namespace.longhorn_system.metadata[0].name
-  }
-  labels = {
-    "recurring-job-group.longhorn.io/daily-backups" = "enabled"
-  }
-
-  depends_on = [kubernetes_manifest.longhorn_daily_backup]
-}

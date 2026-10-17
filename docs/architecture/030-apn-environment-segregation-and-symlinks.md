@@ -1,67 +1,46 @@
-# 030 APN Environment Segregation and Hybrid Symlink Realignment
+# 030 APN Environment Segregation and Namespace-as-a-Service Sandbox
 
-**Status:** Accepted
+**Status:** Accepted (Updated 2026-10-17)
 **Date:** 2026-10-05
 **Related Docs:** [[025-apn-public-ingress-and-dns]], [[027-apn-pr-preview-and-ci-runner]], [[029-apn-performance-optimization-redis-mariadb]]
 **References:** APN PR #76 (Platform Simplification, APN-109, APN-131, APN-121)
 
 ## Context
 
-The APN repository underwent a comprehensive platform simplification refactor (APN-109 / APN-131). As part of this refactor:
-1. The monolithic infrastructure layout in `/home/max/APN/infra/` was restructured into isolated environments:
-   - `infra/environments/staging/` (`apn_staging.tf`, `values-mariadb.yaml`, `values-wordpress.yaml`)
-   - `infra/environments/production/` (`apn_prod.tf`, `values-mariadb.yaml`, `values-wordpress.yaml`)
-2. As a consequence, legacy file paths (`infra/apn.tf`, `infra/helm_values/apn_mariadb.yaml`, `infra/helm_values/apn_wordpress.yaml`) were relocated or removed.
-3. This broke the hybrid symlinks in the central IaaC cluster repository (`/home/max/pet/IaaC/workload/`), resulting in Terraform failing during `terraform apply` / `terraform plan`:
-   ```
-   Error: Failed to read file
-   The file "apn.tf" could not be read.
-   ```
-4. Additionally, in APN-121, the dynamic Redis persistent object cache layer was decommissioned in staging to simplify operations, removing `REDIS_PASSWORD` from staging secrets and simplifying WordPress container environment variables.
+Initially, the central `IaaC` repository integrated `APN` staging manifests via cross-repository filesystem symlinks (`workload/apn.tf` $\rightarrow$ `/home/max/APN/infra/environments/staging/apn_staging.tf`). This caused two major operational issues:
+1. **Broken CI Validation:** Cloud GitHub Actions runners executing `terraform validate` in `IaaC/workload` lacked `/home/max/APN`, causing dangling symlinks and unresolved resource references (`kubernetes_namespace.apn`, `kubernetes_persistent_volume_claim.apn_*`).
+2. **State Coupling vs. Security:** Sharing a single root Terraform state in `IaaC/workload` forced every change in the rapidly evolving `APN` project to go through `IaaC`, whereas granting `APN` full cluster access (`cluster-admin`) violated the Principle of Least Privilege (PoLP).
 
-## Architectural Decision
+## Architectural Decision: Namespace-as-a-Service (Sandbox Isolation)
 
 ```mermaid
 flowchart LR
-    subgraph APN_Repo["Repository: /home/max/APN"]
-        subgraph Staging_Env["infra/environments/staging/"]
-            APN_TF["apn_staging.tf"]
-            DB_Val["values-mariadb.yaml"]
-            WP_Val["values-wordpress.yaml"]
-        end
+    subgraph IaaC_Repo["Platform Repo: /home/max/pet/IaaC/workload/"]
+        NS["Namespaces: apn, apn-preview, apn-prod"]
+        SA["ServiceAccount: ci/github-runner + Token Secret"]
+        RBAC["Namespaced Roles: Full Autonomy (*) ONLY in apn*"]
+        Shared["Cluster Integrations: Mailpit, Cloudflare DNS"]
     end
 
-    subgraph IaaC_Repo["Repository: /home/max/pet/IaaC/workload/"]
-        Sym_TF["apn.tf (symlink)"]
-        subgraph Helm_Values["helm_values/"]
-            Sym_DB["apn_mariadb.yaml (symlink)"]
-            Sym_WP["apn_wordpress.yaml (symlink)"]
-        end
+    subgraph APN_Repo["Application Repo: /home/max/APN/infra/"]
+        Kubeconfig["Scoped Kubeconfig (~/.kube/config-apn)"]
+        Staging["environments/staging/ (Isolated State)"]
+        Prod["environments/production/ (Isolated State)"]
     end
 
-    Sym_TF -->|points to| APN_TF
-    Sym_DB -->|points to| DB_Val
-    Sym_WP -->|points to| WP_Val
+    SA --> RBAC
+    RBAC -->|grants namespace-only admin| NS
+    SA -->|generates| Kubeconfig
+    Kubeconfig --> Staging
+    Kubeconfig --> Prod
 ```
 
-### 1. Hybrid Symlink Realignment
-The hybrid symlink integration between APN and IaaC is maintained and updated:
-- `workload/apn.tf` $\rightarrow$ `/home/max/APN/infra/environments/staging/apn_staging.tf`
-- `workload/helm_values/apn_mariadb.yaml` $\rightarrow$ `/home/max/APN/infra/environments/staging/values-mariadb.yaml`
-- `workload/helm_values/apn_wordpress.yaml` $\rightarrow$ `/home/max/APN/infra/environments/staging/values-wordpress.yaml`
+### 1. Platform Boundary (`IaaC/workload`)
+- All cross-repository symlinks (`workload/apn.tf`, `workload/helm_values/apn_*.yaml`) are permanently removed from `IaaC`.
+- `workload/ci_runner.tf` provisions the three isolated APN sandbox namespaces (`apn`, `apn-preview`, `apn-prod`) with `baseline` Pod Security Standards.
+- `workload/ci_runner.tf` binds `kubernetes_service_account.github_runner` (and its token secret `ci/apn-deployer-token`) to namespaced `Role` objects (`api_groups = ["*"]`, `resources = ["*"]`, `verbs = ["*"]`) strictly inside `apn`, `apn-preview`, and `apn-prod`.
+- The ServiceAccount has **zero `ClusterRole` write permissions** and cannot access `default`, `kube-system`, `cnpg-system`, or `longhorn-system`.
 
-### 2. Path Resolution in `apn_staging.tf`
-Because Terraform evaluates `${path.module}` relative to the execution root (`/home/max/pet/IaaC/workload`), `apn_staging.tf` incorporates dual-resolution logic:
-```hcl
-values = [
-  file(fileexists("${path.module}/helm_values/apn_mariadb.yaml") ? "${path.module}/helm_values/apn_mariadb.yaml" : "${path.module}/values-mariadb.yaml")
-]
-```
-This guarantees that Terraform seamlessly resolves the values whether executed in `IaaC/workload` or in an isolated module context.
-
-### 3. Preserving MariaDB my.cnf Optimization
-The `configMap` mount for `apn-mariadb-config` (`innodb_buffer_pool_size = 512M`) from [[029-apn-performance-optimization-redis-mariadb]] is preserved in `values-mariadb.yaml` under `persistence.config` to prevent MySQL buffer pool degradation.
-
-## Consequences & Safety
-- **State Integrity:** All Terraform resource addresses (`helm_release.apn_mariadb`, `helm_release.apn_wordpress`, `kubernetes_secret.apn_secrets`, PVCs) remain identical, resulting in 0 destroys and 0 additions.
-- **Data Safety:** Persistent volume claims (`apn-mariadb-data`, `apn-wordpress-content`) remain untouched and bound.
+### 2. Application Autonomy (`APN/infra`)
+- `APN` manages its own Terraform states (`infra/environments/staging/` and `infra/environments/production/`) using a namespace-scoped `kubeconfig` (`~/.kube/config-apn`) derived from `ci/apn-deployer-token`.
+- Existing staging resources (`random_password`, `kubernetes_secret.apn_secrets`, `kubernetes_config_map.apn_mariadb_config`, `kubernetes_persistent_volume_claim.apn_*`, `helm_release.apn_*`) were detached from `IaaC/workload` via Terraform 1.7+ `removed { lifecycle { destroy = false } }` blocks and migrated into `APN`'s isolated state with zero downtime.

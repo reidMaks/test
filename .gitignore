@@ -34,7 +34,3 @@ infra/image_metadata.json
 # Python
 __pycache__/
 *.py[cod]
-
-# Local APN symlinks
-workload/apn.tf
-workload/helm_values/apn_*.yaml
