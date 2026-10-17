@@ -13,29 +13,29 @@
     "renovate"
   ],
   "terraform": {
-    "fileMatch": [
-      "(^|/)infra/.*\\.tf$",
-      "(^|/)workload/.*\\.tf$",
-      "(^|/)qnap/.*\\.tf$"
+    "managerFilePatterns": [
+      "/(^|/)infra/.*\\.tf$/",
+      "/(^|/)workload/.*\\.tf$/",
+      "/(^|/)qnap/.*\\.tf$/"
     ]
   },
   "helm-values": {
-    "fileMatch": [
-      "(^|/)workload/helm_values/.*\\.ya?ml$",
-      "(^|/)workload/charts/.*/values\\.ya?ml$"
+    "managerFilePatterns": [
+      "/(^|/)workload/helm_values/.*\\.ya?ml$/",
+      "/(^|/)workload/charts/.*/values\\.ya?ml$/"
     ]
   },
   "docker-compose": {
-    "fileMatch": [
-      "(^|/)qnap/.*docker-compose.*\\.ya?ml$"
+    "managerFilePatterns": [
+      "/(^|/)qnap/.*docker-compose.*\\.ya?ml$/"
     ]
   },
   "customManagers": [
     {
       "customType": "regex",
       "description": "Track container images inside Terraform resources (kubernetes_deployment, kubernetes_job_v1, yamlencode)",
-      "fileMatch": [
-        "(^|/)workload/.*\\.tf$"
+      "managerFilePatterns": [
+        "/(^|/)workload/.*\\.tf$/"
       ],
       "matchStrings": [
         "image\\s*=\\s*\"(?<depName>[a-zA-Z0-9._/-]+):(?<currentValue>[a-zA-Z0-9._-]+)\""
