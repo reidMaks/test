@@ -69,3 +69,9 @@ While streaming replication across 3 instances protects against node/disk failur
 3. **Offsite Replication to QNAP NAS (`[[017-s3-replication-qnap]]`):**
    - Because backups are stored under the `kms-lab-data/cnpg-backups` prefix in MinIO (`oci` zone), the `qnap-sync` CronJob automatically mirrors them every 15 minutes to the home QNAP NAS (`qnap:kms-lab-data/cnpg-backups`).
    - During a `home` zone power/internet outage, the `shared-db-3` instance in `oci` continues archiving WALs and performing scheduled backups directly to `minio-0` in `oci`, and `qnap-sync` catches up automatically once `home` returns online.
+
+### Rolling Upgrades & Switchover Tuning (2026-10-18)
+By default, CloudNativePG uses `primaryUpdateMethod: restart` with `switchoverDelay: 3600` and `stopDelay: 1800`. During operator upgrades (`0.29.0` → `0.29.1`), restarting the primary in-place caused a ~2.5-minute unavailability window on `shared-db-rw` while the primary flushed WAL segments over KubeSpan.
+To eliminate write-path downtime during rolling upgrades:
+- **`primaryUpdateMethod = "switchover"`** (`primaryUpdateStrategy = "unsupervised"`): CNPG updates standby instances first and then performs an online switchover to a healthy replica (~1–2s transition) before updating the former primary.
+- **Bounded Shutdown Timeouts:** `switchoverDelay = 60`, `smartShutdownTimeout = 60`, and `stopDelay = 300` replace the 30–60 minute defaults.

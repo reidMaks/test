@@ -53,7 +53,7 @@ resource "kubernetes_manifest" "cnpg_catalog" {
         {
           major = 18
           # Чистий базовий образ PG18
-          image = "ghcr.io/cloudnative-pg/postgresql:18.4-system-trixie"
+          image = "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie"
           # Декларативне завантаження розширення pgvector через ImageVolume
           extensions = [
             {
@@ -88,6 +88,15 @@ resource "kubernetes_manifest" "cnpg_cluster" {
     }
     spec = {
       instances = 3
+
+      # Online switchover instead of in-place primary restart: during operator or
+      # PG image upgrades, CNPG updates replicas first and then promotes an aligned
+      # replica in ~1-2s instead of taking shared-db-rw offline for 2-3 minutes.
+      primaryUpdateStrategy = "unsupervised"
+      primaryUpdateMethod   = "switchover"
+      switchoverDelay       = 60
+      stopDelay             = 300
+      smartShutdownTimeout  = 60
 
       imageCatalogRef = {
         apiGroup = "postgresql.cnpg.io"
