@@ -20,3 +20,8 @@ output "mcp_grafana_endpoint" {
   description = "Grafana MCP server endpoint"
   value       = module.mcp.grafana_mcp_endpoint
 }
+
+output "mcp_paperless_endpoint" {
+  description = "Paperless-ngx MCP server endpoint"
+  value       = module.mcp.paperless_mcp_endpoint
+}

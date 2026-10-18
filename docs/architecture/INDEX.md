@@ -46,6 +46,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[035-hybrid-zone-workload-policy]] - Hybrid Zone Workload Placement Policy (`oci` Always-On Public Tier vs `home` Private/Heavy Tier)
 - [[036-disaster-recovery-runbook]] - Disaster Recovery (DR) & 3-2-1 Backup Restore Runbook (MinIO, QNAP NAS, Encrypted Google Drive)
 - [[037-rustfs-and-valkey-migration]] - Drop-in Migration: MinIO to RustFS 1.0 and Redis to Valkey 8 (IAAC-24)
+- [[038-paperless-ocr-concurrency-tuning]] - Paperless-ngx OCR Concurrency Tuning (OOM Fix)
 
 ## Workloads & Services
 - Traefik (Ingress)

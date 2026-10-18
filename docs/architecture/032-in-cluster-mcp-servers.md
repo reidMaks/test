@@ -51,12 +51,19 @@ Previously, ADR [[014-mcp-tool-server]] introduced `MCPO` (MCP-to-OpenAPI proxy)
    - Connected directly to internal Grafana: `http://vm-grafana.monitoring.svc.cluster.local:80`.
    - Exposed via Traefik Ingress at `grafana-mcp.kms-lab.in.ua`.
 
-8. **Unified Streamable HTTP Transport**:
+8. **Paperless-ngx MCP Server**:
+   We deploy `ghcr.io/cubinet-code/paperless-ngx-mcp:3.2.1` for full REST API management of Paperless-ngx (documents, tags, correspondents, document types, custom fields, storage paths, saved views, workflows, mail accounts, and mail rules):
+   - Configured with `--http --port 3000` (Streamable HTTP on `/mcp`).
+   - **Zero-Secret Native Token Provisioning (`manage.py drf_create_token`)**: Rather than creating a separate API token in Bitwarden or touching the database directly, the Pod runs under a dedicated `ServiceAccount` (`paperless-mcp-sa`) bound to a minimal `Role` (`paperless-mcp-exec`) in the `default` namespace (`pods` `get`/`list` and `pods/exec` `create`/`get`). At startup, an `initContainer` (`resolve-api-token` running `alpine/k8s:1.36.1`) executes Paperless's built-in idempotent Django REST Framework management command inside the running Paperless container (`kubectl exec -n default "$POD" -- python3 manage.py drf_create_token admin`), extracts the token into an in-memory `emptyDir` volume (`/run/paperless-mcp/token`), and passes it to the main MCP container.
+   - Connected directly to internal Paperless-ngx service: `http://paperless.default.svc.cluster.local:8000` (with `PAPERLESS_PUBLIC_URL=https://paperless.kms-lab.in.ua`).
+   - Exposed via Traefik Ingress at `paperless-mcp.kms-lab.in.ua`.
+
+9. **Unified Streamable HTTP Transport**:
    All in-cluster MCP servers implement the modern Streamable HTTP protocol over `/mcp`. This allows MCP clients (such as Antigravity, Claude Code, Cursor) to connect directly via simple `"url"` fields without requiring external stdio bridge utilities like `mcp-remote`.
 
-9. **Network Exposure & Routing**:
-   - Exposed via Traefik Ingress (`k8s-mcp.kms-lab.in.ua`, `prom-mcp.kms-lab.in.ua`, `grafana-mcp.kms-lab.in.ua`).
-   - Internal DNS resolution routes wildcard `*.kms-lab.in.ua` to the WireGuard / LAN gateway (`10.9.0.1` / `192.168.0.0/24`), ensuring endpoints are reachable only from the local network and VPN.
+10. **Network Exposure & Routing**:
+    - Exposed via Traefik Ingress (`k8s-mcp.kms-lab.in.ua`, `prom-mcp.kms-lab.in.ua`, `grafana-mcp.kms-lab.in.ua`, `paperless-mcp.kms-lab.in.ua`).
+    - Internal DNS resolution routes wildcard `*.kms-lab.in.ua` to the WireGuard / LAN gateway (`10.9.0.1` / `192.168.0.0/24`), ensuring endpoints are reachable only from the local network and VPN.
 
 ## Architecture Diagram
 
@@ -71,6 +78,7 @@ flowchart TD
             IngressK8s["Traefik Ingress\nk8s-mcp.kms-lab.in.ua"]
             IngressProm["Traefik Ingress\nprom-mcp.kms-lab.in.ua"]
             IngressGraf["Traefik Ingress\ngrafana-mcp.kms-lab.in.ua"]
+            IngressPaper["Traefik Ingress\npaperless-mcp.kms-lab.in.ua"]
         end
 
         subgraph MCPNS ["mcp namespace"]
@@ -85,11 +93,16 @@ flowchart TD
             GrafService["Service: grafana-mcp:8000"]
             GrafPod["Pod: grafana-mcp-server\n(docker.io/grafana/mcp-grafana)"]
             GrafSecret["Secret: grafana-mcp-token\n(Generated via Grafana Provider)"]
+
+            PaperService["Service: paperless-mcp:3000"]
+            PaperPod["Pod: paperless-mcp\ninit: resolve-api-token (alpine/k8s)\nmain: ghcr.io/cubinet-code/paperless-ngx-mcp"]
+            PaperSA["ServiceAccount:\npaperless-mcp-sa"]
         end
 
         subgraph K8sAPI ["Control Plane"]
             APIServer["Kubernetes API Server"]
             ClusterRole["ClusterRole: k8s-mcp-read-only\n(get, list, watch - NO secrets)"]
+            PaperRole["Role (default): paperless-mcp-exec\n(pods get/list, pods/exec)"]
         end
 
         subgraph MonitoringNS ["monitoring namespace"]
@@ -97,11 +110,16 @@ flowchart TD
             Grafana["Grafana Instance (vm-grafana:80)"]
             VLogs["VictoriaLogs (vlogs:9428)"]
         end
+
+        subgraph DefaultNS ["default namespace"]
+            Paperless["Paperless-ngx (paperless:8000)"]
+        end
     end
 
     Agent -->|Streamable HTTP /mcp| IngressK8s
     Agent -->|Streamable HTTP /mcp| IngressProm
     Agent -->|Streamable HTTP /mcp| IngressGraf
+    Agent -->|Streamable HTTP /mcp| IngressPaper
 
     IngressK8s --> K8sService --> K8sPod
     ConfigMap -.->|Mount| K8sPod
@@ -116,16 +134,22 @@ flowchart TD
     GrafSecret -.->|Token Env| GrafPod
     GrafPod -->|Query Dashboards, Alerts, Logs| Grafana
     Grafana -.->|Query Logs Datasource| VLogs
+
+    IngressPaper --> PaperService --> PaperPod
+    PaperPod -->|In-Cluster Auth| PaperSA
+    PaperSA -->|Authorized by| PaperRole
+    PaperPod -.->|Init: manage.py drf_create_token| Paperless
+    PaperPod -->|REST API v3.x| Paperless
 ```
 
 ## Consequences
 
 ### Positive
 - **Zero Client Credentials & No Node.js Bridge**: External agents do not need `kubectl`, `kubeconfig`, tokens, or `mcp-remote` node wrappers. Simple `"url": "http://.../mcp"` works out of the box.
-- **Strict Read-Only Enforcement**: Dual-layer protection (RBAC + application-level config) prevents accidental or malicious state changes and blocks access to secrets.
-- **Isolated Failure Domains**: The Kubernetes MCP, Prometheus MCP, and Grafana MCP run in separate Pods with separate resource boundaries and independent lifecycles.
-- **Full Observability for AI Agents**: Agents have comprehensive visibility across cluster workloads (K8s API), metrics (VictoriaMetrics PromQL), and historical logs/dashboards (Grafana Explore / VictoriaLogs).
-- **Fully Automated Lifecycle**: Service Account creation, token generation, secret creation, and pod mounting are 100% managed via Terraform.
+- **Strict Read-Only Enforcement (Observability)**: Dual-layer protection (RBAC + application-level config) prevents accidental or malicious cluster state changes and blocks access to secrets.
+- **Isolated Failure Domains**: The Kubernetes MCP, Prometheus MCP, Grafana MCP, and Paperless MCP run in separate Pods with separate resource boundaries and independent lifecycles.
+- **Full Observability & Document Automation for AI Agents**: Agents have comprehensive visibility across cluster workloads (K8s API), metrics (VictoriaMetrics PromQL), historical logs/dashboards (Grafana Explore / VictoriaLogs), and full document/mail/workflow management in Paperless-ngx.
+- **Fully Automated Lifecycle**: Service Account creation, token generation/resolution via native management commands, and pod mounting are 100% managed via Terraform without requiring manual token creation in Bitwarden.
 
 ### Client Configuration
 To connect an AI assistant or MCP client within the local network:
@@ -141,6 +165,9 @@ To connect an AI assistant or MCP client within the local network:
     },
     "grafana": {
       "url": "http://grafana-mcp.kms-lab.in.ua/mcp"
+    },
+    "paperless": {
+      "url": "http://paperless-mcp.kms-lab.in.ua/mcp"
     }
   }
 }

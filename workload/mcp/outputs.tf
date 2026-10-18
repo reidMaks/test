@@ -12,3 +12,8 @@ output "grafana_mcp_endpoint" {
   description = "Streamable HTTP endpoint for Grafana MCP server"
   value       = "http://${var.grafana_mcp_host}/mcp"
 }
+
+output "paperless_mcp_endpoint" {
+  description = "Streamable HTTP endpoint for Paperless-ngx MCP server"
+  value       = "http://${var.paperless_mcp_host}/mcp"
+}

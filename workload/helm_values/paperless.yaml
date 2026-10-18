@@ -23,6 +23,9 @@ controllers:
           PAPERLESS_TIME_ZONE: "Europe/Kyiv"
           PAPERLESS_OCR_LANGUAGE: "ukr+eng"
           PAPERLESS_OCR_LANGUAGES: "ukr"
+          # Concurrency limits to prevent OOMKill on multi-page scans within 2Gi limit
+          PAPERLESS_TASK_WORKERS: "1"
+          PAPERLESS_THREADS_PER_WORKER: "2"
         envFrom:
           - secretRef:
               name: paperless-secrets
