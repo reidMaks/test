@@ -9,6 +9,22 @@ grafana:
     existingSecret: "grafana-secrets"
     userKey: admin-user
     passwordKey: admin-password
+  envFromSecret: "grafana-secrets"
+  "grafana.ini":
+    server:
+      root_url: https://grafana.kms-lab.in.ua
+    auth.generic_oauth:
+      enabled: true
+      name: Authentik
+      allow_sign_up: true
+      client_id: grafana
+      scopes: openid profile email
+      auth_url: https://auth.kms-lab.in.ua/application/o/authorize/
+      token_url: https://auth.kms-lab.in.ua/application/o/token/
+      api_url: https://auth.kms-lab.in.ua/application/o/userinfo/
+      signout_redirect_url: https://auth.kms-lab.in.ua/application/o/grafana/end-session/
+      role_attribute_path: "contains(groups[*], 'authentik Admins') && 'GrafanaAdmin' || 'Viewer'"
+      allow_assign_grafana_admin: true
   ingress:
     enabled: true
     ingressClassName: "traefik"

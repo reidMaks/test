@@ -14,7 +14,7 @@ controllers:
           GATUS_CONFIG_PATH: /config
           HTTP_PROXY: "http://wg-hub-proxy.wg-hub.svc.cluster.local:3128"
           HTTPS_PROXY: "http://wg-hub-proxy.wg-hub.svc.cluster.local:3128"
-          NO_PROXY: "localhost,127.0.0.1,.cluster.local,.svc,paperless-app,searxng-http,lubelogger,tandoor-app,actualbudget"
+          NO_PROXY: "localhost,127.0.0.1,.cluster.local,.svc,paperless-app,searxng-http,lubelogger,tandoor-app,actualbudget,authentik-server"
         envFrom:
           - secretRef:
               name: gatus-secrets

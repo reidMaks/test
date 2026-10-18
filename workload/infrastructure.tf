@@ -99,7 +99,7 @@ resource "helm_release" "traefik" {
   values = [
     yamlencode({
       providers = {
-        kubernetesCRD     = { enabled = true }
+        kubernetesCRD     = { enabled = true, allowCrossNamespace = true }
         kubernetesIngress = { enabled = true }
       }
       resources = {
@@ -124,7 +124,13 @@ resource "helm_release" "traefik" {
         dashboard = {
           enabled     = true
           matchRule   = "Host(`traefik.kms-lab.in.ua`)"
-          entryPoints = ["web"]
+          entryPoints = ["web", "websecure"]
+          middlewares = [
+            {
+              name      = "authentik-forwardauth"
+              namespace = "default"
+            }
+          ]
         }
       }
     })
@@ -216,6 +222,9 @@ resource "kubernetes_ingress_v1" "longhorn_ui" {
   metadata {
     name      = "longhorn-ui"
     namespace = "longhorn-system"
+    annotations = {
+      "traefik.ingress.kubernetes.io/router.middlewares" = "default-authentik-forwardauth@kubernetescrd"
+    }
   }
 
   spec {

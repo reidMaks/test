@@ -24,8 +24,9 @@ resource "kubernetes_secret" "grafana" {
   }
 
   data = {
-    admin-user     = "admin"
-    admin-password = data.bitwarden-secrets_secret.grafana_admin_password.value
+    admin-user                          = "admin"
+    admin-password                      = data.bitwarden-secrets_secret.grafana_admin_password.value
+    GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET = random_password.authentik_grafana_secret.result
   }
 }
 

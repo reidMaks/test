@@ -37,6 +37,9 @@ ingress:
   main:
     enabled: true
     className: "traefik"
+    annotations:
+      gatus.io/status: "[STATUS] == 200 || [STATUS] == 302"
+      traefik.ingress.kubernetes.io/router.middlewares: "default-authentik-forwardauth@kubernetescrd"
     hosts:
       - host: esphome.kms-lab.in.ua
         paths:

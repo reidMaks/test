@@ -1,0 +1,52 @@
+global:
+  nodeSelector:
+    topology.kubernetes.io/zone: home
+
+authentik:
+  secret_key: "${secret_key}"
+  error_reporting:
+    enabled: false
+  postgresql:
+    host: "shared-db-rw.cnpg-system.svc.cluster.local"
+    name: "authentik"
+    user: "authentik"
+    password: "${db_password}"
+    port: 5432
+  email:
+    host: "mailpit.apn.svc.cluster.local"
+    port: 1025
+    use_tls: false
+    use_ssl: false
+    from: "authentik@kms-lab.in.ua"
+
+blueprints:
+  secrets:
+    - authentik-blueprints
+
+server:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 384Mi
+    limits:
+      memory: 768Mi
+  ingress:
+    enabled: true
+    ingressClassName: "traefik"
+    annotations:
+      gatus.io/status: "[STATUS] == 200 || [STATUS] == 302"
+    hosts:
+      - auth.kms-lab.in.ua
+
+worker:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 384Mi
+    limits:
+      memory: 768Mi
+
+postgresql:
+  enabled: false

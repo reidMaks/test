@@ -16,6 +16,24 @@ resource "kubernetes_secret" "paperless" {
     PAPERLESS_SECRET_KEY = data.bitwarden-secrets_secret.paperless_secret_key.value
     PAPERLESS_DBPASS     = data.bitwarden-secrets_secret.paperless_db_password.value
     POSTGRES_PASSWORD    = data.bitwarden-secrets_secret.paperless_db_password.value
+    PAPERLESS_SOCIALACCOUNT_PROVIDERS = jsonencode({
+      openid_connect = {
+        SCOPE              = ["openid", "profile", "email"]
+        OAUTH_PKCE_ENABLED = true
+        APPS = [
+          {
+            provider_id = "authentik"
+            name        = "Authentik"
+            client_id   = "paperless"
+            secret      = random_password.authentik_paperless_secret.result
+            settings = {
+              server_url        = "https://auth.kms-lab.in.ua/application/o/paperless/.well-known/openid-configuration"
+              token_auth_method = "client_secret_basic"
+            }
+          }
+        ]
+      }
+    })
   }
 }
 

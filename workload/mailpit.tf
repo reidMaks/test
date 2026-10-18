@@ -154,7 +154,8 @@ resource "kubernetes_ingress_v1" "mailpit" {
     name      = "mailpit"
     namespace = kubernetes_namespace.apn.metadata[0].name
     annotations = {
-      "gatus.io/status" = "[STATUS] == 200"
+      "gatus.io/status"                                  = "[STATUS] == 200 || [STATUS] == 302"
+      "traefik.ingress.kubernetes.io/router.middlewares" = "default-authentik-forwardauth@kubernetescrd"
     }
   }
 

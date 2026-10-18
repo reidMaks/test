@@ -11,6 +11,49 @@
 server:
   controllers:
     main:
+      initContainers:
+        configure-oauth:
+          image:
+            repository: ghcr.io/cloudnative-pg/postgresql
+            tag: 18.6-system-trixie
+          env: *shared-env
+          command:
+            - /bin/sh
+            - -c
+            - |
+              psql "$DB_URL" -v ON_ERROR_STOP=1 -c "
+              INSERT INTO system_metadata (key, value)
+              VALUES (
+                'system-config',
+                jsonb_build_object(
+                  'oauth', jsonb_build_object(
+                    'enabled', true,
+                    'issuerUrl', 'https://auth.kms-lab.in.ua/application/o/immich/.well-known/openid-configuration',
+                    'clientId', 'immich',
+                    'clientSecret', '${oidc_secret}',
+                    'scope', 'openid email profile',
+                    'buttonText', 'Login with Authentik',
+                    'autoRegister', true,
+                    'autoLaunch', false,
+                    'mobileOverrideEnabled', false,
+                    'mobileRedirectUri', '',
+                    'signingAlgorithm', 'RS256',
+                    'storageLabelClaim', 'preferred_username',
+                    'storageQuotaClaim', 'immich_quota',
+                    'defaultStorageQuota', null,
+                    'profileSigningAlgorithm', 'none',
+                    'tokenEndpointAuthMethod', 'client_secret_post'
+                  )
+                )
+              )
+              ON CONFLICT (key) DO UPDATE
+              SET value = jsonb_set(
+                COALESCE(system_metadata.value, '{}'::jsonb),
+                '{oauth}',
+                EXCLUDED.value->'oauth',
+                true
+              );
+              "
       containers:
         main:
           env: *shared-env

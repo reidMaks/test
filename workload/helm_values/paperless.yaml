@@ -26,6 +26,11 @@ controllers:
           # Concurrency limits to prevent OOMKill on multi-page scans within 2Gi limit
           PAPERLESS_TASK_WORKERS: "1"
           PAPERLESS_THREADS_PER_WORKER: "2"
+          # OIDC / Authentik SSO (regular login & API tokens remain enabled for iOS app and MCP)
+          PAPERLESS_APPS: "allauth.socialaccount.providers.openid_connect"
+          PAPERLESS_SOCIAL_ACCOUNT_SYNC_GROUPS: "true"
+          PAPERLESS_SOCIAL_ACCOUNT_SYNC_SUPERUSER_GROUP: "authentik Admins"
+          PAPERLESS_SOCIAL_ACCOUNT_SYNC_STAFF_GROUP: "authentik Admins"
         envFrom:
           - secretRef:
               name: paperless-secrets

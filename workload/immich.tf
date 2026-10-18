@@ -75,8 +75,9 @@ resource "kubernetes_manifest" "immich_role" {
       cluster = {
         name = "shared-db"
       }
-      name  = "immich"
-      login = true
+      name      = "immich"
+      login     = true
+      superuser = true
       passwordSecret = {
         name = kubernetes_secret.immich_db_password_cnpg.metadata[0].name
       }
@@ -128,7 +129,8 @@ resource "helm_release" "immich" {
   values = [
     templatefile("${path.module}/helm_values/immich.yaml", {
       redis_password = data.bitwarden-secrets_secret.shared_redis.value,
-      db_password    = data.bitwarden-secrets_secret.immich_db_password.value
+      db_password    = data.bitwarden-secrets_secret.immich_db_password.value,
+      oidc_secret    = random_password.authentik_immich_secret.result
     })
   ]
 
