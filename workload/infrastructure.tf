@@ -179,7 +179,7 @@ resource "helm_release" "longhorn" {
   repository      = "https://charts.longhorn.io"
   chart           = "longhorn"
   namespace       = "longhorn-system"
-  version         = "1.12.1"
+  version         = "1.13.0"
   upgrade_install = true
 
   depends_on = [
