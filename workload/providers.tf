@@ -28,10 +28,6 @@ terraform {
       source  = "grafana/grafana"
       version = "~> 3.0"
     }
-    portainer = {
-      source  = "portainer/portainer"
-      version = "~> 2.0"
-    }
   }
 }
 
@@ -48,16 +44,6 @@ provider "kubernetes" {
 provider "grafana" {
   url  = "https://grafana.kms-lab.in.ua"
   auth = "admin:${data.bitwarden-secrets_secret.grafana_admin_password.value}"
-}
-
-data "bitwarden-secrets_secret" "portainer_token" {
-  id = "7e8d123d-5b32-49e0-b4a3-b4e701249afd"
-}
-
-provider "portainer" {
-  endpoint        = "https://portainer.home.arpa"
-  api_key         = data.bitwarden-secrets_secret.portainer_token.value
-  skip_ssl_verify = true
 }
 
 data "bitwarden-secrets_secret" "cloudflare_api_token" {
