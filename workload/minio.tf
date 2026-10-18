@@ -147,6 +147,10 @@ resource "helm_release" "minio" {
         console = {
           enabled   = true
           className = "traefik"
+          annotations = {
+            "traefik.ingress.kubernetes.io/router.middlewares" = "default-authentik-forwardauth@kubernetescrd"
+            "gatus.io/status"                                  = "[STATUS] == 200 || [STATUS] == 302"
+          }
           hosts = [
             {
               host = "s3-ui.kms-lab.in.ua"

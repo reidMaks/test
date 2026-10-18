@@ -5,12 +5,12 @@ In addition to the main Talos Kubernetes cluster, a separate QNAP NAS operates w
 
 ## Decision
 - **Platform**: Docker Compose running directly on the QNAP NAS, managed declaratively via Terraform in `qnap/main.tf` (`terraform/state/qnap` in GCS) using the official `portainer/portainer` provider (`portainer_settings`, `portainer_user`, `portainer_stack`).
-- **Routing**: A standalone instance of **Traefik** (`traefik-qnap`) handles ingress for the NAS (`portainer_stack.traefik`). It routes `*.home.arpa` internal domains and proxies specific services like Proxmox (`pve.kms-lab.in.ua`).
+- **Routing**: A standalone instance of **Traefik** (`traefik-qnap`) handles ingress for the NAS (`portainer_stack.traefik`). It routes `*.home.arpa` internal domains, proxies specific services like Proxmox (`pve.kms-lab.in.ua`), and enforces Authentik `ForwardAuth` (`https://auth.kms-lab.in.ua/outpost.goauthentik.io/auth/traefik`) via the `authentik@file` middleware.
 - **Workloads (`portainer_stack.arr_suite`)**: The NAS hosts the entire "arr" media stack:
-  - `qbittorrent`
-  - `prowlarr`, `sonarr`, `radarr`, `lidarr`, `bazarr`
+  - `qbittorrent` (protected via Authentik `ForwardAuth`)
+  - `prowlarr`, `sonarr`, `radarr`, `lidarr`, `bazarr` (protected via Authentik `ForwardAuth`, with `/api.*` exempted for inter-service API keys)
   - `seerr`, `cross-seed`
-  - `jellyfin` (Media Server)
+  - `jellyfin` (Media Server, native auth preserved for TV/macOS/mobile clients)
   - `portainer` (Container Management, authenticated via Authentik OIDC SSO)
 - **Cross-Seed Integrity & Hardlink Safety**:
   - `cross-seed` links files to `/torrent/cross-seed` using `hardlink`.

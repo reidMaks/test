@@ -5,6 +5,11 @@ ingressRoute:
   create: true
   entryPoints: ["web", "websecure"]
   rule: "Host(`pairdrop.kms-lab.in.ua`)"
+  middlewares:
+    - name: authentik-forwardauth
+      namespace: default
+  annotations:
+    gatus.io/status: "[STATUS] == 200 || [STATUS] == 302"
   tls: {}
 
 env:

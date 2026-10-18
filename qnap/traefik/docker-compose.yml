@@ -34,6 +34,18 @@ services:
                 certFile: /etc/traefik/dynamic_conf/certs/home-arpa.crt
                 keyFile: /etc/traefik/dynamic_conf/certs/home-arpa.key
         http:
+          middlewares:
+            authentik:
+              forwardAuth:
+                address: "https://auth.kms-lab.in.ua/outpost.goauthentik.io/auth/traefik"
+                trustForwardHeader: true
+                authResponseHeaders:
+                  - X-authentik-username
+                  - X-authentik-groups
+                  - X-authentik-entitlements
+                  - X-authentik-email
+                  - X-authentik-name
+                  - X-authentik-uid
           routers:
             proxmox:
               rule: "Host(`pve.kms-lab.in.ua`)"
@@ -94,6 +106,8 @@ services:
           - seerr.home.arpa
           - sonarr.home.arpa
           - radarr.home.arpa
+          - lidarr.home.arpa
+          - bazarr.home.arpa
           - qb.home.arpa
           - prowlarr.home.arpa
     volumes:
@@ -103,3 +117,4 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik-ui.rule=Host(`traefik.home.arpa`)"
       - "traefik.http.routers.traefik-ui.service=api@internal"
+      - "traefik.http.routers.traefik-ui.middlewares=authentik@file"

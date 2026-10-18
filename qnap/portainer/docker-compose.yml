@@ -28,6 +28,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.qbittorrent.rule=Host(`qb.home.arpa`) || Host(`qbittorrent.home.arpa`)"
+      - "traefik.http.routers.qbittorrent.middlewares=authentik@file"
       - "traefik.http.services.qbittorrent.loadbalancer.server.port=8085"
 
   prowlarr:
@@ -49,6 +50,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.prowlarr.rule=Host(`prowlarr.home.arpa`)"
+      - "traefik.http.routers.prowlarr.middlewares=authentik@file"
       - "traefik.http.services.prowlarr.loadbalancer.server.port=80"
 
   sonarr:
@@ -71,6 +73,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.sonarr.rule=Host(`sonarr.home.arpa`)"
+      - "traefik.http.routers.sonarr.middlewares=authentik@file"
       - "traefik.http.services.sonarr.loadbalancer.server.port=80"
 
   radarr:
@@ -93,6 +96,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.radarr.rule=Host(`radarr.home.arpa`)"
+      - "traefik.http.routers.radarr.middlewares=authentik@file"
       - "traefik.http.services.radarr.loadbalancer.server.port=80"
 
   lidarr:
@@ -115,6 +119,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.lidarr.rule=Host(`lidarr.home.arpa`)"
+      - "traefik.http.routers.lidarr.middlewares=authentik@file"
       - "traefik.http.services.lidarr.loadbalancer.server.port=80"
 
   bazarr:
@@ -137,6 +142,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.bazarr.rule=Host(`bazarr.home.arpa`)"
+      - "traefik.http.routers.bazarr.middlewares=authentik@file"
       - "traefik.http.services.bazarr.loadbalancer.server.port=6767"
 
   seerr:

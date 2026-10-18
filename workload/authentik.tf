@@ -32,6 +32,11 @@ resource "random_password" "authentik_portainer_secret" {
   special = false
 }
 
+resource "random_password" "authentik_actual_secret" {
+  length  = 48
+  special = false
+}
+
 output "portainer_oidc_client_secret" {
   value       = random_password.authentik_portainer_secret.result
   sensitive   = true
@@ -50,6 +55,7 @@ resource "kubernetes_secret" "authentik_blueprints" {
       grafana_client_secret   = random_password.authentik_grafana_secret.result
       immich_client_secret    = random_password.authentik_immich_secret.result
       portainer_client_secret = random_password.authentik_portainer_secret.result
+      actual_client_secret    = random_password.authentik_actual_secret.result
     })
   }
 }

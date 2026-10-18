@@ -167,6 +167,47 @@ entries:
       policy_engine_mode: any
 
   # ============================================================================
+  # 5. Actual Budget (OIDC Provider & Application)
+  # Note: scope-profile is intentionally omitted so userInfo does not include
+  # preferred_username ("akadmin"), allowing Actual Budget to match the existing
+  # owner user_name ("reid.maks@gmail.com") via userInfo.email.
+  # ============================================================================
+  - model: authentik_providers_oauth2.oauth2provider
+    id: provider-actual
+    identifiers:
+      name: Actual Budget OIDC
+    attrs:
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      client_type: confidential
+      client_id: actual
+      client_secret: "${actual_client_secret}"
+      grant_types:
+        - authorization_code
+        - refresh_token
+      signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+      property_mappings:
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+      redirect_uris:
+        - matching_mode: strict
+          url: https://actual.kms-lab.in.ua/openid/callback
+
+  - model: authentik_core.application
+    id: app-actual
+    identifiers:
+      slug: actual
+    attrs:
+      name: Actual Budget
+      provider: !KeyOf provider-actual
+      meta_launch_url: https://actual.kms-lab.in.ua/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/actual-budget.png
+      meta_description: Personal Finance & Zero-Based Budgeting with Monobank Sync
+      group: Home & Productivity
+      policy_engine_mode: any
+
+  # ============================================================================
   # 6. Longhorn UI (Traefik ForwardAuth Proxy Provider & Application)
   # ============================================================================
   - model: authentik_providers_proxy.proxyprovider
@@ -239,7 +280,7 @@ entries:
     identifiers:
       slug: traefik
     attrs:
-      name: Traefik Ingress
+      name: Traefik Ingress (K8s)
       provider: !KeyOf provider-traefik
       meta_launch_url: https://traefik.kms-lab.in.ua/dashboard/
       meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/traefik.png
@@ -275,7 +316,430 @@ entries:
       policy_engine_mode: any
 
   # ============================================================================
-  # 10. Embedded Outpost Binding (attaches all ForwardAuth providers)
+  # 10. Gatus Status Page (Traefik ForwardAuth Proxy Provider & Application)
+  # ============================================================================
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-gatus
+    identifiers:
+      name: Gatus ForwardAuth
+    attrs:
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      mode: forward_single
+      external_host: https://status.kms-lab.in.ua
+
+  - model: authentik_core.application
+    id: app-gatus
+    identifiers:
+      slug: gatus
+    attrs:
+      name: Gatus Status
+      provider: !KeyOf provider-gatus
+      meta_launch_url: https://status.kms-lab.in.ua/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/gatus.png
+      meta_description: Automated Service Health Checks & Uptime Monitoring
+      group: Infrastructure
+      policy_engine_mode: any
+
+  # ============================================================================
+  # 11. OpenSpeedTest (Traefik ForwardAuth Proxy Provider & Application)
+  # ============================================================================
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-speedtest
+    identifiers:
+      name: Speedtest ForwardAuth
+    attrs:
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      mode: forward_single
+      external_host: https://speedtest.kms-lab.in.ua
+
+  - model: authentik_core.application
+    id: app-speedtest
+    identifiers:
+      slug: speedtest
+    attrs:
+      name: OpenSpeedTest
+      provider: !KeyOf provider-speedtest
+      meta_launch_url: https://speedtest.kms-lab.in.ua/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/openspeedtest.png
+      meta_description: Local Network & VPN Bandwidth Speed Test
+      group: Home & Productivity
+      policy_engine_mode: any
+
+  # ============================================================================
+  # 12. PairDrop (Traefik ForwardAuth Proxy Provider & Application)
+  # ============================================================================
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-pairdrop
+    identifiers:
+      name: PairDrop ForwardAuth
+    attrs:
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      mode: forward_single
+      external_host: https://pairdrop.kms-lab.in.ua
+
+  - model: authentik_core.application
+    id: app-pairdrop
+    identifiers:
+      slug: pairdrop
+    attrs:
+      name: PairDrop
+      provider: !KeyOf provider-pairdrop
+      meta_launch_url: https://pairdrop.kms-lab.in.ua/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/pairdrop.png
+      meta_description: Local Peer-to-Peer WebRTC File Sharing
+      group: Home & Productivity
+      policy_engine_mode: any
+
+  # ============================================================================
+  # 13. RustFS S3 Console (Traefik ForwardAuth Proxy Provider & Application)
+  # ============================================================================
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-s3-ui
+    identifiers:
+      name: S3 Console ForwardAuth
+    attrs:
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      mode: forward_single
+      external_host: https://s3-ui.kms-lab.in.ua
+
+  - model: authentik_core.application
+    id: app-s3-ui
+    identifiers:
+      slug: s3-ui
+    attrs:
+      name: RustFS S3 Console
+      provider: !KeyOf provider-s3-ui
+      meta_launch_url: https://s3-ui.kms-lab.in.ua/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/minio.png
+      meta_description: S3 Object Storage Web Console (OCI)
+      group: Infrastructure
+      policy_engine_mode: any
+
+  # ============================================================================
+  # 14. Headlamp K8s UI (Traefik ForwardAuth Proxy Provider & Application)
+  # ============================================================================
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-headlamp
+    identifiers:
+      name: Headlamp ForwardAuth
+    attrs:
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      mode: forward_single
+      external_host: https://headlamp.kms-lab.in.ua
+
+  - model: authentik_core.application
+    id: app-headlamp
+    identifiers:
+      slug: headlamp
+    attrs:
+      name: Headlamp K8s
+      provider: !KeyOf provider-headlamp
+      meta_launch_url: https://headlamp.kms-lab.in.ua/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/kubernetes-dashboard.png
+      meta_description: Kubernetes Cluster Web UI
+      group: Infrastructure
+      policy_engine_mode: any
+
+  # ============================================================================
+  # 15. QNAP Media Stack — Sonarr, Radarr, Prowlarr, Lidarr, Bazarr, qBittorrent, Traefik
+  # ============================================================================
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-sonarr
+    identifiers:
+      name: Sonarr ForwardAuth
+    attrs:
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      mode: forward_single
+      external_host: https://sonarr.home.arpa
+      skip_path_regex: ^/api.*
+
+  - model: authentik_core.application
+    id: app-sonarr
+    identifiers:
+      slug: sonarr
+    attrs:
+      name: Sonarr
+      provider: !KeyOf provider-sonarr
+      meta_launch_url: https://sonarr.home.arpa/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/sonarr.png
+      meta_description: TV Series PVR & Automation
+      group: Media & Downloads
+      policy_engine_mode: any
+
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-radarr
+    identifiers:
+      name: Radarr ForwardAuth
+    attrs:
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      mode: forward_single
+      external_host: https://radarr.home.arpa
+      skip_path_regex: ^/api.*
+
+  - model: authentik_core.application
+    id: app-radarr
+    identifiers:
+      slug: radarr
+    attrs:
+      name: Radarr
+      provider: !KeyOf provider-radarr
+      meta_launch_url: https://radarr.home.arpa/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/radarr.png
+      meta_description: Movie Collection PVR & Automation
+      group: Media & Downloads
+      policy_engine_mode: any
+
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-prowlarr
+    identifiers:
+      name: Prowlarr ForwardAuth
+    attrs:
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      mode: forward_single
+      external_host: https://prowlarr.home.arpa
+      skip_path_regex: ^/api.*
+
+  - model: authentik_core.application
+    id: app-prowlarr
+    identifiers:
+      slug: prowlarr
+    attrs:
+      name: Prowlarr
+      provider: !KeyOf provider-prowlarr
+      meta_launch_url: https://prowlarr.home.arpa/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/prowlarr.png
+      meta_description: Indexer Manager for *arr Suite
+      group: Media & Downloads
+      policy_engine_mode: any
+
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-lidarr
+    identifiers:
+      name: Lidarr ForwardAuth
+    attrs:
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      mode: forward_single
+      external_host: https://lidarr.home.arpa
+      skip_path_regex: ^/api.*
+
+  - model: authentik_core.application
+    id: app-lidarr
+    identifiers:
+      slug: lidarr
+    attrs:
+      name: Lidarr
+      provider: !KeyOf provider-lidarr
+      meta_launch_url: https://lidarr.home.arpa/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/lidarr.png
+      meta_description: Music Collection PVR & Automation
+      group: Media & Downloads
+      policy_engine_mode: any
+
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-bazarr
+    identifiers:
+      name: Bazarr ForwardAuth
+    attrs:
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      mode: forward_single
+      external_host: https://bazarr.home.arpa
+      skip_path_regex: ^/api.*
+
+  - model: authentik_core.application
+    id: app-bazarr
+    identifiers:
+      slug: bazarr
+    attrs:
+      name: Bazarr
+      provider: !KeyOf provider-bazarr
+      meta_launch_url: https://bazarr.home.arpa/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/bazarr.png
+      meta_description: Subtitle Companion for Sonarr & Radarr
+      group: Media & Downloads
+      policy_engine_mode: any
+
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-qbittorrent
+    identifiers:
+      name: qBittorrent ForwardAuth
+    attrs:
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      mode: forward_single
+      external_host: https://qb.home.arpa
+      skip_path_regex: ^/api.*
+
+  - model: authentik_core.application
+    id: app-qbittorrent
+    identifiers:
+      slug: qbittorrent
+    attrs:
+      name: qBittorrent
+      provider: !KeyOf provider-qbittorrent
+      meta_launch_url: https://qb.home.arpa/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/qbittorrent.png
+      meta_description: BitTorrent Download Client (QNAP NAS)
+      group: Media & Downloads
+      policy_engine_mode: any
+
+  - model: authentik_providers_proxy.proxyprovider
+    id: provider-traefik-qnap
+    identifiers:
+      name: Traefik QNAP ForwardAuth
+    attrs:
+      authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
+      authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
+      invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
+      mode: forward_single
+      external_host: https://traefik.home.arpa
+
+  - model: authentik_core.application
+    id: app-traefik-qnap
+    identifiers:
+      slug: traefik-qnap
+    attrs:
+      name: Traefik (QNAP)
+      provider: !KeyOf provider-traefik-qnap
+      meta_launch_url: https://traefik.home.arpa/dashboard/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/traefik.png
+      meta_description: QNAP Reverse Proxy Dashboard
+      group: Infrastructure
+      policy_engine_mode: any
+
+  # ============================================================================
+  # 16. Portal Launchpad Bookmark Applications (No SSO Provider / Native Auth Kept)
+  # ============================================================================
+  - model: authentik_core.application
+    id: app-jellyfin
+    identifiers:
+      slug: jellyfin
+    attrs:
+      name: Jellyfin Media Server
+      meta_launch_url: https://jellyfin.home.arpa/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/jellyfin.png
+      meta_description: Movies, TV Shows & Music Streaming
+      group: Media & Downloads
+      policy_engine_mode: any
+
+  - model: authentik_core.application
+    id: app-seerr
+    identifiers:
+      slug: seerr
+    attrs:
+      name: Seerr Requests
+      meta_launch_url: https://seerr.home.arpa/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/jellyseerr.png
+      meta_description: Media Discovery & Requests for Jellyfin
+      group: Media & Downloads
+      policy_engine_mode: any
+
+  - model: authentik_core.application
+    id: app-searxng
+    identifiers:
+      slug: searxng
+    attrs:
+      name: SearXNG Search
+      meta_launch_url: https://searxng.kms-lab.in.ua/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/searxng.png
+      meta_description: Privacy-Respecting Metasearch Engine
+      group: Home & Productivity
+      policy_engine_mode: any
+
+  - model: authentik_core.application
+    id: app-proxmox
+    identifiers:
+      slug: proxmox
+    attrs:
+      name: Proxmox VE
+      meta_launch_url: https://pve.kms-lab.in.ua/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/proxmox.png
+      meta_description: Hypervisor & Virtual Machine Management
+      group: Infrastructure
+      policy_engine_mode: any
+
+  - model: authentik_core.application
+    id: app-tandoor
+    identifiers:
+      slug: tandoor
+    attrs:
+      name: Tandoor Recipes
+      meta_launch_url: https://tandoor.kms-lab.in.ua/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/tandoor-recipes.png
+      meta_description: Recipe Manager, Meal Planner & Shopping Lists
+      group: Public & External
+      policy_engine_mode: any
+
+  - model: authentik_core.application
+    id: app-lubelogger
+    identifiers:
+      slug: lubelogger
+    attrs:
+      name: LubeLogger
+      meta_launch_url: https://lubelogger.kms-lab.in.ua/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/lubelogger.png
+      meta_description: Vehicle Maintenance, Fuel & Service Tracker
+      group: Public & External
+      policy_engine_mode: any
+
+  - model: authentik_core.application
+    id: app-wishlist
+    identifiers:
+      slug: wishlist
+    attrs:
+      name: Wishlist
+      meta_launch_url: https://wishlist.kms-lab.in.ua/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/gift.png
+      meta_description: Family & Friends Gift Wishlist
+      group: Public & External
+      policy_engine_mode: any
+
+  - model: authentik_core.application
+    id: app-itsaplan
+    identifiers:
+      slug: itsaplan
+    attrs:
+      name: Itsaplan
+      meta_launch_url: https://plan.kms-lab.in.ua/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/planka.png
+      meta_description: Project Planning, Issues & Team Workspace
+      group: Public & External
+      policy_engine_mode: any
+
+  - model: authentik_core.application
+    id: app-freelingo
+    identifiers:
+      slug: freelingo
+    attrs:
+      name: FreeLingo
+      meta_launch_url: https://kms-lab.in.ua/
+      meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/duolingo.png
+      meta_description: AI-Powered Language Learning Platform
+      group: Public & External
+      policy_engine_mode: any
+
+  # ============================================================================
+  # 17. Embedded Outpost Binding (attaches all ForwardAuth providers)
   # ============================================================================
   - model: authentik_outposts.outpost
     id: embedded-outpost
@@ -289,6 +753,18 @@ entries:
         - !KeyOf provider-mailpit
         - !KeyOf provider-traefik
         - !KeyOf provider-esphome
+        - !KeyOf provider-gatus
+        - !KeyOf provider-speedtest
+        - !KeyOf provider-pairdrop
+        - !KeyOf provider-s3-ui
+        - !KeyOf provider-headlamp
+        - !KeyOf provider-sonarr
+        - !KeyOf provider-radarr
+        - !KeyOf provider-prowlarr
+        - !KeyOf provider-lidarr
+        - !KeyOf provider-bazarr
+        - !KeyOf provider-qbittorrent
+        - !KeyOf provider-traefik-qnap
       config:
         authentik_host: https://auth.kms-lab.in.ua
         authentik_host_browser: https://auth.kms-lab.in.ua

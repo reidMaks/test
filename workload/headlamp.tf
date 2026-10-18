@@ -29,6 +29,10 @@ resource "helm_release" "headlamp" {
       ingress = {
         enabled          = true
         ingressClassName = "traefik"
+        annotations = {
+          "traefik.ingress.kubernetes.io/router.middlewares" = "default-authentik-forwardauth@kubernetescrd"
+          "gatus.io/status"                                  = "[STATUS] == 200 || [STATUS] == 302"
+        }
         hosts = [
           {
             host = "headlamp.kms-lab.in.ua"

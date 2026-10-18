@@ -12,9 +12,10 @@ resource "helm_release" "actualbudget" {
 
   values = [
     templatefile("${path.module}/actualbudget/values.yaml", {
-      addon_py       = file("${path.module}/actualbudget/addon.py")
-      monobank_token = data.bitwarden-secrets_secret.monobank_token.value
-      s3_endpoint    = local.minio_s3_endpoint
+      addon_py                  = file("${path.module}/actualbudget/addon.py")
+      monobank_token            = data.bitwarden-secrets_secret.monobank_token.value
+      s3_endpoint               = local.minio_s3_endpoint
+      actual_oidc_client_secret = random_password.authentik_actual_secret.result
     }),
     templatefile("${path.module}/helm_values/litestream_sidecar.yaml.tpl", {
       controller_name = "main"

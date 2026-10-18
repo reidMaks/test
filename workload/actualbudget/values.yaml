@@ -46,6 +46,14 @@ controllers:
         env:
           NODE_EXTRA_CA_CERTS: "/certs/mitmproxy-ca-cert.pem"
           LOG_LEVEL: "WARNING"
+          ACTUAL_OPENID_PROVIDER_NAME: "Authentik"
+          ACTUAL_OPENID_AUTHORIZATION_ENDPOINT: "https://auth.kms-lab.in.ua/application/o/authorize/"
+          ACTUAL_OPENID_TOKEN_ENDPOINT: "http://authentik-server.default.svc.cluster.local/application/o/token/"
+          ACTUAL_OPENID_USERINFO_ENDPOINT: "http://authentik-server.default.svc.cluster.local/application/o/userinfo/"
+          ACTUAL_OPENID_CLIENT_ID: "actual"
+          ACTUAL_OPENID_CLIENT_SECRET: "${actual_oidc_client_secret}"
+          ACTUAL_OPENID_SERVER_HOSTNAME: "https://actual.kms-lab.in.ua"
+          ACTUAL_OPENID_AUTH_METHOD: "oauth2"
         resources:
           requests:
             cpu: 50m

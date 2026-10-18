@@ -19,7 +19,7 @@ We want an Okta-like centralized Identity Provider (IdP) and Application Portal 
 
 1. **Deploy Authentik (`2026.8.4`) in the `home` Zone (`workload/authentik.tf`, `workload/helm_values/authentik.yaml`)**:
    - **Database:** Backed by the existing CloudNativePG `shared-db` cluster (`authentik` role and database in `cnpg-system`). Modern Authentik (2025.2+) uses PostgreSQL for both persistence and background task queues/caching, requiring no Redis dependency.
-   - **Placement:** Pinned to `topology.kubernetes.io/zone: home` per [[035-hybrid-zone-workload-policy]] to leverage local Proxmox RAM capacity (`384Mi` request / `768Mi` limit each for `server` and `worker`).
+   - **Placement & High Availability:** Configured with soft `preferredDuringSchedulingIgnoredDuringExecution` (`weight: 100` for `topology.kubernetes.io/zone: home`) and 60-second `not-ready`/`unreachable` tolerations. In normal operation, Authentik runs on local Proxmox nodes (`home`) to save OCI RAM; during a home power/internet outage, Kubernetes automatically reschedules `server` and `worker` onto `oci` (`arm64`), connecting to the promoted `shared-db-3` replica in OCI.
    - **Ingress & Network Exposure (Phase 1):** Exposed at `https://auth.kms-lab.in.ua` via Traefik. Because `auth.kms-lab.in.ua` is not added as a public Cloudflare Tunnel CNAME in `workload/cloudflare.tf`, it resolves via the wildcard A record (`10.9.0.1`) exclusively inside the WireGuard VPN.
    - **SMTP Testing Integration:** Configured to route outbound emails through the in-cluster Mailpit service (`mailpit.apn.svc.cluster.local:1025`).
 
@@ -34,8 +34,8 @@ flowchart LR
     Traefik["Traefik Ingress (192.168.0.45)"]
     Authentik["Authentik Server & Embedded Outpost\n(auth.kms-lab.in.ua)"]
     CNPG[("CloudNativePG\nshared-db (authentik)")]
-    OIDCApps["OIDC Apps\n(Paperless, Grafana, Immich, Portainer)"]
-    ProxyApps["ForwardAuth Apps\n(Longhorn UI, Mailpit, Traefik Dashboard, ESPHome)"]
+    OIDCApps["OIDC Apps\n(Paperless, Grafana, Immich, Portainer, Actual Budget)"]
+    ProxyApps["ForwardAuth Apps\n(Longhorn, Mailpit, Traefik, ESPHome, Gatus,\nSpeedtest, PairDrop, S3 Console, Headlamp,\nSonarr, Radarr, Prowlarr, Lidarr, Bazarr, qBittorrent)"]
 
     User -->|HTTPS| Traefik
     Traefik -->|App Portal & Login| Authentik
@@ -54,11 +54,15 @@ flowchart LR
   - **Paperless-ngx (`workload/paperless.tf`, `workload/helm_values/paperless.yaml`):** Connected via native OIDC (`allauth.socialaccount.providers.openid_connect`) with superuser group sync (`authentik Admins`), keeping regular login and API tokens active for the iOS app and Paperless MCP server.
   - **Grafana (`workload/victoriametrics.tf`, `workload/helm_values/victoriametrics.yaml`):** Connected via native `auth.generic_oauth` with automatic `GrafanaAdmin` role assignment for `authentik Admins`.
   - **Longhorn UI (`workload/infrastructure.tf`) & Mailpit (`workload/mailpit.tf`):** Protected via Traefik `ForwardAuth` (`default-authentik-forwardauth@kubernetescrd`) bound to Authentik's Embedded Outpost.
-- **Phase 3 (Current — Extended Cluster & Infrastructure Rollout):**
+- **Phase 3 (Completed — Extended Cluster & Infrastructure Rollout):**
   - **Immich (`workload/immich.tf`, `workload/helm_values/immich.yaml`):** Connected via native OIDC (supporting both Web and Mobile `app.immich:///oauth-callback`). Configured declaratively via a PostgreSQL `initContainer` (`configure-oauth`) that merges the `oauth` object into `system_metadata` (`key = 'system-config'`) so the Immich Admin UI remains editable.
   - **Traefik Dashboard (`workload/infrastructure.tf`) & ESPHome (`workload/helm_values/esphome.yaml`):** Protected via Traefik `ForwardAuth` (`default/authentik-forwardauth`) and added to the Authentik application portal.
   - **Portainer (`qnap/main.tf`):** Automated in a dedicated Terraform state (`terraform/state/qnap`) via the official `portainer/portainer` provider (`portainer_settings` with `authentication_method = 3` and `portainer_user.akadmin` with `role = 1` Administrator) using the API token from Bitwarden Secrets (`7e8d123d-5b32-49e0-b4a3-b4e701249afd`).
-- **Phase 4 (Future):** Optional expansion to remaining workloads (`Open WebUI`, `Tandoor`, `LubeLogger`, `Jellyfin` SSO plugin, `*arr` `External` auth).
+- **Phase 4 (Current — Internal Services & Portal Launchpad Completion):**
+  - **Actual Budget (`workload/actualbudget.tf`, `workload/actualbudget/values.yaml`):** Migrated from Google OIDC to Authentik OIDC (`ACTUAL_OPENID_*` env vars, using `scope-openid` + `scope-email` so `userInfo.email = reid.maks@gmail.com` maps directly to the existing owner account in `account.sqlite`).
+  - **Internal K8s Services (`ForwardAuth`):** Protected `Gatus` (`status.kms-lab.in.ua`), `OpenSpeedTest` (`speedtest.kms-lab.in.ua`), `PairDrop` (`pairdrop.kms-lab.in.ua`), `Headlamp` (`headlamp.kms-lab.in.ua`), and `RustFS S3 Console` (`s3-ui.kms-lab.in.ua`, keeping the S3 API endpoint `s3.kms-lab.in.ua` unblocked for Litestream and Rclone CSI).
+  - **QNAP Media Stack (`qnap/traefik/docker-compose.yml`, `qnap/portainer/docker-compose.yml`):** Added `authentik` `forwardAuth` middleware (`https://auth.kms-lab.in.ua/outpost.goauthentik.io/auth/traefik`) in `traefik-qnap` dynamic configuration and attached `authentik@file` to `Sonarr`, `Radarr`, `Prowlarr`, `Lidarr`, `Bazarr`, `qBittorrent`, and `Traefik (QNAP)` (with `skip_path_regex: ^/api.*` so API clients remain unblocked).
+  - **Portal Bookmark Tiles (No Auth Changes):** Added launchpad tiles for internet-facing services (`Tandoor`, `LubeLogger`, `Wishlist`, `Itsaplan`, `FreeLingo`) and services keeping their native/API authentication (`Jellyfin`, `Seerr`, `Proxmox VE`, `SearXNG`).
 
 ## Consequences
 
