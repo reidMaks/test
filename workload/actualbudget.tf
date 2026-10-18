@@ -6,7 +6,7 @@ resource "helm_release" "actualbudget" {
   name            = "actualbudget"
   repository      = "https://bjw-s-labs.github.io/helm-charts"
   chart           = "app-template"
-  version         = "5.0.1"
+  version         = local.app_template_version
   namespace       = "default"
   upgrade_install = true
 

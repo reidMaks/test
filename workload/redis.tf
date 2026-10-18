@@ -17,7 +17,7 @@ resource "helm_release" "shared_redis" {
   name            = "shared-redis"
   repository      = "https://bjw-s-labs.github.io/helm-charts"
   chart           = "app-template"
-  version         = "5.0.1"
+  version         = local.app_template_version
   namespace       = "default"
   upgrade_install = true
 

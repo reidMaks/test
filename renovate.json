@@ -12,6 +12,10 @@
     "dependencies",
     "renovate"
   ],
+  "ignorePaths": [
+    "workload/actualbudget/docker-compose.yml",
+    "workload/charts/itsaplan/values.yaml"
+  ],
   "terraform": {
     "managerFilePatterns": [
       "/(^|/)infra/.*\\.tf$/",
@@ -41,32 +45,106 @@
         "image\\s*=\\s*\"(?<depName>[a-zA-Z0-9._/-]+):(?<currentValue>[a-zA-Z0-9._-]+)\""
       ],
       "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Track shared Helm chart versions in workload/locals.tf annotated with # renovate:",
+      "managerFilePatterns": [
+        "/(^|/)workload/locals\\.tf$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[a-zA-Z0-9._/-]+) registryUrl=(?<registryUrl>[^\\s]+)\\s+[a-zA-Z0-9_]+\\s*=\\s*\"(?<currentValue>[^\"]+)\""
+      ]
     }
   ],
   "packageRules": [
     {
-      "description": "Group Terraform providers into a single weekly PR",
+      "description": "Group non-major Terraform providers into a single weekly PR",
       "matchManagers": [
         "terraform"
       ],
       "matchDepTypes": [
-        "provider"
+        "provider",
+        "required_provider"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "lockFileMaintenance"
       ],
       "groupName": "Terraform providers"
     },
     {
-      "description": "Group Helm chart updates",
+      "description": "Group non-major Helm chart updates",
       "matchDatasources": [
         "helm"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
       ],
       "groupName": "Helm charts"
     },
     {
-      "description": "Group container image updates",
+      "description": "Isolate Longhorn storage engine upgrades into a dedicated PR",
+      "matchDatasources": [
+        "helm"
+      ],
+      "matchPackageNames": [
+        "longhorn"
+      ],
+      "groupName": "Longhorn storage"
+    },
+    {
+      "description": "Group non-major container image updates",
       "matchDatasources": [
         "docker"
       ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "groupName": "Container images"
+    },
+    {
+      "description": "Isolate CloudNativePG PostgreSQL image updates into a dedicated PR (triggers rolling DB restart)",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ghcr.io/cloudnative-pg/postgresql"
+      ],
+      "groupName": "CloudNativePG PostgreSQL"
+    },
+    {
+      "description": "Pin descheduler to Kubernetes 1.36 compatibility matrix until Talos K8s 1.37 upgrade",
+      "matchDatasources": [
+        "helm"
+      ],
+      "matchPackageNames": [
+        "descheduler"
+      ],
+      "allowedVersions": "< 0.37.0"
+    },
+    {
+      "description": "Pin alpine/k8s CLI image to match cluster Kubernetes 1.36 minor version",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "alpine/k8s"
+      ],
+      "allowedVersions": "< 1.37.0"
+    },
+    {
+      "description": "Keep MariaDB on 11.x LTS branch for WordPress APN preview pods",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "mariadb"
+      ],
+      "allowedVersions": "< 12.0"
     },
     {
       "description": "Ignore mutable tags like latest or staging that do not follow semver/digest",

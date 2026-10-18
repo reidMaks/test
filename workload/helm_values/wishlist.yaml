@@ -18,7 +18,7 @@ controllers:
       main:
         image:
           repository: ghcr.io/cmintey/wishlist
-          tag: "v0.67.1"
+          tag: "v0.68.0"
         command:
           - sh
           - -c
@@ -41,7 +41,7 @@ controllers:
       02-wishlist-migrate:
         image:
           repository: ghcr.io/cmintey/wishlist
-          tag: "v0.67.1"
+          tag: "v0.68.0"
         command:
           - sh
           - -c

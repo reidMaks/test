@@ -22,7 +22,13 @@ During the 2026-10 infrastructure audit (`IAAC-14`, `IAAC-22`), several drawback
    - **Terraform Providers & Helm Releases** in `infra/*.tf`, `workload/*.tf`, and `qnap/*.tf`.
    - **Helm Values Container Images** in `workload/helm_values/*.yaml` and `workload/charts/**/values.yaml`.
    - **Inline Terraform Container Images** (`image = "repo:tag"`) via a custom regex manager in `workload/*.tf`.
+   - **Shared Helm Chart Versions (`workload/locals.tf`)**: `local.app_template_version` serves as the single source of truth across all 12 `app-template` releases and is tracked via a `# renovate:` annotation custom regex manager in `renovate.json`.
    - **Docker Compose Images** in `qnap/`.
+3. **Safety Guardrails in `renovate.json` (2026-10-18 Audit):**
+   - **Isolate Stateful Upgrades:** `longhorn` (Helm chart) and `ghcr.io/cloudnative-pg/postgresql` (Docker image) are split into dedicated PR groups (`Longhorn storage` and `CloudNativePG PostgreSQL`) so storage-engine upgrades and database rolling restarts are never bundled with routine application updates.
+   - **Kubernetes Skew Alignment:** `descheduler` (`< 0.37.0`) and `alpine/k8s` (`< 1.37.0`) are pinned to the cluster's current Kubernetes minor version (`v1.36.x`).
+   - **MariaDB LTS Pinning:** `mariadb` is constrained to `< 12.0` (`11.x` LTS branch) for WordPress preview pods.
+   - **Ignore Legacy/Disabled Manifests:** `workload/actualbudget/docker-compose.yml` (legacy pre-K8s file) and `workload/charts/itsaplan/values.yaml` (disabled embedded DB/S3 defaults in vendored chart) are excluded via `ignorePaths`.
 
 ```mermaid
 flowchart LR

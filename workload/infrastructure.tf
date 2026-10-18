@@ -92,7 +92,7 @@ resource "helm_release" "traefik" {
   chart            = "traefik"
   namespace        = "traefik-system"
   create_namespace = true
-  version          = "41.0.0"
+  version          = "41.7.1"
   upgrade_install  = true
   depends_on       = [helm_release.metallb_config]
 
@@ -303,8 +303,6 @@ data "kubernetes_persistent_volume_claim" "esphome_config" {
     name      = "esphome-config"
     namespace = "default"
   }
-
-  depends_on = [helm_release.esphome]
 }
 
 resource "kubernetes_labels" "longhorn_backup_esphome_config" {
@@ -318,5 +316,8 @@ resource "kubernetes_labels" "longhorn_backup_esphome_config" {
     "recurring-job-group.longhorn.io/daily-backups" = "enabled"
   }
 
-  depends_on = [kubernetes_manifest.longhorn_daily_backup]
+  depends_on = [
+    helm_release.esphome,
+    kubernetes_manifest.longhorn_daily_backup
+  ]
 }
