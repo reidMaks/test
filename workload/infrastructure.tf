@@ -120,6 +120,18 @@ resource "helm_release" "traefik" {
           "metallb.universe.tf/loadBalancerIPs" = "192.168.0.45"
         }
       }
+      ports = {
+        web = {
+          forwardedHeaders = {
+            trustedIPs = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+          }
+        }
+        websecure = {
+          forwardedHeaders = {
+            trustedIPs = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
+          }
+        }
+      }
       ingressRoute = {
         dashboard = {
           enabled     = true

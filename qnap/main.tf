@@ -38,7 +38,7 @@ data "terraform_remote_state" "workload" {
 }
 
 provider "portainer" {
-  endpoint        = "https://portainer.home.arpa"
+  endpoint        = "https://192.168.0.21:9443"
   api_key         = data.bitwarden-secrets_secret.portainer_token.value
   skip_ssl_verify = true
 }
@@ -91,29 +91,23 @@ resource "portainer_settings" "this" {
 # ==============================================================================
 
 resource "portainer_stack" "traefik" {
-  name                      = "traefik"
-  deployment_type           = "standalone"
-  method                    = "repository"
-  endpoint_id               = 7
-  repository_url            = "https://github.com/reidMaks/test"
-  repository_reference_name = "refs/heads/main"
-  file_path_in_repository   = "qnap/traefik/docker-compose.yml"
-  update_interval           = "5m"
-  tlsskip_verify            = false
-  pull_image                = false
-  force_update              = false
+  name               = "traefik"
+  deployment_type    = "standalone"
+  method             = "string"
+  endpoint_id        = 7
+  stack_file_content = file("${path.module}/traefik/docker-compose.yml")
+  pull_image         = false
+  prune              = false
+  force_update       = false
 }
 
 resource "portainer_stack" "arr_suite" {
-  name                      = "arr-suite"
-  deployment_type           = "standalone"
-  method                    = "repository"
-  endpoint_id               = 7
-  repository_url            = "https://github.com/reidMaks/test"
-  repository_reference_name = "refs/heads/main"
-  file_path_in_repository   = "qnap/portainer/docker-compose.yml"
-  update_interval           = "5m"
-  tlsskip_verify            = false
-  pull_image                = false
-  force_update              = false
+  name               = "arr-suite"
+  deployment_type    = "standalone"
+  method             = "string"
+  endpoint_id        = 7
+  stack_file_content = file("${path.module}/portainer/docker-compose.yml")
+  pull_image         = false
+  prune              = false
+  force_update       = false
 }

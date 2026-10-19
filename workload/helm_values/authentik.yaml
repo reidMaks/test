@@ -1,4 +1,6 @@
 global:
+  podAnnotations:
+    checksum/blueprints: "${blueprint_checksum}"
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:

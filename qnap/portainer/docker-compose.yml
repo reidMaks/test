@@ -15,6 +15,220 @@ services:
       - PGID=0
       - TZ=Europe/Kyiv
       - WEBUI_PORT=8085
+      # --- WebUI та SSO (Authentik ForwardAuth) ---
+      # Локалізація інтерфейсу
+      - QBT_LOCALE=uk
+      # Вимикає запит пароля для localhost (127.0.0.1) та дозволених підмереж,
+      # оскільки авторизацію повністю контролює Traefik + Authentik ForwardAuth
+      - QBT_BYPASS_LOCAL_AUTH=true
+      - QBT_AUTH_SUBNET_WHITELIST_ENABLED=true
+      - QBT_AUTH_SUBNET_WHITELIST=192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8
+      # Має бути false: qBittorrent не вміє парсити CIDR у ReverseProxiesList,
+      # тому беремо IP контейнера traefik-qnap (172.16.0.0/12) напряму
+      - QBT_REVERSE_PROXY_ENABLED=false
+      - QBT_CSRF_PROTECTION=false
+      - QBT_HOST_HEADER_VALIDATION=false
+      - QBT_CLICKJACKING_PROTECTION=true
+      - QBT_SECURE_COOKIE=true
+      # --- Дисковий ввід/вивід та RAM (оптимізовано під QNAP HDD RAID) ---
+      # Тип роботи з диском: Posix (2) замість Default/mmap (0).
+      # Забігає роздуванню RAM (page cache) та зависанням контейнера при пробудженні HDD
+      - QBT_DISK_IO_TYPE_INI=Posix
+      - QBT_DISK_IO_TYPE_API=2
+      # Ліміт робочого набору пам'яті в МіБ (запобіжник для фізичної RAM)
+      - QBT_MEMORY_WORKING_SET_LIMIT=512
+      # Кількість потоків асинхронного I/O: зменшено з 10 до 4 (рекомендація libtorrent
+      # для механічних HDD RAID, щоб уникнути зайвого смикання голівок диска)
+      - QBT_ASYNC_IO_THREADS=4
+      # 1 потік хешування ідеально для HDD (перевірка файлів не блокує паралельні операції)
+      - QBT_HASHING_THREADS=1
+      # Ліміт відкритих файлових дескрипторів (замість дефолтних 5000 у libtorrent)
+      - QBT_FILE_POOL_SIZE=100
+      # Розмір черги диска: збільшено з 1 МіБ до 4 МіБ (4194304 байт) для згладжування
+      # піків запису на HDD на гігабітному каналі
+      - QBT_DISK_QUEUE_SIZE=4194304
+      # Об'єднання суміжних операцій читання/запису та групування шматків (зменшує фрагментацію HDD)
+      - QBT_COALESCE_READ_WRITE=true
+      - QBT_PIECE_EXTENT_AFFINITY=true
+      - QBT_RECHECK_COMPLETED=false
+      # --- Шляхи збереження та авто керування торентами (TMM) ---
+      - QBT_SAVE_PATH=/torrent/Downloads
+      - QBT_TEMP_PATH_ENABLED=true
+      - QBT_TEMP_PATH=/torrent/Downloads/temp
+      - QBT_SCAN_DIR=/torrent/utp-free-leech
+      - QBT_TORRENT_CHANGED_TMM=true
+      - QBT_SAVE_PATH_CHANGED_TMM=false
+      - QBT_CATEGORY_CHANGED_TMM=false
+      # --- Мережа, протоколи та приватні трекери ---
+      - QBT_LISTEN_PORT=34760
+      - QBT_UPNP=false
+      - QBT_RANDOM_PORT=false
+      # 0 = Пріоритет TCP над uTP (оптимально для оптоволокна, де uTP штучно ріже швидкість)
+      - QBT_UTP_TCP_MIXED_MODE=0
+      - QBT_PEER_TOS=0
+      - QBT_DHT=true
+      - QBT_PEX=true
+      - QBT_LSD=true
+      # 0 = Дозволити шифрування (Allow encryption)
+      - QBT_ENCRYPTION=0
+      # Вимкнено (false): anonymous_mode ховає User-Agent/Peer-ID, через що приватні трекери
+      # (Toloka, Rutracker) та cross-seed можуть відхиляти анонси
+      - QBT_ANONYMOUS_MODE=false
+      - QBT_BLOCK_PRIVILEGED_PORTS=false
+      # --- Ліміти з'єднань, слотів роздачі та рейтинг ---
+      # Зменшено з 1000 до 500 глобальних з'єднань для зменшення навантаження на роутер і HDD
+      - QBT_MAX_CONNEC=500
+      - QBT_MAX_CONNEC_PER_TORRENT=100
+      # Обмежено слоти роздачі (20 глобально / 10 на торент замість безлімітних -1),
+      # щоб десятки пірів не смикали головки HDD одночасно на низькій швидкості
+      - QBT_MAX_UPLOADS=20
+      - QBT_MAX_UPLOADS_PER_TORRENT=10
+      # Черга вимкнена, щоб усі торенти залишались активними для роздачі та cross-seed
+      - QBT_QUEUEING_ENABLED=false
+      # Зупиняти роздачу (act=0) при досягненні рейтингу 10.0
+      - QBT_MAX_RATIO_ENABLED=true
+      - QBT_MAX_RATIO=10
+      - QBT_MAX_RATIO_ACT=0
+      # --- Ліміти швидкості ---
+      - QBT_DL_LIMIT=0
+      - QBT_UP_LIMIT=0
+      # Альтернативні ліміти швидкості ("режим черепашки"): 2048000 Б/с (~2 МБ/с)
+      - QBT_ALT_DL_LIMIT=2048000
+      - QBT_ALT_UP_LIMIT=2048000
+      # Не обмежувати швидкість для локальних пірів у LAN (було true)
+      - QBT_LIMIT_LAN_PEERS=false
+      - QBT_LIMIT_UTP_RATE=true
+      - QBT_LIMIT_TCP_OVERHEAD=false
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        CONF="/config/qBittorrent/qBittorrent.conf"
+        if [ -f "$$CONF" ]; then
+          sed -i "s|^WebUI\\\\AuthSubnetWhitelist=.*|WebUI\\\\AuthSubnetWhitelist=$$QBT_AUTH_SUBNET_WHITELIST|" "$$CONF"
+          sed -i "s|^WebUI\\\\AuthSubnetWhitelistEnabled=.*|WebUI\\\\AuthSubnetWhitelistEnabled=$$QBT_AUTH_SUBNET_WHITELIST_ENABLED|" "$$CONF"
+          sed -i "s|^WebUI\\\\LocalHostAuth=.*|WebUI\\\\LocalHostAuth=false|" "$$CONF"
+          sed -i "s|^WebUI\\\\ReverseProxySupportEnabled=.*|WebUI\\\\ReverseProxySupportEnabled=$$QBT_REVERSE_PROXY_ENABLED|" "$$CONF"
+          if grep -q "^Session\\\\DiskIOType=" "$$CONF"; then
+            sed -i "s|^Session\\\\DiskIOType=.*|Session\\\\DiskIOType=$$QBT_DISK_IO_TYPE_INI|" "$$CONF"
+          else
+            sed -i "/^\[BitTorrent\]/a Session\\\\DiskIOType=$$QBT_DISK_IO_TYPE_INI" "$$CONF"
+          fi
+        fi
+        (
+          for i in $$(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:$$WEBUI_PORT/api/v2/app/version" >/dev/null 2>&1; then
+              PREFS_JSON=$$(printf '{
+                "locale": "%s",
+                "bypass_local_auth": %s,
+                "bypass_auth_subnet_whitelist_enabled": %s,
+                "bypass_auth_subnet_whitelist": "%s",
+                "web_ui_reverse_proxy_enabled": %s,
+                "web_ui_csrf_protection_enabled": %s,
+                "web_ui_host_header_validation_enabled": %s,
+                "web_ui_clickjacking_protection_enabled": %s,
+                "web_ui_secure_cookie_enabled": %s,
+                "disk_io_type": %s,
+                "memory_working_set_limit": %s,
+                "async_io_threads": %s,
+                "hashing_threads": %s,
+                "file_pool_size": %s,
+                "disk_queue_size": %s,
+                "enable_coalesce_read_write": %s,
+                "enable_piece_extent_affinity": %s,
+                "recheck_completed_torrents": %s,
+                "save_path": "%s",
+                "temp_path_enabled": %s,
+                "temp_path": "%s",
+                "scan_dirs": {"%s": 1},
+                "torrent_changed_tmm_enabled": %s,
+                "save_path_changed_tmm_enabled": %s,
+                "category_changed_tmm_enabled": %s,
+                "listen_port": %s,
+                "upnp": %s,
+                "random_port": %s,
+                "utp_tcp_mixed_mode": %s,
+                "peer_tos": %s,
+                "dht": %s,
+                "pex": %s,
+                "lsd": %s,
+                "encryption": %s,
+                "anonymous_mode": %s,
+                "block_peers_on_privileged_ports": %s,
+                "max_connec": %s,
+                "max_connec_per_torrent": %s,
+                "max_uploads": %s,
+                "max_uploads_per_torrent": %s,
+                "queueing_enabled": %s,
+                "max_ratio_enabled": %s,
+                "max_ratio": %s,
+                "max_ratio_act": %s,
+                "dl_limit": %s,
+                "up_limit": %s,
+                "alt_dl_limit": %s,
+                "alt_up_limit": %s,
+                "limit_lan_peers": %s,
+                "limit_utp_rate": %s,
+                "limit_tcp_overhead": %s
+              }' \
+                "$$QBT_LOCALE" \
+                "$$QBT_BYPASS_LOCAL_AUTH" \
+                "$$QBT_AUTH_SUBNET_WHITELIST_ENABLED" \
+                "$$QBT_AUTH_SUBNET_WHITELIST" \
+                "$$QBT_REVERSE_PROXY_ENABLED" \
+                "$$QBT_CSRF_PROTECTION" \
+                "$$QBT_HOST_HEADER_VALIDATION" \
+                "$$QBT_CLICKJACKING_PROTECTION" \
+                "$$QBT_SECURE_COOKIE" \
+                "$$QBT_DISK_IO_TYPE_API" \
+                "$$QBT_MEMORY_WORKING_SET_LIMIT" \
+                "$$QBT_ASYNC_IO_THREADS" \
+                "$$QBT_HASHING_THREADS" \
+                "$$QBT_FILE_POOL_SIZE" \
+                "$$QBT_DISK_QUEUE_SIZE" \
+                "$$QBT_COALESCE_READ_WRITE" \
+                "$$QBT_PIECE_EXTENT_AFFINITY" \
+                "$$QBT_RECHECK_COMPLETED" \
+                "$$QBT_SAVE_PATH" \
+                "$$QBT_TEMP_PATH_ENABLED" \
+                "$$QBT_TEMP_PATH" \
+                "$$QBT_SCAN_DIR" \
+                "$$QBT_TORRENT_CHANGED_TMM" \
+                "$$QBT_SAVE_PATH_CHANGED_TMM" \
+                "$$QBT_CATEGORY_CHANGED_TMM" \
+                "$$QBT_LISTEN_PORT" \
+                "$$QBT_UPNP" \
+                "$$QBT_RANDOM_PORT" \
+                "$$QBT_UTP_TCP_MIXED_MODE" \
+                "$$QBT_PEER_TOS" \
+                "$$QBT_DHT" \
+                "$$QBT_PEX" \
+                "$$QBT_LSD" \
+                "$$QBT_ENCRYPTION" \
+                "$$QBT_ANONYMOUS_MODE" \
+                "$$QBT_BLOCK_PRIVILEGED_PORTS" \
+                "$$QBT_MAX_CONNEC" \
+                "$$QBT_MAX_CONNEC_PER_TORRENT" \
+                "$$QBT_MAX_UPLOADS" \
+                "$$QBT_MAX_UPLOADS_PER_TORRENT" \
+                "$$QBT_QUEUEING_ENABLED" \
+                "$$QBT_MAX_RATIO_ENABLED" \
+                "$$QBT_MAX_RATIO" \
+                "$$QBT_MAX_RATIO_ACT" \
+                "$$QBT_DL_LIMIT" \
+                "$$QBT_UP_LIMIT" \
+                "$$QBT_ALT_DL_LIMIT" \
+                "$$QBT_ALT_UP_LIMIT" \
+                "$$QBT_LIMIT_LAN_PEERS" \
+                "$$QBT_LIMIT_UTP_RATE" \
+                "$$QBT_LIMIT_TCP_OVERHEAD")
+              curl -fsS -X POST "http://127.0.0.1:$$WEBUI_PORT/api/v2/app/setPreferences" \
+                --data-urlencode "json=$$PREFS_JSON" >/dev/null 2>&1 && break
+            fi
+            sleep 1
+          done
+        ) &
+        exec /init
     volumes:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/qbittorrent:/config
       - /share/CACHEDEV1_DATA/torrent:/torrent

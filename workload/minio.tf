@@ -23,10 +23,11 @@ resource "kubernetes_secret" "minio_secret" {
     namespace = "default"
   }
   data = {
-    MINIO_ROOT_USER     = "admin"
-    MINIO_ROOT_PASSWORD = data.bitwarden-secrets_secret.minio_root.value
-    RUSTFS_ACCESS_KEY   = "admin"
-    RUSTFS_SECRET_KEY   = data.bitwarden-secrets_secret.minio_root.value
+    MINIO_ROOT_USER                      = "admin"
+    MINIO_ROOT_PASSWORD                  = data.bitwarden-secrets_secret.minio_root.value
+    RUSTFS_ACCESS_KEY                    = "admin"
+    RUSTFS_SECRET_KEY                    = data.bitwarden-secrets_secret.minio_root.value
+    RUSTFS_IDENTITY_OPENID_CLIENT_SECRET = random_password.authentik_rustfs_secret.result
   }
 }
 
@@ -41,9 +42,18 @@ resource "helm_release" "minio" {
   values = [
     yamlencode({
       defaultPodOptions = {
+        annotations = {
+          "checksum/secret" = sha256(jsonencode(kubernetes_secret.minio_secret.data))
+        }
         nodeSelector = {
           "kubernetes.io/hostname" = "talos-cp-oci"
         }
+        hostAliases = [
+          {
+            ip        = "192.168.0.45"
+            hostnames = ["auth.kms-lab.in.ua"]
+          }
+        ]
       }
       controllers = {
         main = {
@@ -75,6 +85,20 @@ resource "helm_release" "minio" {
                 # instead of writing to container-local /logs.
                 RUSTFS_OBS_LOG_DIRECTORY = ""
                 RUSTFS_OBS_LOGGER_LEVEL  = "warn"
+                # Native OpenID Connect (OIDC) SSO with Authentik
+                RUSTFS_BROWSER_REDIRECT_URL                 = "https://s3-ui.kms-lab.in.ua"
+                RUSTFS_OUTBOUND_ALLOW_ORIGINS               = "https://auth.kms-lab.in.ua"
+                RUSTFS_IDENTITY_OPENID_ENABLE               = "on"
+                RUSTFS_IDENTITY_OPENID_CONFIG_URL           = "https://auth.kms-lab.in.ua/application/o/s3-ui/.well-known/openid-configuration"
+                RUSTFS_IDENTITY_OPENID_ISSUER               = "https://auth.kms-lab.in.ua/application/o/s3-ui/"
+                RUSTFS_IDENTITY_OPENID_CLIENT_ID            = "rustfs"
+                RUSTFS_IDENTITY_OPENID_SCOPES               = "openid,profile,email"
+                RUSTFS_IDENTITY_OPENID_REDIRECT_URI         = "https://s3-ui.kms-lab.in.ua/rustfs/admin/v3/oidc/callback/default"
+                RUSTFS_IDENTITY_OPENID_REDIRECT_URI_DYNAMIC = "off"
+                RUSTFS_IDENTITY_OPENID_DISPLAY_NAME         = "Authentik"
+                RUSTFS_IDENTITY_OPENID_EMAIL_CLAIM          = "email"
+                RUSTFS_IDENTITY_OPENID_USERNAME_CLAIM       = "preferred_username"
+                RUSTFS_IDENTITY_OPENID_ROLE_POLICY          = "consoleAdmin"
               }
               probes = {
                 readiness = {
@@ -148,8 +172,7 @@ resource "helm_release" "minio" {
           enabled   = true
           className = "traefik"
           annotations = {
-            "traefik.ingress.kubernetes.io/router.middlewares" = "default-authentik-forwardauth@kubernetescrd"
-            "gatus.io/status"                                  = "[STATUS] == 200 || [STATUS] == 302"
+            "gatus.io/status" = "[STATUS] == 200 || [STATUS] == 302"
           }
           hosts = [
             {
@@ -186,5 +209,9 @@ resource "helm_release" "minio" {
         }
       }
     })
+  ]
+
+  depends_on = [
+    helm_release.authentik
   ]
 }

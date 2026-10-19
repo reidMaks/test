@@ -18,6 +18,9 @@ resource "helm_release" "headlamp" {
   values = [
     yamlencode({
       replicaCount = 1
+      config = {
+        unsafeUseServiceAccountToken = true
+      }
       nodeSelector = {
         "topology.kubernetes.io/zone" = "home"
       }

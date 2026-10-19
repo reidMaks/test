@@ -37,6 +37,11 @@ resource "random_password" "authentik_actual_secret" {
   special = false
 }
 
+resource "random_password" "authentik_rustfs_secret" {
+  length  = 48
+  special = false
+}
+
 output "portainer_oidc_client_secret" {
   value       = random_password.authentik_portainer_secret.result
   sensitive   = true
@@ -56,6 +61,7 @@ resource "kubernetes_secret" "authentik_blueprints" {
       immich_client_secret    = random_password.authentik_immich_secret.result
       portainer_client_secret = random_password.authentik_portainer_secret.result
       actual_client_secret    = random_password.authentik_actual_secret.result
+      rustfs_client_secret    = random_password.authentik_rustfs_secret.result
     })
   }
 }
@@ -131,8 +137,9 @@ resource "helm_release" "authentik" {
 
   values = [
     templatefile("${path.module}/helm_values/authentik.yaml", {
-      db_password = random_password.authentik_db_password.result
-      secret_key  = random_password.authentik_secret_key.result
+      db_password        = random_password.authentik_db_password.result
+      secret_key         = random_password.authentik_secret_key.result
+      blueprint_checksum = sha256(kubernetes_secret.authentik_blueprints.data["kms-lab-apps.yaml"])
     })
   ]
 

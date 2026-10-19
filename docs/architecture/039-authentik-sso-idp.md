@@ -34,8 +34,8 @@ flowchart LR
     Traefik["Traefik Ingress (192.168.0.45)"]
     Authentik["Authentik Server & Embedded Outpost\n(auth.kms-lab.in.ua)"]
     CNPG[("CloudNativePG\nshared-db (authentik)")]
-    OIDCApps["OIDC Apps\n(Paperless, Grafana, Immich, Portainer, Actual Budget)"]
-    ProxyApps["ForwardAuth Apps\n(Longhorn, Mailpit, Traefik, ESPHome, Gatus,\nSpeedtest, PairDrop, S3 Console, Headlamp,\nSonarr, Radarr, Prowlarr, Lidarr, Bazarr, qBittorrent)"]
+    OIDCApps["OIDC Apps\n(Paperless, Grafana, Immich, Portainer, Actual Budget, RustFS Console)"]
+    ProxyApps["ForwardAuth Apps\n(Longhorn, Mailpit, Traefik, ESPHome, Gatus,\nSpeedtest, PairDrop, Headlamp,\nSonarr, Radarr, Prowlarr, Lidarr, Bazarr, qBittorrent)"]
 
     User -->|HTTPS| Traefik
     Traefik -->|App Portal & Login| Authentik
@@ -51,7 +51,7 @@ flowchart LR
 - **Phase 1 (Completed):** Deploy Authentik (`auth.kms-lab.in.ua`) over VPN and complete initial administrator setup (`/if/flow/initial-setup/`) + Passkey enrollment.
 - **Phase 2 (Completed — Core Declarative Blueprint Rollout):**
   - Provisioned `workload/helm_values/authentik_blueprint.yaml` via `kubernetes_secret.authentik_blueprints` (`blueprints.secrets` in `workload/helm_values/authentik.yaml`).
-  - **Paperless-ngx (`workload/paperless.tf`, `workload/helm_values/paperless.yaml`):** Connected via native OIDC (`allauth.socialaccount.providers.openid_connect`) with superuser group sync (`authentik Admins`), keeping regular login and API tokens active for the iOS app and Paperless MCP server.
+  - **Paperless-ngx (`workload/paperless.tf`, `workload/helm_values/paperless.yaml`):** Connected via native OIDC (`allauth.socialaccount.providers.openid_connect`) with automatic SSO redirect (`PAPERLESS_REDIRECT_LOGIN_TO_SSO=true`, `PAPERLESS_SOCIAL_AUTO_SIGNUP=true`) and superuser group sync (`authentik Admins`), while keeping `PAPERLESS_DISABLE_REGULAR_LOGIN` unset so API tokens and Basic Auth remain active for the iOS app and Paperless MCP server.
   - **Grafana (`workload/victoriametrics.tf`, `workload/helm_values/victoriametrics.yaml`):** Connected via native `auth.generic_oauth` with automatic `GrafanaAdmin` role assignment for `authentik Admins`.
   - **Longhorn UI (`workload/infrastructure.tf`) & Mailpit (`workload/mailpit.tf`):** Protected via Traefik `ForwardAuth` (`default-authentik-forwardauth@kubernetescrd`) bound to Authentik's Embedded Outpost.
 - **Phase 3 (Completed — Extended Cluster & Infrastructure Rollout):**
@@ -60,8 +60,9 @@ flowchart LR
   - **Portainer (`qnap/main.tf`):** Automated in a dedicated Terraform state (`terraform/state/qnap`) via the official `portainer/portainer` provider (`portainer_settings` with `authentication_method = 3` and `portainer_user.akadmin` with `role = 1` Administrator) using the API token from Bitwarden Secrets (`7e8d123d-5b32-49e0-b4a3-b4e701249afd`).
 - **Phase 4 (Current — Internal Services & Portal Launchpad Completion):**
   - **Actual Budget (`workload/actualbudget.tf`, `workload/actualbudget/values.yaml`):** Migrated from Google OIDC to Authentik OIDC (`ACTUAL_OPENID_*` env vars, using `scope-openid` + `scope-email` so `userInfo.email = reid.maks@gmail.com` maps directly to the existing owner account in `account.sqlite`).
-  - **Internal K8s Services (`ForwardAuth`):** Protected `Gatus` (`status.kms-lab.in.ua`), `OpenSpeedTest` (`speedtest.kms-lab.in.ua`), `PairDrop` (`pairdrop.kms-lab.in.ua`), `Headlamp` (`headlamp.kms-lab.in.ua`), and `RustFS S3 Console` (`s3-ui.kms-lab.in.ua`, keeping the S3 API endpoint `s3.kms-lab.in.ua` unblocked for Litestream and Rclone CSI).
-  - **QNAP Media Stack (`qnap/traefik/docker-compose.yml`, `qnap/portainer/docker-compose.yml`):** Added `authentik` `forwardAuth` middleware (`https://auth.kms-lab.in.ua/outpost.goauthentik.io/auth/traefik`) in `traefik-qnap` dynamic configuration and attached `authentik@file` to `Sonarr`, `Radarr`, `Prowlarr`, `Lidarr`, `Bazarr`, `qBittorrent`, and `Traefik (QNAP)` (with `skip_path_regex: ^/api.*` so API clients remain unblocked).
+  - **RustFS S3 Console (`workload/minio.tf`, `workload/authentik.tf`, `workload/helm_values/authentik_blueprint.yaml`):** Connected via native OIDC (`RUSTFS_IDENTITY_OPENID_*` with `RUSTFS_IDENTITY_OPENID_ROLE_POLICY=consoleAdmin`, `RUSTFS_OUTBOUND_ALLOW_ORIGINS=https://auth.kms-lab.in.ua`, and a pod `hostAliases` entry mapping `auth.kms-lab.in.ua` to `192.168.0.45` on `talos-cp-oci`) with direct portal launch URL `https://s3-ui.kms-lab.in.ua/rustfs/admin/v3/oidc/authorize/default`. The S3 API endpoint (`s3.kms-lab.in.ua`) remains unblocked for Litestream and Rclone CSI.
+  - **Internal K8s Services (`ForwardAuth`):** Protected `Gatus` (`status.kms-lab.in.ua`), `OpenSpeedTest` (`speedtest.kms-lab.in.ua`), `PairDrop` (`pairdrop.kms-lab.in.ua`), and `Headlamp` (`headlamp.kms-lab.in.ua`, with `config.unsafeUseServiceAccountToken = true` so users authenticated via Traefik `ForwardAuth` are not prompted for a Kubernetes Bearer token).
+  - **QNAP Media Stack (`workload/infrastructure.tf`, `qnap/traefik/docker-compose.yml`, `qnap/portainer/docker-compose.yml`):** Configured `forwardedHeaders.trustedIPs` (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`) on K8s Traefik's `web` and `websecure` entrypoints so `X-Forwarded-Host` and `X-Forwarded-Uri` sent by `traefik-qnap` (`192.168.0.21`) are preserved when reaching Authentik's Embedded Outpost (`https://auth.kms-lab.in.ua/outpost.goauthentik.io/auth/traefik`). Attached `authentik@docker` to `Sonarr`, `Radarr`, `Prowlarr`, `Lidarr`, `Bazarr`, `qBittorrent` (with `QBT_AUTH_SUBNET_WHITELIST=192.168.0.0/16, 172.16.0.0/12, 10.0.0.0/8` injected into `qBittorrent.conf` on startup), and `Traefik (QNAP)` (with `skip_path_regex: ^/api.*` and `^(/sonarr\.home\.arpa)?/api.*` so API clients remain unblocked).
   - **Portal Bookmark Tiles (No Auth Changes):** Added launchpad tiles for internet-facing services (`Tandoor`, `LubeLogger`, `Wishlist`, `Itsaplan`, `FreeLingo`) and services keeping their native/API authentication (`Jellyfin`, `Seerr`, `Proxmox VE`, `SearXNG`).
 
 ## Consequences

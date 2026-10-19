@@ -397,18 +397,30 @@ entries:
       policy_engine_mode: any
 
   # ============================================================================
-  # 13. RustFS S3 Console (Traefik ForwardAuth Proxy Provider & Application)
+  # 13. RustFS S3 Console (OIDC Provider & Application)
   # ============================================================================
-  - model: authentik_providers_proxy.proxyprovider
-    id: provider-s3-ui
+  - model: authentik_providers_oauth2.oauth2provider
+    id: provider-rustfs
     identifiers:
-      name: S3 Console ForwardAuth
+      name: RustFS OIDC
     attrs:
       authentication_flow: !Find [authentik_flows.flow, [slug, default-authentication-flow]]
       authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-implicit-consent]]
       invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
-      mode: forward_single
-      external_host: https://s3-ui.kms-lab.in.ua
+      client_type: confidential
+      client_id: rustfs
+      client_secret: "${rustfs_client_secret}"
+      grant_types:
+        - authorization_code
+        - refresh_token
+      signing_key: !Find [authentik_crypto.certificatekeypair, [name, authentik Self-signed Certificate]]
+      property_mappings:
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-openid]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-email]]
+        - !Find [authentik_providers_oauth2.scopemapping, [managed, goauthentik.io/providers/oauth2/scope-profile]]
+      redirect_uris:
+        - matching_mode: strict
+          url: https://s3-ui.kms-lab.in.ua/rustfs/admin/v3/oidc/callback/default
 
   - model: authentik_core.application
     id: app-s3-ui
@@ -416,8 +428,8 @@ entries:
       slug: s3-ui
     attrs:
       name: RustFS S3 Console
-      provider: !KeyOf provider-s3-ui
-      meta_launch_url: https://s3-ui.kms-lab.in.ua/
+      provider: !KeyOf provider-rustfs
+      meta_launch_url: https://s3-ui.kms-lab.in.ua/rustfs/admin/v3/oidc/authorize/default
       meta_icon: https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/minio.png
       meta_description: S3 Object Storage Web Console (OCI)
       group: Infrastructure
@@ -463,7 +475,7 @@ entries:
       invalidation_flow: !Find [authentik_flows.flow, [slug, default-provider-invalidation-flow]]
       mode: forward_single
       external_host: https://sonarr.home.arpa
-      skip_path_regex: ^/api.*
+      skip_path_regex: ^(/sonarr\.home\.arpa)?/api.*
 
   - model: authentik_core.application
     id: app-sonarr
@@ -756,7 +768,6 @@ entries:
         - !KeyOf provider-gatus
         - !KeyOf provider-speedtest
         - !KeyOf provider-pairdrop
-        - !KeyOf provider-s3-ui
         - !KeyOf provider-headlamp
         - !KeyOf provider-sonarr
         - !KeyOf provider-radarr
