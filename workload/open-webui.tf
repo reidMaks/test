@@ -6,7 +6,7 @@ resource "helm_release" "open_webui" {
   name            = "open-webui"
   repository      = "https://helm.openwebui.com/"
   chart           = "open-webui"
-  version         = "16.6.0"
+  version         = "17.0.0"
   namespace       = "default"
   upgrade_install = true
   timeout         = 600
