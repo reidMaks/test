@@ -11,10 +11,15 @@ controllers:
         image:
           repository: ghcr.io/hargata/lubelogger
           tag: "v1.7.4"
+        env:
+          DOTNET_gcServer: "0"
+          DOTNET_GCConserveMemory: "9"
+          MALLOC_TRIM_THRESHOLD_: "131072"
+          MALLOC_ARENA_MAX: "2"
         resources:
           requests:
             cpu: 10m
-            memory: 128Mi
+            memory: 64Mi
           limits:
             memory: 256Mi
         envFrom:

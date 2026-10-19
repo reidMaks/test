@@ -31,12 +31,16 @@ controllers:
             value: "72"
           - name: DEFAULT_CURRENCY
             value: "UAH"
+          - name: NODE_OPTIONS
+            value: "--max-old-space-size=128"
+          - name: MALLOC_ARENA_MAX
+            value: "2"
         resources:
           requests:
             cpu: 10m
-            memory: 256Mi
+            memory: 128Mi
           limits:
-            memory: 512Mi
+            memory: 384Mi
     initContainers:
       02-wishlist-migrate:
         image:

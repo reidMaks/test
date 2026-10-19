@@ -1,6 +1,17 @@
 global:
   podAnnotations:
     checksum/blueprints: "${blueprint_checksum}"
+  env:
+    - name: AUTHENTIK_WEB__WORKERS
+      value: "1"
+    - name: AUTHENTIK_WEB__THREADS
+      value: "4"
+    - name: PYTHONOPTIMIZE
+      value: "1"
+    - name: MALLOC_TRIM_THRESHOLD_
+      value: "65536"
+    - name: MALLOC_ARENA_MAX
+      value: "2"
   affinity:
     nodeAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:

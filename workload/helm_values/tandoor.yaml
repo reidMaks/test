@@ -20,6 +20,12 @@ controllers:
           STATIC_URL: "/staticfiles/"
           MEDIA_URL: "/media/"
           GUNICORN_MEDIA: "1"
+          # 1 воркер із 4 потоками замість дефолтних 3 важких процесів (економить ~550 МіБ RAM на OCI)
+          GUNICORN_WORKERS: "1"
+          GUNICORN_THREADS: "4"
+          PYTHONOPTIMIZE: "1"
+          MALLOC_TRIM_THRESHOLD_: "65536"
+          MALLOC_ARENA_MAX: "2"
           ALLOWED_HOSTS: "*"
           CSRF_TRUSTED_ORIGINS: 'https://{{ (first .Values.ingress.main.hosts).host }}'
         envFrom:
@@ -28,9 +34,9 @@ controllers:
         resources:
           requests:
             cpu: 10m
-            memory: 1Gi
+            memory: 256Mi
           limits:
-            memory: 2Gi
+            memory: 768Mi
 
 service:
   app:

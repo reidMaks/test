@@ -22,6 +22,12 @@ redis:
 env:
   - name: SEARXNG_REDIS_URL
     value: "redis://:${redis_password}@shared-redis:6379/2"
+  - name: PYTHONOPTIMIZE
+    value: "1"
+  - name: MALLOC_TRIM_THRESHOLD_
+    value: "65536"
+  - name: MALLOC_ARENA_MAX
+    value: "2"
 
 searxng:
   base_url: "https://searxng.kms-lab.in.ua"
@@ -29,6 +35,6 @@ searxng:
 resources:
   requests:
     cpu: 10m
-    memory: 256Mi
+    memory: 128Mi
   limits:
-    memory: 512Mi
+    memory: 384Mi

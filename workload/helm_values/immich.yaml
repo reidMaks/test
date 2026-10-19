@@ -7,6 +7,11 @@
   REDIS_DBINDEX: "3"
   IMMICH_MACHINE_LEARNING_URL: "http://immich-machine-learning:3003"
   IMMICH_MEDIA_LOCATION: "/data/immich"
+  # Змушує libvips/sharp (C++) та OpenVINO/Python повертати звільнені буфери ядру Linux
+  MALLOC_TRIM_THRESHOLD_: "65536"
+  MALLOC_ARENA_MAX: "2"
+  NODE_OPTIONS: "--max-old-space-size=512"
+  PYTHONOPTIMIZE: "1"
 
 server:
   controllers:

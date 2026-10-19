@@ -71,7 +71,16 @@ Before recreating `vmsingle`'s local PVC on `home`, a 7-day PromQL audit identif
 - `management/itsaplan-api`: raised `limits.memory` from `512Mi` to `768Mi`.
 - `wg-hub` (`ingress-80` and `ingress-443` `socat` containers): raised `limits.memory` from `32Mi` to `128Mi`.
 
+### 5. Runtime Worker, Garbage Collector & Allocator Tuning (2026-10-19)
+To reduce steady-state RSS memory across both `oci` and `home` zones without reducing request concurrency:
+- **`Tandoor` (`workload/helm_values/tandoor.yaml`):** Replaced default 3 Gunicorn worker processes (~855 MiB RSS) with `GUNICORN_WORKERS=1`, `GUNICORN_THREADS=4`, `PYTHONOPTIMIZE=1`, `MALLOC_TRIM_THRESHOLD_=65536`, `MALLOC_ARENA_MAX=2`, and lowered `requests.memory` from `1Gi` to `256Mi` (`limits.memory: 768Mi`).
+- **`Immich` (`workload/helm_values/immich.yaml`):** Added `MALLOC_TRIM_THRESHOLD_=65536`, `MALLOC_ARENA_MAX=2` (for `sharp`/`libvips` and OpenVINO), `NODE_OPTIONS=--max-old-space-size=512`, and `PYTHONOPTIMIZE=1`.
+- **`Authentik` (`workload/helm_values/authentik.yaml`):** Set `AUTHENTIK_WEB__WORKERS=1`, `AUTHENTIK_WEB__THREADS=4`, `PYTHONOPTIMIZE=1`, `MALLOC_TRIM_THRESHOLD_=65536`, and `MALLOC_ARENA_MAX=2`.
+- **`Paperless-ngx` & `SearXNG` (`workload/helm_values/paperless.yaml`, `workload/helm_values/searxng.yaml`):** Added `PYTHONOPTIMIZE=1`, `MALLOC_TRIM_THRESHOLD_=65536`, and `MALLOC_ARENA_MAX=2`.
+- **`LubeLogger` (`workload/helm_values/lubelogger.yaml`):** Added `.NET` Workstation GC (`DOTNET_gcServer=0`, `DOTNET_GCConserveMemory=9`) and `glibc` arena limits (`MALLOC_TRIM_THRESHOLD_=131072`, `MALLOC_ARENA_MAX=2`).
+- **`Wishlist` (`workload/helm_values/wishlist.yaml`):** Bounded Node.js V8 heap (`NODE_OPTIONS=--max-old-space-size=128`, `MALLOC_ARENA_MAX=2`) and lowered `requests.memory` from `256Mi` to `128Mi`.
+
 ## Consequences
 - **Resilience to Home Blackouts:** All public endpoints and `actualbudget` (over VPN) remain 100% operational in OCI with their ingress (`cloudflared`, `traefik`) and storage (`minio`, `shared-db`) co-located in the cloud.
 - **Safe Descheduler Operation:** Descheduler balances pods *within* their designated zone (`talos-cp-oci` <-> `talos-cp-oci-2` in `oci`, and `talos-f9o-10o` <-> `talos-wfh-33w` in `home`) without ever crossing the zone boundary for pinned services.
-- **OCI Headroom:** Moving `paperless` and the `monitoring` stack to `home` frees ~760m CPU requests and ~2.2 GiB RAM on the OCI nodes.
+- **OCI & Home Headroom:** Moving `paperless` and `monitoring` to `home` plus tuning Python/Node.js/.NET runtimes frees ~3.5+ GiB of combined RAM across `oci` and `home` nodes.
