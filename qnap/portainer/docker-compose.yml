@@ -229,6 +229,8 @@ services:
           done
         ) &
         exec /init
+    # Верхній ліміт cgroup для захисту 4 ГБ RAM хоста (QBT_MEMORY_WORKING_SET_LIMIT тримає робочий набір у межах 512 МіБ)
+    mem_limit: 768m
     volumes:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/qbittorrent:/config
       - /share/CACHEDEV1_DATA/torrent:/torrent
@@ -254,6 +256,16 @@ services:
       - PUID=0
       - PGID=0
       - TZ=Europe/Kyiv
+      # --- Оптимізація .NET GC та glibc під 4 ГБ ARM64 NAS ---
+      # Workstation GC замість Server GC (одна купа замість 4 окремих куп на кожне ядро CPU)
+      - DOTNET_gcServer=0
+      # Максимальна економія пам'яті (1..9): агресивна компактифікація купи та повернення сторінок ОС
+      - DOTNET_GCConserveMemory=9
+      # Змушує glibc повертати звільнену пам'ять ядру Linux і обмежує кількість арен з 32 до 2
+      - MALLOC_TRIM_THRESHOLD_=131072
+      - MALLOC_ARENA_MAX=2
+    # .NET автоматично зчитує mem_limit з cgroup і підлаштовує поріг GC під 350 МіБ замість 4 ГБ хоста
+    mem_limit: 350m
     volumes:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/prowlarr:/config
     ports:
@@ -276,6 +288,12 @@ services:
       - PUID=0
       - PGID=0
       - TZ=Europe/Kyiv
+      # --- Оптимізація .NET GC та glibc під 4 ГБ ARM64 NAS ---
+      - DOTNET_gcServer=0
+      - DOTNET_GCConserveMemory=9
+      - MALLOC_TRIM_THRESHOLD_=131072
+      - MALLOC_ARENA_MAX=2
+    mem_limit: 350m
     volumes:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/sonarr:/config
       - /share/CACHEDEV1_DATA/torrent:/torrent
@@ -299,6 +317,12 @@ services:
       - PUID=0
       - PGID=0
       - TZ=Europe/Kyiv
+      # --- Оптимізація .NET GC та glibc під 4 ГБ ARM64 NAS ---
+      - DOTNET_gcServer=0
+      - DOTNET_GCConserveMemory=9
+      - MALLOC_TRIM_THRESHOLD_=131072
+      - MALLOC_ARENA_MAX=2
+    mem_limit: 350m
     volumes:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/radarr:/config
       - /share/CACHEDEV1_DATA/torrent:/torrent
@@ -322,6 +346,12 @@ services:
       - PUID=0
       - PGID=0
       - TZ=Europe/Kyiv
+      # --- Оптимізація .NET GC та glibc під 4 ГБ ARM64 NAS ---
+      - DOTNET_gcServer=0
+      - DOTNET_GCConserveMemory=9
+      - MALLOC_TRIM_THRESHOLD_=131072
+      - MALLOC_ARENA_MAX=2
+    mem_limit: 350m
     volumes:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/lidarr:/config
       - /share/CACHEDEV1_DATA/torrent:/torrent
@@ -345,6 +375,13 @@ services:
       - PUID=0
       - PGID=0
       - TZ=Europe/Kyiv
+      # --- Оптимізація Python та glibc ---
+      # Не зберігати docstrings у пам'яті байткоду Python
+      - PYTHONOPTIMIZE=1
+      # Повертати звільнені сторінки пам'яті ядру Linux після пошуку/парсингу субтитрів
+      - MALLOC_TRIM_THRESHOLD_=65536
+      - MALLOC_ARENA_MAX=2
+    mem_limit: 350m
     volumes:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/bazarr:/config
       - /share/CACHEDEV1_DATA/torrent:/torrent
@@ -365,8 +402,13 @@ services:
     user: "0:0"
     environment:
       - TZ=Europe/Kyiv
-      - LOG_LEVEL=debug
+      # Змінено з debug на info, щоб прибрати безперервний фоновий запис логів на диск
+      - LOG_LEVEL=info
       - NODE_TLS_REJECT_UNAUTHORIZED=0
+      # Обмеження купи V8 (Node.js 22), щоб не роздувати RAM при фонових синхронізаціях
+      - NODE_OPTIONS=--max-old-space-size=160
+      - MALLOC_ARENA_MAX=2
+    mem_limit: 350m
     volumes:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/seerr:/app/config
     ports:
@@ -386,6 +428,10 @@ services:
       - 192.168.0.1
     environment:
       - TZ=Europe/Kyiv
+      # Обмеження купи V8 для фонового демона cross-seed
+      - NODE_OPTIONS=--max-old-space-size=128
+      - MALLOC_ARENA_MAX=2
+    mem_limit: 256m
     volumes:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/cross-seed:/config
       - /share/CACHEDEV1_DATA/torrent:/torrent
@@ -408,6 +454,12 @@ services:
       - PUID=0
       - PGID=0
       - TZ=Europe/Kyiv
+      # --- Оптимізація .NET 8 GC та glibc для медіасервера ---
+      - DOTNET_gcServer=0
+      - DOTNET_GCConserveMemory=9
+      - MALLOC_TRIM_THRESHOLD_=131072
+      - MALLOC_ARENA_MAX=2
+    mem_limit: 1200m
     volumes:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/jellyfin:/config
       - /share/CACHEDEV1_DATA/torrent:/torrent
