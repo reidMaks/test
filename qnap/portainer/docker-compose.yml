@@ -459,6 +459,64 @@ services:
       - DOTNET_GCConserveMemory=9
       - MALLOC_TRIM_THRESHOLD_=131072
       - MALLOC_ARENA_MAX=2
+      # --- Транскодування та ffmpeg (/config/encoding.xml) ---
+      # Обмеження потоків ffmpeg до 2 (із 4 ядер CPU), щоб транскодування не блокувало NAS
+      - JELLYFIN_ENCODING_THREADS=2
+      # Дроселювання транскодування: ставити ffmpeg на паузу, коли буфер попереду на 180 с
+      - JELLYFIN_ENABLE_THROTTLING=true
+      - JELLYFIN_THROTTLE_DELAY_SECONDS=180
+      # Автоматично видаляти вже переглянуті сегменти HLS старіші за 720 с (12 хв),
+      # щоб не забивати диск і Page Cache під час перегляду
+      - JELLYFIN_ENABLE_SEGMENT_DELETION=true
+      - JELLYFIN_SEGMENT_KEEP_SECONDS=720
+      # На QNAP ARM Cortex-A55 апаратного енкодера немає, тому використовуємо швидкий пресет CPU
+      - JELLYFIN_HW_ACCEL_TYPE=none
+      - JELLYFIN_ENCODER_PRESET=superfast
+      - JELLYFIN_DOWNMIX_AUDIO_BOOST=2
+      - JELLYFIN_MAX_MUXING_QUEUE_SIZE=2048
+      # --- Система, локалізація та фонові задачі (/config/system.xml) ---
+      - JELLYFIN_SERVER_NAME=nas-jellyfin
+      - JELLYFIN_UI_CULTURE=uk
+      - JELLYFIN_METADATA_LANG=uk
+      - JELLYFIN_METADATA_COUNTRY=UA
+      - JELLYFIN_LOG_RETENTION_DAYS=3
+      # Обмеження паралельності при скануванні бібліотеки та обробці обкладинок (замість 0=Auto)
+      - JELLYFIN_LIBRARY_SCAN_CONCURRENCY=2
+      - JELLYFIN_METADATA_REFRESH_CONCURRENCY=2
+      - JELLYFIN_PARALLEL_IMAGE_ENCODING_LIMIT=1
+      # Витягувати лише ключові кадри (keyframes) для прев'ю перемотування (Trickplay) — у ~20 разів менше CPU
+      - JELLYFIN_TRICKPLAY_KEYFRAME_ONLY=true
+      - JELLYFIN_TRICKPLAY_THREADS=1
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        ENC="/config/encoding.xml"
+        if [ -f "$$ENC" ]; then
+          sed -i "s|<EncodingThreadCount>.*</EncodingThreadCount>|<EncodingThreadCount>$$JELLYFIN_ENCODING_THREADS</EncodingThreadCount>|" "$$ENC"
+          sed -i "s|<EnableThrottling>.*</EnableThrottling>|<EnableThrottling>$$JELLYFIN_ENABLE_THROTTLING</EnableThrottling>|" "$$ENC"
+          sed -i "s|<ThrottleDelaySeconds>.*</ThrottleDelaySeconds>|<ThrottleDelaySeconds>$$JELLYFIN_THROTTLE_DELAY_SECONDS</ThrottleDelaySeconds>|" "$$ENC"
+          sed -i "s|<EnableSegmentDeletion>.*</EnableSegmentDeletion>|<EnableSegmentDeletion>$$JELLYFIN_ENABLE_SEGMENT_DELETION</EnableSegmentDeletion>|" "$$ENC"
+          sed -i "s|<SegmentKeepSeconds>.*</SegmentKeepSeconds>|<SegmentKeepSeconds>$$JELLYFIN_SEGMENT_KEEP_SECONDS</SegmentKeepSeconds>|" "$$ENC"
+          sed -i "s|<HardwareAccelerationType>.*</HardwareAccelerationType>|<HardwareAccelerationType>$$JELLYFIN_HW_ACCEL_TYPE</HardwareAccelerationType>|" "$$ENC"
+          sed -i "s|<EncoderPreset>.*</EncoderPreset>|<EncoderPreset>$$JELLYFIN_ENCODER_PRESET</EncoderPreset>|" "$$ENC"
+          sed -i "s|<DownMixAudioBoost>.*</DownMixAudioBoost>|<DownMixAudioBoost>$$JELLYFIN_DOWNMIX_AUDIO_BOOST</DownMixAudioBoost>|" "$$ENC"
+          sed -i "s|<MaxMuxingQueueSize>.*</MaxMuxingQueueSize>|<MaxMuxingQueueSize>$$JELLYFIN_MAX_MUXING_QUEUE_SIZE</MaxMuxingQueueSize>|" "$$ENC"
+        fi
+        SYS="/config/system.xml"
+        if [ -f "$$SYS" ]; then
+          sed -i "s|<ServerName>.*</ServerName>|<ServerName>$$JELLYFIN_SERVER_NAME</ServerName>|" "$$SYS"
+          sed -i "s|<UICulture>.*</UICulture>|<UICulture>$$JELLYFIN_UI_CULTURE</UICulture>|" "$$SYS"
+          sed -i "s|<PreferredMetadataLanguage>.*</PreferredMetadataLanguage>|<PreferredMetadataLanguage>$$JELLYFIN_METADATA_LANG</PreferredMetadataLanguage>|" "$$SYS"
+          sed -i "s|<MetadataCountryCode>.*</MetadataCountryCode>|<MetadataCountryCode>$$JELLYFIN_METADATA_COUNTRY</MetadataCountryCode>|" "$$SYS"
+          sed -i "s|<LogFileRetentionDays>.*</LogFileRetentionDays>|<LogFileRetentionDays>$$JELLYFIN_LOG_RETENTION_DAYS</LogFileRetentionDays>|" "$$SYS"
+          sed -i "s|<LibraryScanFanoutConcurrency>.*</LibraryScanFanoutConcurrency>|<LibraryScanFanoutConcurrency>$$JELLYFIN_LIBRARY_SCAN_CONCURRENCY</LibraryScanFanoutConcurrency>|" "$$SYS"
+          sed -i "s|<LibraryMetadataRefreshConcurrency>.*</LibraryMetadataRefreshConcurrency>|<LibraryMetadataRefreshConcurrency>$$JELLYFIN_METADATA_REFRESH_CONCURRENCY</LibraryMetadataRefreshConcurrency>|" "$$SYS"
+          sed -i "s|<ParallelImageEncodingLimit>.*</ParallelImageEncodingLimit>|<ParallelImageEncodingLimit>$$JELLYFIN_PARALLEL_IMAGE_ENCODING_LIMIT</ParallelImageEncodingLimit>|" "$$SYS"
+          sed -i "s|<EnableKeyFrameOnlyExtraction>.*</EnableKeyFrameOnlyExtraction>|<EnableKeyFrameOnlyExtraction>$$JELLYFIN_TRICKPLAY_KEYFRAME_ONLY</EnableKeyFrameOnlyExtraction>|" "$$SYS"
+          sed -i "s|<ProcessThreads>.*</ProcessThreads>|<ProcessThreads>$$JELLYFIN_TRICKPLAY_THREADS</ProcessThreads>|" "$$SYS"
+        fi
+        exec /init
     mem_limit: 1200m
     volumes:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/jellyfin:/config
