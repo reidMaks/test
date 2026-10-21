@@ -1,0 +1,176 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/app-template-5.0.1/charts/other/app-template/values.schema.json
+
+defaultPodOptions:
+  securityContext:
+    fsGroup: 1000
+    fsGroupChangePolicy: OnRootMismatch
+  nodeSelector:
+    topology.kubernetes.io/zone: home
+  hostAliases:
+    - ip: "192.168.0.45"
+      hostnames:
+        - "auth.kms-lab.in.ua"
+        - "git.kms-lab.in.ua"
+
+controllers:
+  main:
+    containers:
+      main:
+        image:
+          repository: codeberg.org/forgejo/forgejo
+          tag: "17.0.0"
+        env:
+          USER_UID: "1000"
+          USER_GID: "1000"
+          FORGEJO__server__DOMAIN: "git.kms-lab.in.ua"
+          FORGEJO__server__ROOT_URL: "https://git.kms-lab.in.ua/"
+          FORGEJO__server__HTTP_PORT: "3000"
+          FORGEJO__server__START_SSH_SERVER: "true"
+          FORGEJO__server__SSH_DOMAIN: "git.kms-lab.in.ua"
+          FORGEJO__server__SSH_PORT: "22"
+          FORGEJO__server__SSH_LISTEN_PORT: "2222"
+          FORGEJO__database__DB_TYPE: "postgres"
+          FORGEJO__database__HOST: "shared-db-rw.cnpg-system.svc.cluster.local:5432"
+          FORGEJO__database__NAME: "forgejo"
+          FORGEJO__database__USER: "forgejo"
+          FORGEJO__database__SSL_MODE: "disable"
+          FORGEJO__security__INSTALL_LOCK: "true"
+          FORGEJO__service__DISABLE_REGISTRATION: "false"
+          FORGEJO__service__ALLOW_ONLY_EXTERNAL_REGISTRATION: "true"
+          FORGEJO__service__SHOW_REGISTRATION_BUTTON: "false"
+          FORGEJO__openid__ENABLE_OPENID_SIGNIN: "false"
+          FORGEJO__openid__ENABLE_OPENID_SIGNUP: "false"
+          FORGEJO__oauth2_client__ENABLE_AUTO_REGISTRATION: "true"
+          FORGEJO__oauth2_client__ACCOUNT_LINKING: "auto"
+          FORGEJO__oauth2_client__USERNAME: "nickname"
+          FORGEJO__packages__ENABLED: "true"
+          FORGEJO__packages__STORAGE_TYPE: "local"
+          FORGEJO__packages__PATH: "/data/packages"
+          FORGEJO__actions__ENABLED: "true"
+          FORGEJO__actions__ARTIFACT_STORAGE_TYPE: "local"
+          FORGEJO__actions__ARTIFACT_PATH: "/data/actions_artifacts"
+          FORGEJO__lfs__START_SERVER: "true"
+          FORGEJO__lfs__STORAGE_TYPE: "local"
+          FORGEJO__lfs__PATH: "/data/lfs"
+          FORGEJO__webhook__ALLOWED_HOST_LIST: "private,loopback,external"
+          FORGEJO__mailer__ENABLED: "true"
+          FORGEJO__mailer__PROTOCOL: "smtp"
+          FORGEJO__mailer__SMTP_ADDR: "mailpit.apn.svc.cluster.local"
+          FORGEJO__mailer__SMTP_PORT: "1025"
+          FORGEJO__mailer__FROM: "git@kms-lab.in.ua"
+        envFrom:
+          - secretRef:
+              name: forgejo-secrets
+        probes:
+          readiness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /api/healthz
+                port: 3000
+              initialDelaySeconds: 10
+              periodSeconds: 10
+              timeoutSeconds: 5
+              failureThreshold: 3
+          liveness:
+            enabled: true
+            custom: true
+            spec:
+              httpGet:
+                path: /api/healthz
+                port: 3000
+              initialDelaySeconds: 30
+              periodSeconds: 15
+              timeoutSeconds: 5
+              failureThreshold: 3
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  chown -R 1000:1000 /data/packages /data/actions_artifacts /data/actions_log /data/lfs || true
+                  (
+                    until wget -qO- http://127.0.0.1:3000/api/healthz >/dev/null 2>&1; do
+                      sleep 2
+                    done
+                    su-exec git forgejo admin user create \
+                      --admin \
+                      --username max \
+                      --password "$FORGEJO_ADMIN_PASSWORD" \
+                      --email "reid.maks@gmail.com" \
+                      --must-change-password=false 2>/dev/null || true
+
+                    if ! su-exec git forgejo admin auth list | grep -q "Authentik"; then
+                      su-exec git forgejo admin auth add-oauth \
+                        --name "Authentik" \
+                        --provider "openidConnect" \
+                        --key "forgejo" \
+                        --secret "$FORGEJO_OIDC_CLIENT_SECRET" \
+                        --auto-discover-url "https://auth.kms-lab.in.ua/application/o/forgejo/.well-known/openid-configuration" \
+                        --scopes "openid email profile" || true
+                    fi
+
+                    su-exec git forgejo forgejo-cli actions register \
+                      --name "talos-home-runner" \
+                      --keep-labels \
+                      --labels "ubuntu-latest,docker" \
+                      --secret "$FORGEJO_RUNNER_SECRET" >/dev/null 2>&1 || true
+                  ) &
+        resources:
+          requests:
+            cpu: 50m
+            memory: 192Mi
+          limits:
+            memory: 768Mi
+
+service:
+  main:
+    controller: main
+    ports:
+      http:
+        port: 3000
+      ssh:
+        port: 22
+        targetPort: 2222
+        protocol: TCP
+
+ingress:
+  main:
+    enabled: true
+    className: "traefik"
+    annotations:
+      gatus.home-operations.com/endpoint: |
+        path: /api/healthz
+    hosts:
+      - host: git.kms-lab.in.ua
+        paths:
+          - path: /
+            service:
+              identifier: main
+              port: http
+
+persistence:
+  git:
+    type: persistentVolumeClaim
+    existingClaim: forgejo-git
+    advancedMounts:
+      main:
+        main:
+          - path: /data
+  packages:
+    type: persistentVolumeClaim
+    existingClaim: forgejo-packages
+    advancedMounts:
+      main:
+        main:
+          - path: /data/packages
+            subPath: packages
+          - path: /data/actions_artifacts
+            subPath: actions_artifacts
+          - path: /data/actions_log
+            subPath: actions_log
+          - path: /data/lfs
+            subPath: lfs

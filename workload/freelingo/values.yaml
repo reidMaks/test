@@ -130,6 +130,8 @@ ingress:
   main:
     enabled: true
     className: "traefik"
+    annotations:
+      gatus.home-operations.com/enabled: "false"
     hosts:
       - host: freelingo.kms-lab.in.ua
         paths:

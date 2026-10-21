@@ -119,6 +119,9 @@ resource "kubernetes_ingress_v1" "headroom" {
   metadata {
     name      = "headroom"
     namespace = "default"
+    annotations = {
+      "gatus.home-operations.com/enabled" = "false"
+    }
   }
 
   spec {

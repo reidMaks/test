@@ -138,6 +138,13 @@ resource "kubernetes_ingress_v1" "prom_mcp" {
     labels = {
       app = "prometheus-mcp"
     }
+    annotations = {
+      "gatus.home-operations.com/endpoint" = yamlencode({
+        group      = "MCP Servers"
+        path       = "/mcp"
+        conditions = ["[STATUS] == 406"]
+      })
+    }
   }
 
   spec {

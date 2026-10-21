@@ -235,6 +235,13 @@ resource "kubernetes_ingress_v1" "paperless_mcp" {
     labels = {
       app = "paperless-mcp"
     }
+    annotations = {
+      "gatus.home-operations.com/endpoint" = yamlencode({
+        group      = "MCP Servers"
+        path       = "/mcp"
+        conditions = ["[STATUS] == 400"]
+      })
+    }
   }
 
   spec {

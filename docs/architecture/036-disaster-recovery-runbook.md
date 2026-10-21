@@ -184,9 +184,11 @@ kubectl apply -f /tmp/cnpg-restore-test.yaml
 kubectl get cluster shared-db-restore-test -n cnpg-system -w
 # Once STATUS is "Cluster in healthy state", verify databases:
 kubectl exec -it -n cnpg-system shared-db-restore-test-1 -c postgres -- psql -U postgres -c "\l+"
-# Clean up drill cluster and its PVC after verification:
+# Clean up drill cluster, its PVC, and any Released PVs (since longhorn-postgres uses Retain policy):
 kubectl delete cluster shared-db-restore-test -n cnpg-system
 kubectl delete pvc -n cnpg-system -l cnpg.io/cluster=shared-db-restore-test
+kubectl get pv | awk '/shared-db-restore-test/ {print $1}' | xargs -r kubectl delete pv
+kubectl get volumes.longhorn.io -n longhorn-system -o jsonpath='{range .items[?(@.status.kubernetesStatus.pvcName=="shared-db-restore-test-1")]}{.metadata.name}{"\n"}{end}' | xargs -r kubectl delete volumes.longhorn.io -n longhorn-system
 ```
 
 #### B. Full Production Recovery of `shared-db`

@@ -48,6 +48,8 @@ ingress:
   enabled: true
   class: traefik
   host: "openui.kms-lab.in.ua"
+  annotations:
+    gatus.home-operations.com/enabled: "false"
 
 databaseUrl: "postgresql://openwebui:${db_password}@shared-db-rw.cnpg-system.svc.cluster.local:5432/openwebui"
 

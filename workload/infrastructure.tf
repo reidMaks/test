@@ -131,6 +131,12 @@ resource "helm_release" "traefik" {
             trustedIPs = ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"]
           }
         }
+        git-ssh = {
+          port        = 2222
+          expose      = { default = true }
+          exposedPort = 22
+          protocol    = "TCP"
+        }
       }
       ingressRoute = {
         dashboard = {

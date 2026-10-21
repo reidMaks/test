@@ -46,6 +46,11 @@ data "talos_machine_configuration" "config" {
             - 8.8.8.8
             - 1.1.1.1
             - ${local.gateway_ip}
+          extraHostEntries:
+            - ip: 192.168.0.45
+              aliases:
+                - git.kms-lab.in.ua
+                - auth.kms-lab.in.ua
           interfaces:
             - interface: ens18
               dhcp: false
@@ -201,6 +206,11 @@ data "talos_machine_configuration" "oci" {
           network:
             kubespan:
               enabled: true
+            extraHostEntries:
+              - ip: 192.168.0.45
+                aliases:
+                  - git.kms-lab.in.ua
+                  - auth.kms-lab.in.ua
             interfaces:
               - interface: lo
                 addresses:

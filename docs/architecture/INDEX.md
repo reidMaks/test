@@ -48,10 +48,12 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[037-rustfs-and-valkey-migration]] - Drop-in Migration: MinIO to RustFS 1.0 and Redis to Valkey 8 (IAAC-24)
 - [[038-paperless-ocr-concurrency-tuning]] - Paperless-ngx OCR Concurrency Tuning (OOM Fix)
 - [[039-authentik-sso-idp]] - Self-Hosted SSO & Identity Provider (Authentik)
+- [[040-forgejo-git-and-container-registry]] - Self-Hosted Forgejo (Git Server, OCI Container Registry & Global CI Runner)
 
 ## Workloads & Services
 - Traefik (Ingress)
 - Authentik (Self-Hosted SSO & Application Portal)
+- Forgejo (Self-Hosted Git, OCI Container Registry & Global Actions Runner)
 - MetalLB (LoadBalancer)
 - Renovate Bot (Declarative GitOps Dependency & Image Updates — replaced Keel & Diun)
 - GitHub Actions CI Runner (APN PR Previews & E2E)

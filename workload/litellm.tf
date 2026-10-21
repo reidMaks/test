@@ -211,6 +211,9 @@ resource "kubernetes_ingress_v1" "litellm_ui" {
   metadata {
     name      = "litellm-ui"
     namespace = "default"
+    annotations = {
+      "gatus.home-operations.com/enabled" = "false"
+    }
   }
 
   spec {

@@ -172,7 +172,9 @@ resource "helm_release" "minio" {
           enabled   = true
           className = "traefik"
           annotations = {
-            "gatus.io/status" = "[STATUS] == 200 || [STATUS] == 302"
+            "gatus.home-operations.com/endpoint" = yamlencode({
+              path = "/health"
+            })
           }
           hosts = [
             {
@@ -192,6 +194,11 @@ resource "helm_release" "minio" {
         api = {
           enabled   = true
           className = "traefik"
+          annotations = {
+            "gatus.home-operations.com/endpoint" = yamlencode({
+              path = "/health"
+            })
+          }
           hosts = [
             {
               host = "s3.kms-lab.in.ua"

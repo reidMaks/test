@@ -161,6 +161,12 @@ resource "kubernetes_ingress_v1" "grafana_mcp" {
     labels = {
       app = "grafana-mcp"
     }
+    annotations = {
+      "gatus.home-operations.com/endpoint" = yamlencode({
+        group = "MCP Servers"
+        path  = "/healthz"
+      })
+    }
   }
 
   spec {

@@ -42,6 +42,11 @@ resource "random_password" "authentik_rustfs_secret" {
   special = false
 }
 
+resource "random_password" "authentik_forgejo_secret" {
+  length  = 48
+  special = false
+}
+
 output "portainer_oidc_client_secret" {
   value       = random_password.authentik_portainer_secret.result
   sensitive   = true
@@ -62,6 +67,7 @@ resource "kubernetes_secret" "authentik_blueprints" {
       portainer_client_secret = random_password.authentik_portainer_secret.result
       actual_client_secret    = random_password.authentik_actual_secret.result
       rustfs_client_secret    = random_password.authentik_rustfs_secret.result
+      forgejo_client_secret   = random_password.authentik_forgejo_secret.result
     })
   }
 }

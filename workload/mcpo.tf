@@ -199,6 +199,9 @@ resource "kubernetes_ingress_v1" "mcpo" {
   metadata {
     name      = "mcpo"
     namespace = "default"
+    annotations = {
+      "gatus.home-operations.com/enabled" = "false"
+    }
   }
   spec {
     ingress_class_name = "traefik"

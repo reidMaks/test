@@ -58,11 +58,17 @@ Previously, ADR [[014-mcp-tool-server]] introduced `MCPO` (MCP-to-OpenAPI proxy)
    - Connected directly to internal Paperless-ngx service: `http://paperless.default.svc.cluster.local:8000` (with `PAPERLESS_PUBLIC_URL=https://paperless.kms-lab.in.ua`).
    - Exposed via Traefik Ingress at `paperless-mcp.kms-lab.in.ua`.
 
-9. **Unified Streamable HTTP Transport**:
-   All in-cluster MCP servers implement the modern Streamable HTTP protocol over `/mcp`. This allows MCP clients (such as Antigravity, Claude Code, Cursor) to connect directly via simple `"url"` fields without requiring external stdio bridge utilities like `mcp-remote`.
+9. **Portainer MCP Server**:
+   We deploy `docker.io/portainer/portainer-mcp:2.45.1` for managing Docker stacks, containers, logs, registries, and webhooks across Portainer endpoints (QNAP NAS `local` and TV-box `aml-s9xx-box`):
+   - Configured with Streamable HTTP on port `17717` (`/mcp`), scoped to `PORTAINER_PROFILES=BASE,DOCKER,ADMIN` and `PORTAINER_TAGS_EXTRA=observability,webhooks` (excluding Portainer's Kubernetes tools since Kubernetes is handled natively by `kubernetes-mcp-server`).
+   - **Zero-Client-Credential Traefik Header Injection**: Because `portainer-mcp` in HTTP mode requires both a shared gate bearer token (`Authorization: Bearer <gate-token>`) and a Portainer API key (`X-Portainer-API-Key`), a Traefik `Middleware` (`portainer-mcp-auth` in namespace `mcp`) injects both headers in-cluster from Terraform (`random_password.portainer_mcp_gate_token` and Bitwarden `portainer_token`). Clients connect to `http://portainer-mcp.kms-lab.in.ua/mcp` with zero client-side credentials.
+   - Connected directly to the QNAP Portainer API (`https://192.168.0.21:9443`, `PORTAINER_TLS_VERIFY=0`).
 
-10. **Network Exposure & Routing**:
-    - Exposed via Traefik Ingress (`k8s-mcp.kms-lab.in.ua`, `prom-mcp.kms-lab.in.ua`, `grafana-mcp.kms-lab.in.ua`, `paperless-mcp.kms-lab.in.ua`).
+10. **Unified Streamable HTTP Transport**:
+    All in-cluster MCP servers implement the modern Streamable HTTP protocol over `/mcp`. This allows MCP clients (such as Antigravity, Claude Code, Cursor) to connect directly via simple `"url"` fields without requiring external stdio bridge utilities like `mcp-remote`.
+
+11. **Network Exposure & Routing**:
+    - Exposed via Traefik Ingress (`k8s-mcp.kms-lab.in.ua`, `prom-mcp.kms-lab.in.ua`, `grafana-mcp.kms-lab.in.ua`, `paperless-mcp.kms-lab.in.ua`, `portainer-mcp.kms-lab.in.ua`).
     - Internal DNS resolution routes wildcard `*.kms-lab.in.ua` to the WireGuard / LAN gateway (`10.9.0.1` / `192.168.0.0/24`), ensuring endpoints are reachable only from the local network and VPN.
 
 ## Architecture Diagram
@@ -168,6 +174,9 @@ To connect an AI assistant or MCP client within the local network:
     },
     "paperless": {
       "url": "http://paperless-mcp.kms-lab.in.ua/mcp"
+    },
+    "portainer": {
+      "url": "http://portainer-mcp.kms-lab.in.ua/mcp"
     }
   }
 }

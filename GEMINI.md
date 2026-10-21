@@ -18,8 +18,18 @@
 ## 4. Project Architecture (IaaC)
 - **Approach:** "Terraform for everything" (VM provisioning, cluster init, workloads).
 - **Cluster (Talos Linux):** Hybrid Kubernetes cluster. Control plane/workers on local Proxmox (`192.168.0.0/24`), extra nodes on Oracle Cloud (OCI). Managed in the `infra/` directory.
-- **Workloads:** Kubernetes resources in `workload/`. Key services: Traefik (Ingress), MetalLB (LoadBalancer), Longhorn (Storage).
+- **Workloads:** Kubernetes resources in `workload/`. Key services: Traefik (Ingress), MetalLB (LoadBalancer), Longhorn (Storage), Forgejo (Git, Container Registry & CI).
+- **QNAP NAS:** Docker Compose stacks in Portainer managed in the `qnap/` directory.
 - **Secrets Management (CRITICAL):** NO hardcoded secrets in Git. Fetch dynamically from Bitwarden using the `bitwarden-secrets` Terraform provider.
+
+## 5. Command Runner (`justfile`)
+- The root `justfile` is the single entrypoint for repository and cluster operations:
+  - `just` — list all available commands.
+  - `just validate` / `just fmt` — validate and format all Terraform modules (`infra`, `workload`, `qnap`).
+  - `just plan [workload|infra|qnap]` — run read-only Terraform plan (defaults to `workload`).
+  - `just apply [workload|infra|qnap]` — apply Terraform changes with interactive confirmation (for manual user execution only).
+  - `just status` / `just storage` — read-only cluster diagnostics (nodes, CNPG, Longhorn capacity, and orphaned `Released` PVs).
+  - `just clean-pods` / `just clean-released-pvs` — cluster hygiene tasks with confirmation prompt.
 
 ## 6. MCP Servers & Tools
 - **Web Search:** If you need to search the internet, you MUST use the `searxng` MCP server (e.g., `searxng_web_search`). Do not use default web search tools if they conflict.

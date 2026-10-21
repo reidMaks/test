@@ -45,3 +45,27 @@ variable "paperless_public_url" {
   description = "Public URL to Paperless-ngx for user-facing links"
   default     = "https://paperless.kms-lab.in.ua"
 }
+
+variable "portainer_mcp_host" {
+  type        = string
+  description = "Ingress hostname for Portainer MCP server"
+  default     = "portainer-mcp.kms-lab.in.ua"
+}
+
+variable "portainer_url" {
+  type        = string
+  description = "Internal URL to Portainer instance on QNAP NAS"
+  default     = "https://192.168.0.21:9443"
+}
+
+variable "portainer_api_key" {
+  type        = string
+  description = "Portainer API key injected by Traefik middleware"
+  sensitive   = true
+}
+
+variable "portainer_mcp_gate_token" {
+  type        = string
+  description = "Shared bearer gate token for Portainer MCP HTTP transport"
+  sensitive   = true
+}

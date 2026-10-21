@@ -255,6 +255,12 @@ resource "kubernetes_ingress_v1" "k8s_mcp" {
     labels = {
       app = "kubernetes-mcp"
     }
+    annotations = {
+      "gatus.home-operations.com/endpoint" = yamlencode({
+        group = "MCP Servers"
+        path  = "/healthz"
+      })
+    }
   }
 
   spec {

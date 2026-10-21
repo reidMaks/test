@@ -12,6 +12,7 @@ controllers:
           tag: v5.37.0
         env:
           GATUS_CONFIG_PATH: /config
+          GATUS_DELAY_START_SECONDS: "5"
           HTTP_PROXY: "http://wg-hub-proxy.wg-hub.svc.cluster.local:3128"
           HTTPS_PROXY: "http://wg-hub-proxy.wg-hub.svc.cluster.local:3128"
           NO_PROXY: "localhost,127.0.0.1,.cluster.local,.svc,paperless-app,searxng-http,lubelogger,tandoor-app,actualbudget,authentik-server"
@@ -29,11 +30,8 @@ controllers:
           repository: ghcr.io/home-operations/gatus-sidecar
           tag: latest
         args:
-          - --auto-service
           - --auto-ingress
-          - --prefix-service=svc-
           - --output=/config/endpoints.yaml
-          - --namespace=default
         resources:
           requests:
             cpu: 10m

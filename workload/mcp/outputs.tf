@@ -17,3 +17,8 @@ output "paperless_mcp_endpoint" {
   description = "Streamable HTTP endpoint for Paperless-ngx MCP server"
   value       = "http://${var.paperless_mcp_host}/mcp"
 }
+
+output "portainer_mcp_endpoint" {
+  description = "Streamable HTTP endpoint for Portainer MCP server"
+  value       = "http://${var.portainer_mcp_host}/mcp"
+}

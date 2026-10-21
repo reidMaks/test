@@ -166,6 +166,23 @@ resource "kubernetes_deployment" "wg_hub" {
           }
         }
 
+        # 4b. Вхідний проксі для Git SSH (Port 22 виключно всередині VPN 10.9.0.1)
+        container {
+          name  = "ingress-22"
+          image = "alpine/socat:1.8.1.3"
+          args  = ["TCP4-LISTEN:22,fork,reuseaddr", "TCP4:traefik.traefik-system.svc.cluster.local:22"]
+
+          resources {
+            requests = {
+              cpu    = "5m"
+              memory = "16Mi"
+            }
+            limits = {
+              memory = "64Mi"
+            }
+          }
+        }
+
         # 5. Вихідний проксі (Squid) для доступу в дім (Gatus)
         container {
           name    = "egress-squid"

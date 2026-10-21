@@ -111,3 +111,28 @@ resource "portainer_stack" "arr_suite" {
   prune              = false
   force_update       = false
 }
+
+# ==============================================================================
+# 3. TV-Box ARM64 Docker Compose Stacks (Endpoint ID = 8: aml-s9xx-box)
+# ==============================================================================
+
+resource "portainer_stack" "shopping_master" {
+  name               = "shopping-master"
+  deployment_type    = "standalone"
+  method             = "string"
+  endpoint_id        = 8
+  stack_file_content = file("${path.module}/shopping-master/docker-compose.yml")
+  pull_image         = true
+  prune              = true
+  force_update       = true
+
+  env {
+    name  = "TZ"
+    value = "Europe/Kyiv"
+  }
+
+  lifecycle {
+    # Application secrets (Env) are managed and injected by Forgejo CI (ENV_FILE secret)
+    ignore_changes = [env]
+  }
+}

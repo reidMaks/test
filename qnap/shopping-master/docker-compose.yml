@@ -1,0 +1,15 @@
+services:
+  shopping-master:
+    image: git.kms-lab.in.ua/max/shopping-master:latest
+    container_name: shopping-master
+    restart: unless-stopped
+    env_file:
+      - stack.env
+    environment:
+      - TZ=Europe/Kyiv
+      - DB_PATH=/data/shopping.db
+      - TOKEN_CACHE_DIR=/data
+      - AGY_BIN=agy
+    volumes:
+      - /home/max/shopping-master/data:/data
+      - /home/max/.gemini:/root/.gemini

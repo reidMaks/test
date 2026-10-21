@@ -24,28 +24,26 @@ resource "kubernetes_config_map" "gatus_config" {
   }
 }
 
-resource "kubernetes_role" "gatus_sidecar" {
+resource "kubernetes_cluster_role" "gatus_sidecar" {
   metadata {
-    name      = "gatus-sidecar"
-    namespace = "default"
+    name = "gatus-sidecar"
   }
 
   rule {
     api_groups = ["", "networking.k8s.io", "traefik.io"]
-    resources  = ["services", "ingresses", "endpoints", "ingressroutes"]
+    resources  = ["services", "ingresses", "ingressclasses", "endpoints", "ingressroutes"]
     verbs      = ["get", "list", "watch"]
   }
 }
 
-resource "kubernetes_role_binding" "gatus_sidecar" {
+resource "kubernetes_cluster_role_binding" "gatus_sidecar" {
   metadata {
-    name      = "gatus-sidecar"
-    namespace = "default"
+    name = "gatus-sidecar"
   }
   role_ref {
     api_group = "rbac.authorization.k8s.io"
-    kind      = "Role"
-    name      = kubernetes_role.gatus_sidecar.metadata[0].name
+    kind      = "ClusterRole"
+    name      = kubernetes_cluster_role.gatus_sidecar.metadata[0].name
   }
   subject {
     kind      = "ServiceAccount"
@@ -66,5 +64,5 @@ resource "helm_release" "gatus" {
     file("${path.module}/helm_values/gatus.yaml")
   ]
 
-  depends_on = [kubernetes_config_map.gatus_config, kubernetes_secret.gatus_secrets, kubernetes_role_binding.gatus_sidecar]
+  depends_on = [kubernetes_config_map.gatus_config, kubernetes_secret.gatus_secrets, kubernetes_cluster_role_binding.gatus_sidecar]
 }
