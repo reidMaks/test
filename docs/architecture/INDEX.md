@@ -49,6 +49,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[038-paperless-ocr-concurrency-tuning]] - Paperless-ngx OCR Concurrency Tuning (OOM Fix)
 - [[039-authentik-sso-idp]] - Self-Hosted SSO & Identity Provider (Authentik)
 - [[040-forgejo-git-and-container-registry]] - Self-Hosted Forgejo (Git Server, OCI Container Registry & Global CI Runner)
+- [[041-holos-tts-migration]] - Ukrainian TTS Migration: Wyoming Piper to HolosTTS (`ha-holos-tts`)
 
 ## Workloads & Services
 - Traefik (Ingress)
@@ -64,6 +65,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - QNAP NAS (Jellyfin, Arr-stack, Portainer)
 - FreeLingo (AI Language Learning)
 - Open WebUI (LLM Chat)
+- HolosTTS (Ukrainian TTS — Wyoming TCP:10200 & OpenAI HTTP:8000 on `192.168.0.47`)
 - It's a Plan (AI-Native Issue Tracker)
 - APN (Educational Platform - WordPress, MariaDB, TutorLMS)
 - Shopping Master (Telegram Bot & Mini App WebApp on `shopping.kms-lab.in.ua` -> TV-Box `192.168.0.106:8080`)

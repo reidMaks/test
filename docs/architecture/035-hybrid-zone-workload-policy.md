@@ -43,7 +43,7 @@ flowchart TB
     subgraph Home_Zone["Zone: home (Local Heavy, Private & Monitoring Tier)"]
         Mon["Monitoring & Logs:\nvmsingle (2Gi), vmagent, vmalert,\nalertmanager, grafana, vlogs, kube-state-metrics"]
         PrivateApps["Private / LAN Workloads:\npaperless, shared-redis, searxng,\nheadlamp, pairdrop, speedtest, cert-manager"]
-        AIStack["AI Stack (stack=ai):\nopen-webui, litellm, piper, oikb,\nheadroom, mcpo, mcp/*"]
+        AIStack["AI Stack (stack=ai):\nopen-webui, litellm, holos-tts, oikb,\nheadroom, mcpo, mcp/*"]
         LocalHW["Hardware / NAS / Staging:\nimmich (iGPU + NFS), esphome, qnap-sync,\nfreelingo, mailpit, apn staging/preview/ci"]
     end
 ```
@@ -59,7 +59,7 @@ Pinned strictly to `oci` so public and critical VPN-accessible services experien
 Pinned strictly to `home` to keep OCI CPU and RAM free for the survivor tier and co-locate heavy workloads with local storage/GPU:
 - **Monitoring & Logging (`monitoring`):** `vmsingle` (resized from `1Gi` to `2Gi` on `longhorn-postgres` to resolve `KubePersistentVolumeFillingUp`), `vmagent`, `vmalert`, `alertmanager`, `vm-grafana`, `vlogs`, `kube-state-metrics`, `victoria-metrics-operator`. Disabled unreachable localhost control-plane scrape targets (`kubeControllerManager`, `kubeScheduler`, `kubeEtcd`) on Talos Linux.
 - **Private / Internal Apps:** `paperless`, `shared-redis`, `searxng`, `headlamp`, `pairdrop`, `speedtest`, `cert-manager`.
-- **AI Stack (`stack=ai`):** `open-webui`, `litellm`, `piper`, `oikb`, `headroom`, `mcpo`, `mcp` (`kubernetes-mcp`, `prometheus-mcp`, `grafana-mcp`).
+- **AI Stack (`stack=ai`):** `open-webui`, `litellm`, `holos-tts` ([[041-holos-tts-migration]]), `oikb`, `headroom`, `mcpo`, `mcp` (`kubernetes-mcp`, `prometheus-mcp`, `grafana-mcp`).
 - **Local Hardware / Staging:** `immich`, `esphome`, `qnap-sync`, `freelingo`, `mailpit`, `apn` (staging, preview, `ci-runner`).
 
 ### 3. Longhorn Engine Auto-Upgrade (`concurrentAutomaticEngineUpgradePerNodeLimit = 1`)

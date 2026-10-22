@@ -25,7 +25,7 @@ Stateful workloads in our hybrid Talos Kubernetes cluster (`home` Proxmox + `oci
 ```mermaid
 flowchart TD
     subgraph HomeZone["Zone: home (Proxmox LAN)"]
-        HomePods["Home Workloads<br/>(esphome, immich-ml, piper, vlogs, apn)"]
+        HomePods["Home Workloads<br/>(esphome, immich-ml, holos-tts, vlogs, apn)"]
         HomeDB["shared-db-1 / shared-db-2 / vmsingle"]
         LHHome["Longhorn Home Disks<br/>(talos-f9o-10o & talos-wfh-33w)<br/>allowScheduling: true"]
     end
@@ -46,5 +46,5 @@ flowchart TD
 ```
 
 ## Consequences
-- **Zero WAN Block Latency:** Home workloads (`apn-mariadb`, `vlogs`, `esphome`, `immich-ml`, `piper`) write exclusively to local NVMe/SSD storage in `home` without waiting for WAN round-trips to OCI.
+- **Zero WAN Block Latency:** Home workloads (`apn-mariadb`, `vlogs`, `esphome`, `immich-ml`, `holos-tts`) write exclusively to local NVMe/SSD storage in `home` without waiting for WAN round-trips to OCI.
 - **Independent Always-On OCI Tier:** OCI workloads rely on `shared-db-3` (CNPG streaming replication) and `minio-0` (`Litestream` + `s3-rclone`), surviving complete home power/internet outages (`[[035-hybrid-zone-workload-policy]]`).
