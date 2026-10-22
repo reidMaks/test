@@ -66,4 +66,5 @@ All documentation here should be maintained in English and linked using Obsidian
 - Open WebUI (LLM Chat)
 - It's a Plan (AI-Native Issue Tracker)
 - APN (Educational Platform - WordPress, MariaDB, TutorLMS)
+- Shopping Master (Telegram Bot & Mini App WebApp on `shopping.kms-lab.in.ua` -> TV-Box `192.168.0.106:8080`)
 - In-Cluster MCP Servers (Kubernetes & Tool Servers for Network Agents)

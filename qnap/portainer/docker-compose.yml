@@ -476,6 +476,8 @@ services:
       - JELLYFIN_MAX_MUXING_QUEUE_SIZE=2048
       # --- Система, локалізація та фонові задачі (/config/system.xml) ---
       - JELLYFIN_SERVER_NAME=nas-jellyfin
+      - JELLYFIN_PublishedServerUrl=http://192.168.0.21:8096
+      - JELLYFIN_ENABLE_IPV6=false
       - JELLYFIN_UI_CULTURE=uk
       - JELLYFIN_METADATA_LANG=uk
       - JELLYFIN_METADATA_COUNTRY=UA
@@ -516,18 +518,18 @@ services:
           sed -i "s|<EnableKeyFrameOnlyExtraction>.*</EnableKeyFrameOnlyExtraction>|<EnableKeyFrameOnlyExtraction>$$JELLYFIN_TRICKPLAY_KEYFRAME_ONLY</EnableKeyFrameOnlyExtraction>|" "$$SYS"
           sed -i "s|<ProcessThreads>.*</ProcessThreads>|<ProcessThreads>$$JELLYFIN_TRICKPLAY_THREADS</ProcessThreads>|" "$$SYS"
         fi
+        NET="/config/network.xml"
+        if [ -f "$$NET" ]; then
+          sed -i "s|<AutoDiscovery>.*</AutoDiscovery>|<AutoDiscovery>true</AutoDiscovery>|" "$$NET"
+          sed -i "s|<EnableIPv6>.*</EnableIPv6>|<EnableIPv6>$$JELLYFIN_ENABLE_IPV6</EnableIPv6>|" "$$NET"
+          sed -i '/<LocalNetworkAddresses>/,/<\/LocalNetworkAddresses>/c\  <LocalNetworkAddresses />' "$$NET"
+          sed -i '/<PublishedServerUriBySubnet>/,/<\/PublishedServerUriBySubnet>/c\  <PublishedServerUriBySubnet />' "$$NET"
+          sed -i "s|<PublishedServerUriBySubnet />|<PublishedServerUriBySubnet>\n    <string>all=$$JELLYFIN_PublishedServerUrl</string>\n  </PublishedServerUriBySubnet>|" "$$NET"
+        fi
         exec /init
     mem_limit: 1200m
     volumes:
       - /share/CACHEDEV2_DATA/appdata/arr-stack/config/jellyfin:/config
       - /share/CACHEDEV1_DATA/torrent:/torrent
-    ports:
-      - 8096:8096
-      - 7359:7359/udp
-    networks:
-      - proxy
+    network_mode: host
     restart: unless-stopped
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.jellyfin.rule=Host(`jellyfin.home.arpa`)"
-      - "traefik.http.services.jellyfin.loadbalancer.server.port=8096"

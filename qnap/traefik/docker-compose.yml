@@ -59,6 +59,10 @@ services:
               rule: "Host(`nas72ffeb.home.arpa`)"
               service: qnap-svc
               tls: {}
+            jellyfin:
+              rule: "Host(`jellyfin.home.arpa`)"
+              service: jellyfin-svc
+              tls: {}
           services:
             proxmox-svc:
               loadBalancer:
@@ -72,6 +76,10 @@ services:
               loadBalancer:
                 servers:
                   - url: "https://host.docker.internal:4433"
+            jellyfin-svc:
+              loadBalancer:
+                servers:
+                  - url: "http://192.168.0.21:8096"
         EOF
         echo "Traefik config generated successfully"
 
