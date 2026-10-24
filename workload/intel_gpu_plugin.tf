@@ -129,7 +129,7 @@ resource "kubernetes_cron_job_v1" "intel_gpu_plugin_watchdog" {
 
             container {
               name  = "watchdog"
-              image = "alpine/k8s:1.36.1"
+              image = "alpine/k8s:1.36.5"
 
               resources {
                 requests = {

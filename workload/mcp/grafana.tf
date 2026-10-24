@@ -71,7 +71,7 @@ resource "kubernetes_deployment" "grafana_mcp" {
 
         container {
           name  = "grafana-mcp-server"
-          image = "docker.io/grafana/mcp-grafana:2.0.2"
+          image = "docker.io/grafana/mcp-grafana:2.1.1"
           args = [
             "-t", "streamable-http",
             "-allowed-hosts", "*",
