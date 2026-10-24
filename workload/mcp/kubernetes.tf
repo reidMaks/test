@@ -158,7 +158,7 @@ resource "kubernetes_deployment" "k8s_mcp" {
 
         container {
           name  = "kubernetes-mcp-server"
-          image = "ghcr.io/containers/kubernetes-mcp-server:v0.0.67"
+          image = "ghcr.io/containers/kubernetes-mcp-server:v0.0.69"
           args  = ["--config", "/etc/kubernetes-mcp-server/config.toml"]
 
           port {

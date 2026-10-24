@@ -58,7 +58,7 @@ resource "kubernetes_deployment" "portainer_mcp" {
 
         container {
           name  = "portainer-mcp-server"
-          image = "docker.io/portainer/portainer-mcp:2.45.1"
+          image = "docker.io/portainer/portainer-mcp:2.45.3"
 
           env {
             name  = "PORTAINER_URL"

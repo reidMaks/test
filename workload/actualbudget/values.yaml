@@ -35,7 +35,7 @@ controllers:
       init-certs:
         image:
           repository: mitmproxy/mitmproxy
-          tag: "12.2.3"
+          tag: "12.3.0"
         command: ["sh", "-c", "mitmdump --set confdir=/certs & sleep 5; kill $!"]
 
     containers:
@@ -81,7 +81,7 @@ controllers:
       mitmproxy:
         image:
           repository: mitmproxy/mitmproxy
-          tag: "12.2.3"
+          tag: "12.3.0"
         securityContext:
           runAsUser: 0
         command:
