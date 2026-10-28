@@ -113,6 +113,7 @@ resource "kubernetes_deployment" "wg_hub" {
             cat << 'DNS' > /etc/dnsmasq.conf
             server=1.1.1.1
             server=1.0.0.1
+            address=/rustdesk.kms-lab.in.ua/152.67.85.188
             address=/.kms-lab.in.ua/10.9.0.1
             bind-interfaces
             listen-address=10.9.0.1

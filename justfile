@@ -72,11 +72,35 @@ storage:
     kubectl get volumes.longhorn.io -n longhorn-system -o custom-columns="NAME:.metadata.name,STATE:.status.state,ROBUSTNESS:.status.robustness,NODE:.status.currentNodeID,PVC:.status.kubernetesStatus.pvcName,PV_STATUS:.status.kubernetesStatus.pvStatus,SIZE:.spec.size"
     @echo "\n=== Orphaned (Released) PersistentVolumes ==="
     kubectl get pv | awk 'NR==1 || /Released/'
+    @echo "\n=== Orphaned Longhorn Replicas ==="
+    kubectl get orphans.longhorn.io -n longhorn-system || true
 
 # Show logs for a workload in default or ci namespace
 [group('diagnostics')]
 logs deploy namespace="default":
     kubectl logs -n "{{namespace}}" "deploy/{{deploy}}" --tail=100 -f
+
+# Show RustDesk self-hosted server public key, ready-to-import client config string, and mobile QR code
+[group('diagnostics')]
+rustdesk-config:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    HOST="152.67.85.188"
+    API="https://rustdesk-api.kms-lab.in.ua"
+    PUBKEY=$(kubectl exec -n default deploy/rustdesk -c litestream -- cat /root/id_ed25519.pub | tr -d '[:space:]')
+    JSON_CFG=$(printf '{"host":"%s","key":"%s","api":"%s"}' "$HOST" "$PUBKEY" "$API")
+    CONFIG_STR=$(printf '%s' "$JSON_CFG" | base64 -w0 | sed 's/=*$//' | rev)
+    echo "=== RustDesk Server Configuration ==="
+    echo "ID Server : $HOST (or rustdesk.kms-lab.in.ua)"
+    echo "Relay     : $HOST"
+    echo "API Server: $API"
+    echo "Public Key: $PUBKEY"
+    echo ""
+    echo "=== Ready-to-Import Config String (Clipboard / --config) ==="
+    echo "$CONFIG_STR"
+    echo ""
+    echo "=== Mobile QR Code (Settings -> ID/Relay Server -> Scan QR) ==="
+    /usr/bin/python3 -c "import qrcode; qr = qrcode.QRCode(border=1); qr.add_data('config=$JSON_CFG'); qr.make(fit=True); qr.print_ascii(invert=True)"
 
 # ==============================================================================
 # 3. Maintenance & Hygiene
@@ -90,17 +114,19 @@ clean-pods:
     kubectl delete pods -A --field-selector=status.phase==Failed
     @echo "Cleaned up terminated pods."
 
-# Delete orphaned PersistentVolumes in 'Released' state and their detached Longhorn volumes
+# Delete orphaned PersistentVolumes in 'Released' state, detached Longhorn volumes, and Longhorn Orphan replicas
 [group('maintenance')]
-[confirm("Delete all orphaned 'Released' PersistentVolumes and their detached Longhorn volumes? (y/N)")]
+[confirm("Delete all orphaned 'Released' PersistentVolumes and Longhorn Orphan replicas? (y/N)")]
 clean-released-pvs:
     #!/usr/bin/env bash
     set -euo pipefail
     RELEASED_PVS=$(kubectl get pv --no-headers | awk '$5 == "Released" {print $1}')
-    if [ -z "$RELEASED_PVS" ]; then
+    if [ -n "$RELEASED_PVS" ]; then
+        echo "Deleting Released PVs: $RELEASED_PVS"
+        echo "$RELEASED_PVS" | xargs -r kubectl delete pv
+        echo "$RELEASED_PVS" | xargs -r kubectl delete volumes.longhorn.io -n longhorn-system --ignore-not-found
+    else
         echo "No Released PVs found."
-        exit 0
     fi
-    echo "Deleting Released PVs: $RELEASED_PVS"
-    echo "$RELEASED_PVS" | xargs -r kubectl delete pv
-    echo "$RELEASED_PVS" | xargs -r kubectl delete volumes.longhorn.io -n longhorn-system --ignore-not-found
+    echo "Cleaning up Longhorn Orphan replicas..."
+    kubectl delete orphans.longhorn.io -n longhorn-system --all

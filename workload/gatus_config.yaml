@@ -65,3 +65,12 @@ endpoints:
       - "[STATUS] == 200"
     alerts:
       - type: ntfy
+
+  - name: RustDesk Server
+    group: Cloud Infrastructure
+    url: "tcp://rustdesk.default.svc.cluster.local:21116"
+    interval: 1m
+    conditions:
+      - "[CONNECTED] == true"
+    alerts:
+      - type: ntfy

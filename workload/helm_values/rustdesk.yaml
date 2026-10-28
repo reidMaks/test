@@ -1,0 +1,246 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/bjw-s-labs/helm-charts/app-template-5.3.0/charts/other/app-template/values.schema.json
+
+defaultPodOptions:
+  nodeSelector:
+    kubernetes.io/hostname: talos-cp-oci
+  hostAliases:
+    - ip: 192.168.0.45
+      hostnames:
+        - auth.kms-lab.in.ua
+        - rustdesk-api.kms-lab.in.ua
+
+controllers:
+  main:
+    strategy: Recreate
+    pod:
+      labels:
+        litestream-metrics: "true"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+    initContainers:
+      00-keys-restore:
+        image:
+          repository: litestream/litestream
+          tag: "0.5.17"
+        securityContext:
+          runAsUser: 0
+          runAsGroup: 0
+        command:
+          - sh
+          - -c
+          - |
+            set -e
+            if [ -s /keys/id_ed25519 ] && [ -s /keys/id_ed25519.pub ]; then
+              cp /keys/id_ed25519 /keys/id_ed25519.pub /root/
+              chmod 600 /root/id_ed25519
+              chmod 644 /root/id_ed25519.pub
+              echo "Restored RustDesk Ed25519 keypair from S3."
+            fi
+      01-litestream-restore:
+        command:
+          - sh
+          - -c
+          - |
+            set -e
+            litestream restore -config /etc/litestream.yml -if-replica-exists -if-db-not-exists /root/db_v2.sqlite3
+            litestream restore -config /etc/litestream.yml -if-replica-exists -if-db-not-exists /root/rustdeskapi.db
+    containers:
+      hbbs:
+        image:
+          repository: rustdesk/rustdesk-server
+          tag: "1.1.16"
+        command:
+          - hbbs
+          - -r
+          - 152.67.85.188:21117
+          - -k
+          - _
+        securityContext:
+          allowPrivilegeEscalation: false
+        ports:
+          - name: nat-test
+            containerPort: 21115
+            hostPort: 21115
+            protocol: TCP
+          - name: hbbs-tcp
+            containerPort: 21116
+            hostPort: 21116
+            protocol: TCP
+          - name: hbbs-udp
+            containerPort: 21116
+            hostPort: 21116
+            protocol: UDP
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+      hbbr:
+        image:
+          repository: rustdesk/rustdesk-server
+          tag: "1.1.16"
+        command:
+          - hbbr
+          - -k
+          - _
+        env:
+          # Cap single relay session to 16 Mb/s (~2 MB/s) and total relay traffic to 64 Mb/s
+          SINGLE_BANDWIDTH: "16"
+          TOTAL_BANDWIDTH: "64"
+        securityContext:
+          allowPrivilegeEscalation: false
+        ports:
+          - name: hbbr
+            containerPort: 21117
+            hostPort: 21117
+            protocol: TCP
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+      api:
+        image:
+          repository: lejianwen/rustdesk-api
+          tag: "v2.7"
+        envFrom:
+          - secretRef:
+              name: rustdesk-api-secret
+        env:
+          TZ: "Europe/Kyiv"
+          RUSTDESK_API_LANG: "en"
+          RUSTDESK_API_APP_WEB_CLIENT: "1"
+          RUSTDESK_API_APP_REGISTER: "false"
+          RUSTDESK_API_APP_TOKEN_EXPIRE: "720h"
+          RUSTDESK_API_APP_WEB_SSO: "true"
+          RUSTDESK_API_RUSTDESK_ID_SERVER: "152.67.85.188:21116"
+          RUSTDESK_API_RUSTDESK_RELAY_SERVER: "152.67.85.188:21117"
+          RUSTDESK_API_RUSTDESK_API_SERVER: "https://rustdesk-api.kms-lab.in.ua"
+          RUSTDESK_API_RUSTDESK_KEY_FILE: "/keys/id_ed25519.pub"
+          RUSTDESK_API_RUSTDESK_PERSONAL: "1"
+        ports:
+          - name: api
+            containerPort: 21114
+            protocol: TCP
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  (
+                    i=0
+                    while ! wget -qO- http://127.0.0.1:21114/api/version >/dev/null 2>&1; do
+                      i=$((i+1))
+                      [ $i -ge 30 ] && exit 0
+                      sleep 1
+                    done
+                    /app/apimain reset-admin-pwd "$RUSTDESK_ADMIN_PWD" >/dev/null 2>&1 || true
+                    LOGIN_RES=$(wget -qO- --header="Content-Type: application/json" \
+                      --post-data="{\"username\":\"admin\",\"password\":\"$RUSTDESK_ADMIN_PWD\"}" \
+                      http://127.0.0.1:21114/api/admin/login 2>/dev/null || true)
+                    TOKEN=$(printf "%s" "$LOGIN_RES" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+                    if [ -n "$TOKEN" ]; then
+                      wget -qO- --header="Content-Type: application/json" --header="api-token: $TOKEN" \
+                        --post-data='{"id":1,"username":"admin","nickname":"Max","email":"reid.maks@gmail.com","group_id":1,"is_admin":true,"status":1}' \
+                        http://127.0.0.1:21114/api/admin/user/update >/dev/null 2>&1 || true
+                      OAUTH_LIST=$(wget -qO- --header="api-token: $TOKEN" \
+                        "http://127.0.0.1:21114/api/admin/oauth/list?page=1&page_size=50" 2>/dev/null || true)
+                      if printf "%s" "$OAUTH_LIST" | grep -q '"op":"Authentik"'; then
+                        wget -qO- --header="Content-Type: application/json" --header="api-token: $TOKEN" \
+                          --post-data="{\"id\":1,\"op\":\"Authentik\",\"oauth_type\":\"oidc\",\"issuer\":\"https://auth.kms-lab.in.ua/application/o/rustdesk/\",\"client_id\":\"rustdesk\",\"client_secret\":\"$OIDC_CLIENT_SECRET\",\"scopes\":\"openid,profile,email\",\"auto_register\":true,\"pkce_enable\":true,\"pkce_method\":\"S256\"}" \
+                          http://127.0.0.1:21114/api/admin/oauth/update >/dev/null 2>&1 || true
+                      else
+                        wget -qO- --header="Content-Type: application/json" --header="api-token: $TOKEN" \
+                          --post-data="{\"op\":\"Authentik\",\"oauth_type\":\"oidc\",\"issuer\":\"https://auth.kms-lab.in.ua/application/o/rustdesk/\",\"client_id\":\"rustdesk\",\"client_secret\":\"$OIDC_CLIENT_SECRET\",\"scopes\":\"openid,profile,email\",\"auto_register\":true,\"pkce_enable\":true,\"pkce_method\":\"S256\"}" \
+                          http://127.0.0.1:21114/api/admin/oauth/create >/dev/null 2>&1 || true
+                      fi
+                    fi
+                  ) &
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 250m
+            memory: 128Mi
+      litestream:
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  while [ ! -s /root/id_ed25519.pub ]; do sleep 1; done
+                  if [ ! -s /keys/id_ed25519.pub ]; then
+                    cp /root/id_ed25519 /root/id_ed25519.pub /keys/
+                  fi
+
+configMaps:
+  litestream-config:
+    enabled: true
+    data:
+      litestream.yml: |
+        addr: ":9090"
+        dbs:
+          - path: /root/db_v2.sqlite3
+            replica:
+              url: s3://kms-lab-data/rustdesk-db?endpoint=http://minio.default.svc.cluster.local:9000&region=us-east-1&forcePathStyle=true
+              access-key-id: ${MINIO_ACCESS_KEY}
+              secret-access-key: ${MINIO_SECRET_KEY}
+          - path: /root/rustdeskapi.db
+            replica:
+              url: s3://kms-lab-data/rustdesk-api-db?endpoint=http://minio.default.svc.cluster.local:9000&region=us-east-1&forcePathStyle=true
+              access-key-id: ${MINIO_ACCESS_KEY}
+              secret-access-key: ${MINIO_SECRET_KEY}
+
+service:
+  app:
+    controller: main
+    ports:
+      api:
+        port: 21114
+        protocol: TCP
+      nat-test:
+        port: 21115
+        protocol: TCP
+      hbbs-tcp:
+        port: 21116
+        protocol: TCP
+      hbbs-udp:
+        port: 21116
+        protocol: UDP
+      hbbr:
+        port: 21117
+        protocol: TCP
+
+ingress:
+  main:
+    enabled: true
+    className: "traefik"
+    hosts:
+      - host: rustdesk-api.kms-lab.in.ua
+        paths:
+          - path: /
+            service:
+              identifier: app
+              port: api
+
+persistence:
+  keys:
+    type: persistentVolumeClaim
+    existingClaim: rustdesk-keys-s3
+    globalMounts:
+      - path: /keys
+  data:
+    type: emptyDir
+    globalMounts:
+      - path: /root
+      - path: /app/data

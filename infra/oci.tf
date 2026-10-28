@@ -87,6 +87,26 @@ resource "oci_core_security_list" "sl" {
       max = 51821
     }
   }
+
+  # RustDesk Server (hbbs NAT test 21115, TCP hole-punching 21116, hbbr Relay 21117)
+  ingress_security_rules {
+    protocol = "6" # TCP
+    source   = "0.0.0.0/0"
+    tcp_options {
+      min = 21115
+      max = 21117
+    }
+  }
+
+  # RustDesk Server (hbbs ID registration & heartbeat 21116/UDP)
+  ingress_security_rules {
+    protocol = "17" # UDP
+    source   = "0.0.0.0/0"
+    udp_options {
+      min = 21116
+      max = 21116
+    }
+  }
 }
 
 resource "oci_core_subnet" "main_subnet" {

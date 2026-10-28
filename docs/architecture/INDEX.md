@@ -50,11 +50,13 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[039-authentik-sso-idp]] - Self-Hosted SSO & Identity Provider (Authentik)
 - [[040-forgejo-git-and-container-registry]] - Self-Hosted Forgejo (Git Server, OCI Container Registry & Global CI Runner)
 - [[041-holos-tts-migration]] - Ukrainian TTS Migration: Wyoming Piper to HolosTTS (`ha-holos-tts`)
+- [[042-rustdesk-self-hosted-server]] - Self-Hosted RustDesk Rendezvous & Relay Server (`hbbs` / `hbbr` on OCI)
 
 ## Workloads & Services
 - Traefik (Ingress)
 - Authentik (Self-Hosted SSO & Application Portal)
 - Forgejo (Self-Hosted Git, OCI Container Registry & Global Actions Runner)
+- RustDesk Server (`hbbs` / `hbbr` on `rustdesk.kms-lab.in.ua`)
 - MetalLB (LoadBalancer)
 - Renovate Bot (Declarative GitOps Dependency & Image Updates — replaced Keel & Diun)
 - GitHub Actions CI Runner (APN PR Previews & E2E)

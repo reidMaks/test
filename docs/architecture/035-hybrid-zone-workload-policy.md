@@ -50,7 +50,7 @@ flowchart TB
 
 ### 1. `zone: oci` — Always-On Cloud Survivor Tier (`topology.kubernetes.io/zone: oci`)
 Pinned strictly to `oci` so public and critical VPN-accessible services experience **zero downtime** when the `home` zone loses power or internet:
-- **Ingress & Connectivity:** `wg-hub` (`talos-cp-oci`), `traefik`, `cloudflared` (2 replicas spread across `talos-cp-oci` and `talos-cp-oci-2`).
+- **Ingress & Connectivity:** `wg-hub` (`talos-cp-oci`), `traefik`, `cloudflared` (2 replicas spread across `talos-cp-oci` and `talos-cp-oci-2`), `rustdesk` (`hbbs`/`hbbr` on `talos-cp-oci`, [[042-rustdesk-self-hosted-server]]).
 - **Public Services (`workload/cloudflare.tf`):** `gatus`, `lubelogger`, `tandoor`, `wishlist`, `itsaplan` (`api`, `web`, `worker`).
 - **Intranet/VPN Survivor Services:** `actualbudget` (accessible via WireGuard VPN `wg-hub` during home outages; backed by Litestream + MinIO in `oci`, not exposed via public Cloudflare Tunnel).
 - **Cloud-Local Backing Storage:** `minio` (`talos-cp-oci`), `rclone-s3-gateway` (`oci`), and one `shared-db` CloudNativePG instance.

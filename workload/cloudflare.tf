@@ -30,6 +30,16 @@ resource "cloudflare_record" "vpn" {
   comment = "OCI WG Hub public IP"
 }
 
+# Публічний IP OCI ноди для власного сервера RustDesk (hbbs/hbbr)
+resource "cloudflare_record" "rustdesk" {
+  zone_id = data.cloudflare_zone.main.id
+  name    = "rustdesk"
+  content = "152.67.85.188"
+  type    = "A"
+  proxied = false
+  comment = "OCI RustDesk Server (hbbs/hbbr) public IP"
+}
+
 # -----------------------------------------------------
 # CNAME Records (Proxied via Cloudflare Tunnel)
 # -----------------------------------------------------
