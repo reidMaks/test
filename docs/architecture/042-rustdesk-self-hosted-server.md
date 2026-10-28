@@ -12,7 +12,10 @@ Because our hybrid Kubernetes cluster includes an Always-On Oracle Cloud (`zone:
 
 ## Decision
 
-We deploy **RustDesk Server OSS (`rustdesk/rustdesk-server:1.1.16`)** alongside **RustDesk API Server (`lejianwen/rustdesk-api:v2.7`)** in the `default` namespace pinned to `talos-cp-oci` (`workload/rustdesk.tf` and `workload/helm_values/rustdesk.yaml`), integrated with **Authentik SSO (`auth.kms-lab.in.ua`)** via OpenID Connect (OIDC).
+We deploy **RustDesk Server (`lejianwen/rustdesk-server:v0`)** alongside **RustDesk API Server (`lejianwen/rustdesk-api:v2.7`)** in the `default` namespace pinned to `talos-cp-oci` (`workload/rustdesk.tf` and `workload/helm_values/rustdesk.yaml`), integrated with **Authentik SSO (`auth.kms-lab.in.ua`)** via OpenID Connect (OIDC).
+
+> [!IMPORTANT]
+> When a RustDesk client (`>= 1.4.1`) is logged into an API server account (holds an `access_token`), the client initiates a `secure_tcp` (`KeyExchange`) handshake on port `21116/TCP` before transmitting its first frame so the token is never sent in plaintext. Upstream `rustdesk/rustdesk-server` OSS omits `key_exchange_phase1`, causing logged-in clients to stall for 18 seconds and fail with `Failed to secure tcp: deadline has elapsed`. Using `lejianwen/rustdesk-server:v0` provides the full `KeyExchange` handshake and `RUSTDESK_API_JWT_KEY` verification.
 
 ```mermaid
 flowchart LR

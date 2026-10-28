@@ -48,14 +48,17 @@ controllers:
     containers:
       hbbs:
         image:
-          repository: rustdesk/rustdesk-server
-          tag: "1.1.16"
+          repository: lejianwen/rustdesk-server
+          tag: "v0"
         command:
           - hbbs
           - -r
           - 152.67.85.188:21117
           - -k
           - _
+        envFrom:
+          - secretRef:
+              name: rustdesk-api-secret
         securityContext:
           allowPrivilegeEscalation: false
         ports:
@@ -80,8 +83,8 @@ controllers:
             memory: 128Mi
       hbbr:
         image:
-          repository: rustdesk/rustdesk-server
-          tag: "1.1.16"
+          repository: lejianwen/rustdesk-server
+          tag: "v0"
         command:
           - hbbr
           - -k
