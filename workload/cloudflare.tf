@@ -51,14 +51,6 @@ resource "cloudflare_record" "rustdesk" {
 # CNAME Records (Proxied via Cloudflare Tunnel)
 # -----------------------------------------------------
 
-resource "cloudflare_record" "root" {
-  zone_id = data.cloudflare_zone.main.id
-  name    = "kms-lab.in.ua"
-  content = local.cf_tunnel_cname
-  type    = "CNAME"
-  proxied = true
-}
-
 resource "cloudflare_record" "lubelogger" {
   zone_id = data.cloudflare_zone.main.id
   name    = "lubelogger"
@@ -99,6 +91,22 @@ resource "cloudflare_record" "plan_api" {
   proxied = true
 }
 
+# Існуюче WAF-правило "Ukraine Only" для зони kms-lab.in.ua (імпортовано в Terraform)
+resource "cloudflare_ruleset" "kms_lab_waf_custom" {
+  zone_id     = data.cloudflare_zone.main.id
+  name        = "default"
+  description = ""
+  kind        = "zone"
+  phase       = "http_request_firewall_custom"
+
+  rules {
+    description = "Ukraine Only"
+    expression  = "(ip.src.country ne \"UA\" and not starts_with(http.request.uri.path, \"/webhooks/\"))"
+    action      = "block"
+    enabled     = true
+  }
+}
+
 # -----------------------------------------------------
 # APN Production Domain (apn.in.ua) — DNS, Tunnel & Free WAF/RateLimit
 # -----------------------------------------------------
@@ -119,6 +127,34 @@ resource "cloudflare_record" "apn_www" {
   type    = "CNAME"
   proxied = true
   comment = "APN Production www subdomain via Cloudflare Tunnel"
+}
+
+# Захисні поштові TXT-записи (Anti-Spoofing SPF, DMARC, DKIM) для apn.in.ua
+resource "cloudflare_record" "apn_spf" {
+  zone_id = data.cloudflare_zone.apn.id
+  name    = "apn.in.ua"
+  content = "\"v=spf1 -all\""
+  type    = "TXT"
+  proxied = false
+  comment = "Strict SPF policy to prevent email spoofing until production SMTP is configured"
+}
+
+resource "cloudflare_record" "apn_dmarc" {
+  zone_id = data.cloudflare_zone.apn.id
+  name    = "_dmarc"
+  content = "\"v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s;\""
+  type    = "TXT"
+  proxied = false
+  comment = "Strict DMARC policy against email spoofing"
+}
+
+resource "cloudflare_record" "apn_dkim_wildcard" {
+  zone_id = data.cloudflare_zone.apn.id
+  name    = "*._domainkey"
+  content = "\"v=DKIM1; p=\""
+  type    = "TXT"
+  proxied = false
+  comment = "Null wildcard DKIM record to invalidate unauthorized DKIM signatures"
 }
 
 # Декларативна конфігурація маршрутів Cloudflare Tunnel (Zero Trust Free)

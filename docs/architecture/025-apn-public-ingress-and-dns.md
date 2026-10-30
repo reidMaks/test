@@ -68,6 +68,7 @@ All edge capabilities strictly use **Cloudflare Free Plan (`Free Website`)** fea
 - **Edge TLS:** Cloudflare Universal SSL terminates HTTPS (TLS 1.2/1.3) at the edge and forwards HTTP over the encrypted QUIC tunnel to `cloudflared` -> `traefik:80`. No public HTTP-01 challenge on port 443 is needed in `apn-prod`.
 - **WAF Custom Rule (`cloudflare_ruleset.apn_waf_custom`):** Uses 1 of the 5 free custom rules in phase `http_request_firewall_custom` to `skip` `http_ratelimit` and `http_request_firewall_managed` when `http.request.uri.query contains "wc-api=wc_monobank"`.
 - **Rate Limiting (`cloudflare_ruleset.apn_rate_limit`):** Uses the 1 free rate-limiting rule in phase `http_ratelimit` (`characteristics = ["cf.colo.id", "ip.src"]`, `period = 10`, `requests_per_period = 20`, `mitigation_timeout = 10`, `action = "block"`) to protect `/wp-login.php` and `/wp-json/`.
+- **Anti-Spoofing Email DNS Records (`SPF`, `DMARC`, `DKIM`):** Strict `TXT` records (`v=spf1 -all`, `_dmarc` with `p=reject`, and `*._domainkey` with `v=DKIM1; p=`) protect `apn.in.ua` against email spoofing until a production transactional SMTP provider is configured.
 - **Static Asset Caching:** Cloudflare Free automatically caches static extensions (`.css`, `.js`, `.woff2`, `.png`, `.webp`, `.svg`, `.ico`) on proxied CNAME records while bypassing dynamic HTML (`/wp-admin/*`, `/checkout/*`, `/cart/*`, `/my-account/*`).
 
 ### 3. Declarative ImagePullSecret in `apn-prod` (`workload/ci_runner.tf`)

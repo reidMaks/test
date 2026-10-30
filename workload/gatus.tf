@@ -61,7 +61,14 @@ resource "helm_release" "gatus" {
   upgrade_install = true
 
   values = [
-    file("${path.module}/helm_values/gatus.yaml")
+    file("${path.module}/helm_values/gatus.yaml"),
+    yamlencode({
+      defaultPodOptions = {
+        annotations = {
+          "checksum/config" = sha256(kubernetes_config_map.gatus_config.data["config.yaml"])
+        }
+      }
+    })
   ]
 
   depends_on = [kubernetes_config_map.gatus_config, kubernetes_secret.gatus_secrets, kubernetes_cluster_role_binding.gatus_sidecar]

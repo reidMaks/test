@@ -51,6 +51,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[040-forgejo-git-and-container-registry]] - Self-Hosted Forgejo (Git Server, OCI Container Registry & Global CI Runner)
 - [[041-holos-tts-migration]] - Ukrainian TTS Migration: Wyoming Piper to HolosTTS (`ha-holos-tts`)
 - [[042-rustdesk-self-hosted-server]] - Self-Hosted RustDesk Rendezvous & Relay Server (`hbbs` / `hbbr` on OCI)
+- [[043-apn-prod-backups-and-public-monitoring]] - Production Backups (30-Day Retention) & Public Internet Gatus Monitoring for APN (`apn-prod`, IAAC-5)
 
 ## Workloads & Services
 - Traefik (Ingress)

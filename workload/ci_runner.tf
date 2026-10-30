@@ -202,6 +202,14 @@ resource "kubernetes_secret" "apn_prod_ghcr_secret" {
       }
     })
   }
+
+  lifecycle {
+    # GitHub Actions CD pipeline refreshes ghcr-secret with short-lived ghs_* tokens on deploy
+    ignore_changes = [
+      data,
+      metadata[0].annotations,
+    ]
+  }
 }
 
 # 4. GitHub Runner Secret (Uses Bitwarden Secret github_token)

@@ -348,3 +348,71 @@ resource "kubernetes_labels" "longhorn_backup_esphome_config" {
     kubernetes_manifest.longhorn_daily_backup
   ]
 }
+
+# Щоденні бекапи для бойового контуру APN (apn-prod) із глибиною зберігання 30 днів
+# (Longhorn -> S3 RustFS/MinIO kms-lab-data/longhorn-backups -> QNAP NAS через qnap-sync).
+resource "kubernetes_manifest" "longhorn_apn_prod_daily_backup" {
+  manifest = {
+    apiVersion = "longhorn.io/v1beta2"
+    kind       = "RecurringJob"
+    metadata = {
+      name      = "apn-prod-daily-backup"
+      namespace = "longhorn-system"
+    }
+    spec = {
+      cron        = "30 2 * * *"
+      task        = "backup"
+      retain      = 30
+      concurrency = 1
+      groups      = ["apn-prod-backups"]
+    }
+  }
+
+  depends_on = [helm_release.longhorn]
+}
+
+data "kubernetes_persistent_volume_claim" "apn_prod_mariadb_data" {
+  metadata {
+    name      = "apn-prod-mariadb-data"
+    namespace = kubernetes_namespace.apn_prod.metadata[0].name
+  }
+}
+
+data "kubernetes_persistent_volume_claim" "apn_prod_wordpress_uploads" {
+  metadata {
+    name      = "apn-prod-wordpress-uploads"
+    namespace = kubernetes_namespace.apn_prod.metadata[0].name
+  }
+}
+
+resource "kubernetes_labels" "longhorn_backup_apn_prod_mariadb" {
+  api_version = "longhorn.io/v1beta2"
+  kind        = "Volume"
+  metadata {
+    name      = data.kubernetes_persistent_volume_claim.apn_prod_mariadb_data.spec[0].volume_name
+    namespace = kubernetes_namespace.longhorn_system.metadata[0].name
+  }
+  labels = {
+    "recurring-job-group.longhorn.io/apn-prod-backups" = "enabled"
+  }
+
+  depends_on = [
+    kubernetes_manifest.longhorn_apn_prod_daily_backup
+  ]
+}
+
+resource "kubernetes_labels" "longhorn_backup_apn_prod_uploads" {
+  api_version = "longhorn.io/v1beta2"
+  kind        = "Volume"
+  metadata {
+    name      = data.kubernetes_persistent_volume_claim.apn_prod_wordpress_uploads.spec[0].volume_name
+    namespace = kubernetes_namespace.longhorn_system.metadata[0].name
+  }
+  labels = {
+    "recurring-job-group.longhorn.io/apn-prod-backups" = "enabled"
+  }
+
+  depends_on = [
+    kubernetes_manifest.longhorn_apn_prod_daily_backup
+  ]
+}
