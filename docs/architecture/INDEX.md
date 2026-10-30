@@ -52,6 +52,7 @@ All documentation here should be maintained in English and linked using Obsidian
 - [[041-holos-tts-migration]] - Ukrainian TTS Migration: Wyoming Piper to HolosTTS (`ha-holos-tts`)
 - [[042-rustdesk-self-hosted-server]] - Self-Hosted RustDesk Rendezvous & Relay Server (`hbbs` / `hbbr` on OCI)
 - [[043-apn-prod-backups-and-public-monitoring]] - Production Backups (30-Day Retention) & Public Internet Gatus Monitoring for APN (`apn-prod`, IAAC-5)
+- [[044-itsaplan-runner-base-image]] - Shared Base Image Architecture for Multi-Project "It's a Plan" Agent Runners (`itsaplan-runner-base` on TV-Box)
 
 ## Workloads & Services
 - Traefik (Ingress)

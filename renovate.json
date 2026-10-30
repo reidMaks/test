@@ -33,6 +33,11 @@
       "/(^|/)qnap/.*docker-compose.*\\.ya?ml$/"
     ]
   },
+  "dockerfile": {
+    "managerFilePatterns": [
+      "/(^|/)qnap/.*/Dockerfile$/"
+    ]
+  },
   "customManagers": [
     {
       "customType": "regex",
@@ -53,6 +58,16 @@
       ],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[a-zA-Z0-9._/-]+) registryUrl=(?<registryUrl>[^\\s]+)\\s+[a-zA-Z0-9_]+\\s*=\\s*\"(?<currentValue>[^\"]+)\""
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Track npm/CLI versions in Dockerfiles annotated with # renovate:",
+      "managerFilePatterns": [
+        "/(^|/)qnap/.*/Dockerfile$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+ARG [A-Z0-9_]+=(?<currentValue>[^\\s]+)"
       ]
     }
   ],

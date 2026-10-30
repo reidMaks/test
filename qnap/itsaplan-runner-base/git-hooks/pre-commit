@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Universal Git Pre-Commit Hook Dispatcher
+# ==============================================================================
+# Automatically executes repository-local .githooks/pre-commit or
+# .git/hooks/pre-commit when present in the active workspace repository.
+# ==============================================================================
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -n "$REPO_ROOT" ]; then
+    for hook in "${REPO_ROOT}/.githooks/pre-commit" "${REPO_ROOT}/.git/hooks/pre-commit"; do
+        if [ -x "$hook" ] && [ "$(realpath "$hook")" != "$(realpath "${BASH_SOURCE[0]}")" ]; then
+            exec "$hook" "$@"
+        fi
+    done
+fi
+
+exit 0

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# Universal Git Pre-Push Hook: Guardrail against direct push to main/master
+# ==============================================================================
+# Blocks any direct push to refs/heads/main or refs/heads/master unless
+# ALLOW_MAIN_PUSH=1 is set. Delegates to repository-local pre-push hooks if any.
+# ==============================================================================
+set -euo pipefail
+
+STDIN_DATA="$(cat)"
+
+while read -r local_ref local_oid remote_ref remote_oid; do
+    [ -z "${remote_ref:-}" ] && continue
+    if [ "$remote_ref" = "refs/heads/main" ] || [ "$remote_ref" = "refs/heads/master" ]; then
+        if [ "${ALLOW_MAIN_PUSH:-0}" != "1" ]; then
+            echo "=====================================================================" >&2
+            echo "❌ ERROR: Direct push to '${remote_ref#refs/heads/}' branch is strictly forbidden!" >&2
+            echo "   Agents and developers must push to task branches (feat/*, fix/*," >&2
+            echo "   docs/*, chore/*) and open a Pull Request for review." >&2
+            echo "=====================================================================" >&2
+            exit 1
+        fi
+    fi
+done <<< "$STDIN_DATA"
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -n "$REPO_ROOT" ]; then
+    for hook in "${REPO_ROOT}/.githooks/pre-push" "${REPO_ROOT}/.git/hooks/pre-push"; do
+        if [ -x "$hook" ] && [ "$(realpath "$hook")" != "$(realpath "${BASH_SOURCE[0]}")" ]; then
+            exec "$hook" "$@" <<< "$STDIN_DATA"
+        fi
+    done
+fi
+
+exit 0

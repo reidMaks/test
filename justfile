@@ -130,3 +130,17 @@ clean-released-pvs:
     fi
     echo "Cleaning up Longhorn Orphan replicas..."
     kubectl delete orphans.longhorn.io -n longhorn-system --all
+
+# Build the shared It's a Plan Agent Runner base image natively on TV-Box (192.168.0.106)
+[group('maintenance')]
+[confirm("Build and tag 'itsaplan-runner-base' on TV-Box (192.168.0.106)? (y/N)")]
+build-runner-base host="max@192.168.0.106":
+    #!/usr/bin/env bash
+    set -euo pipefail
+    VERSION=$(sed -n 's/^ARG RUNNER_VERSION=\(.*\)/\1/p' qnap/itsaplan-runner-base/Dockerfile)
+    echo "Syncing qnap/itsaplan-runner-base (RUNNER_VERSION=$VERSION) to {{host}}..."
+    ssh "{{host}}" "mkdir -p /home/max/itsaplan-runner-base/git-hooks"
+    scp -q qnap/itsaplan-runner-base/Dockerfile qnap/itsaplan-runner-base/entrypoint.sh qnap/itsaplan-runner-base/README.md "{{host}}:/home/max/itsaplan-runner-base/"
+    scp -q qnap/itsaplan-runner-base/git-hooks/* "{{host}}:/home/max/itsaplan-runner-base/git-hooks/"
+    ssh "{{host}}" "cd /home/max/itsaplan-runner-base && chmod +x entrypoint.sh git-hooks/* && docker build --pull -t itsaplan-runner-base:${VERSION} -t itsaplan-runner-base:latest -t git.kms-lab.in.ua/max/itsaplan-runner-base:${VERSION} -t git.kms-lab.in.ua/max/itsaplan-runner-base:latest ."
+    echo "✅ Base image itsaplan-runner-base:${VERSION} built and tagged on {{host}}"
