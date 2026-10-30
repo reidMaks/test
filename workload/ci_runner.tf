@@ -575,7 +575,7 @@ resource "kubernetes_deployment" "forgejo_runner" {
         # Docker-in-Docker sidecar for container builds & Compose tests
         container {
           name  = "dind"
-          image = "docker:27-dind"
+          image = "docker:29-dind"
           args = [
             "dockerd",
             "--group=0",
