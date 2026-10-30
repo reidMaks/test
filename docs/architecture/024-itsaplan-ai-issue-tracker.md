@@ -1,7 +1,7 @@
 # 024 Deploy "It's a Plan" AI-Native Issue Tracker
 
-**Status:** Implemented (Updated to v1.5.0)
-**Date:** 2026-09-29 (Updated 2026-10-16)
+**Status:** Implemented (Updated to v1.9.0 & Official OCI Helm Chart)
+**Date:** 2026-09-29 (Updated 2026-10-30)
 
 ## Context
 
@@ -59,6 +59,7 @@ flowchart TD
      - `plan-api.kms-lab.in.ua` for Elysia API & MCP server (`itsaplan-api`, port 3000).
    - Single-level subdomains are natively protected by our cluster-wide Let's Encrypt wildcard certificate (`*.kms-lab.in.ua`) and Cloudflare Universal SSL (which does not support multi-level subdomains like `api.plan.kms-lab.in.ua` on the free tier).
    - `COOKIE_DOMAIN` is set to `.kms-lab.in.ua` to allow seamless session sharing between `plan` and `plan-api`.
+   - `TRUSTED_PROXIES` is set to `"10.244.0.0/16"` (added in `v1.7.0`) so `better-auth` skips the `cloudflared` pod IP in `X-Forwarded-For` and accurately keys authentication rate limits by real client IP across both Cloudflare Tunnel and direct VPN/LAN traffic.
 
 2. **CloudNativePG (`shared-db`) & Decoupled Migration Lifecycle:**
    - Dedicated database `itsaplan` and user `itsaplan` are provisioned declaratively in `cnpg-system` using `DatabaseRole` and `Database` custom resources.
@@ -73,8 +74,10 @@ flowchart TD
    - Upstream `v1.2.0` (`#437`) replaced `quay.io/minio/minio` and `quay.io/minio/mc` with `rustfs/rustfs:1.0.0` after MinIO discontinued free public container images on Quay.io (`401 UNAUTHORIZED`).
    - Following upstream `job-minio-init.yaml`, our declarative `kubernetes_job_v1.itsaplan_minio_bucket_init` now uses `rustfs/rustfs:1.0.0` and initializes the bucket via `curl -X PUT --aws-sigv4 aws:amz:us-east-1:s3` (accepting both HTTP `200` and `409 BucketAlreadyOwnedByYou` for idempotency across MinIO and RustFS).
 
-4. **Multi-Arch Container Images from GHCR (`v1.5.0`):**
-   - Official images are pulled from GitHub Container Registry (`ghcr.io/croffasia/itsaplan-*`), pinned to release tag `1.5.0` (bringing Workspaces & Project Archiving from `v1.3.0`, status-triggered agent schedules & PG18 client from `v1.4.0`, and encrypted OAuth tokens at rest, account deactivation, workspace model pricing, and PWA support from `v1.5.0`).
+4. **Official OCI Helm Chart & Multi-Arch Container Images (`v1.9.0`):**
+   - Starting in `v1.9.0` (`#707`, `#682`), upstream publishes an official OCI Helm chart (`oci://ghcr.io/croffasia/charts/itsaplan`) whose chart `version` and `appVersion` match the application release (`1.9.0`), with native support for `api.env.SKIP_PRE_MIGRATION_BACKUP`, `CLIENT_IP_HEADER`, and `TRUSTED_PROXIES`.
+   - We migrated `helm_release.itsaplan` in `workload/itsaplan.tf` from the locally vendored `workload/charts/itsaplan` directory to `repository = "oci://ghcr.io/croffasia/charts"`, `chart = "itsaplan"`, `version = "1.9.0"`, deleting the vendored chart directory and letting `.Chart.AppVersion` drive the `api`, `web`, and `worker` image tags from a single version pin.
+   - `v1.9.0` brings cross-project search (`search_issues_all_projects`), bulk checklist item creation (`create_checklist_items`), `@mentions` of humans and AI agents in Docs & Doc comments, multimodal attachment/PDF reading and GitHub tools for agents, inline property editing in Table/Timeline views, Trello import, `.ics` calendar feeds, external agent invocation URLs (`v1.6.0`), agent run history & runner queues (`v1.7.0`), stripped production images (`v1.6.0`), and 11 security advisory fixes (`v1.7.0`–`v1.9.0`).
    - Images provide native multi-architecture support (`linux/amd64` for Proxmox workers and `linux/arm64` for OCI nodes).
 
 5. **Resource Efficiency & Omission of `itsaplan-bot`:**

@@ -191,10 +191,6 @@ resource "cloudflare_zero_trust_tunnel_cloudflared_config" "main" {
   tunnel_id  = local.cf_tunnel_id
 
   config {
-    warp_routing {
-      enabled = false
-    }
-
     ingress_rule {
       hostname = "tandoor.kms-lab.in.ua"
       service  = local.traefik_origin

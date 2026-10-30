@@ -28,7 +28,7 @@ During the 2026-10 infrastructure audit (`IAAC-14`, `IAAC-22`), several drawback
    - **Isolate Stateful Upgrades:** `longhorn` (Helm chart) and `ghcr.io/cloudnative-pg/postgresql` (Docker image) are split into dedicated PR groups (`Longhorn storage` and `CloudNativePG PostgreSQL`) so storage-engine upgrades and database rolling restarts are never bundled with routine application updates.
    - **Kubernetes Skew Alignment:** `descheduler` (`< 0.37.0`) and `alpine/k8s` (`< 1.37.0`) are pinned to the cluster's current Kubernetes minor version (`v1.36.x`).
    - **MariaDB LTS Pinning:** `mariadb` is constrained to `< 12.0` (`11.x` LTS branch) for WordPress preview pods.
-   - **Ignore Legacy/Disabled Manifests:** `workload/actualbudget/docker-compose.yml` (legacy pre-K8s file) and `workload/charts/itsaplan/values.yaml` (disabled embedded DB/S3 defaults in vendored chart) are excluded via `ignorePaths`.
+   - **Ignore Legacy/Disabled Manifests:** `workload/actualbudget/docker-compose.yml` (legacy pre-K8s file) is excluded via `ignorePaths`. (`itsaplan` migrated from a vendored chart to the official OCI Helm chart `oci://ghcr.io/croffasia/charts/itsaplan` in `v1.9.0`, tracked directly by Renovate's Terraform manager).
 
 ```mermaid
 flowchart LR

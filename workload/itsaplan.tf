@@ -134,10 +134,12 @@ resource "kubernetes_job_v1" "itsaplan_minio_bucket_init" {
   }
 }
 
-# 5. Helm Release: It's a Plan
+# 5. Helm Release: It's a Plan (Official OCI Chart)
 resource "helm_release" "itsaplan" {
   name            = "itsaplan"
-  chart           = "${path.module}/charts/itsaplan"
+  repository      = "oci://ghcr.io/croffasia/charts"
+  chart           = "itsaplan"
+  version         = "1.9.0"
   namespace       = kubernetes_namespace.management.metadata[0].name
   upgrade_install = true
 
@@ -147,9 +149,6 @@ resource "helm_release" "itsaplan" {
         "topology.kubernetes.io/zone" = "oci"
       }
       api = {
-        image = {
-          tag = "1.5.0"
-        }
         resources = {
           requests = {
             cpu    = "50m"
@@ -163,6 +162,7 @@ resource "helm_release" "itsaplan" {
           API_URL                   = "https://plan-api.kms-lab.in.ua"
           APP_URL                   = "https://plan.kms-lab.in.ua"
           COOKIE_DOMAIN             = ".kms-lab.in.ua"
+          TRUSTED_PROXIES           = "10.244.0.0/16"
           S3_BUCKET                 = "itsaplan-attachments"
           S3_REGION                 = "us-east-1"
           S3_FORCE_PATH_STYLE       = "true"
@@ -171,9 +171,6 @@ resource "helm_release" "itsaplan" {
         }
       }
       web = {
-        image = {
-          tag = "1.5.0"
-        }
         resources = {
           requests = {
             cpu    = "50m"
@@ -185,9 +182,6 @@ resource "helm_release" "itsaplan" {
         }
       }
       worker = {
-        image = {
-          tag = "1.5.0"
-        }
         resources = {
           requests = {
             cpu    = "20m"

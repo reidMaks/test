@@ -13,8 +13,7 @@
     "renovate"
   ],
   "ignorePaths": [
-    "workload/actualbudget/docker-compose.yml",
-    "workload/charts/itsaplan/values.yaml"
+    "workload/actualbudget/docker-compose.yml"
   ],
   "terraform": {
     "managerFilePatterns": [
