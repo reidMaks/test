@@ -92,7 +92,7 @@ resource "helm_release" "traefik" {
   chart            = "traefik"
   namespace        = "traefik-system"
   create_namespace = true
-  version          = "41.7.1"
+  version          = "42.2.0"
   upgrade_install  = true
   depends_on       = [helm_release.metallb_config]
 
