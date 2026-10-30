@@ -182,6 +182,28 @@ resource "kubernetes_role_binding" "github_runner_apn_prod_binding" {
   }
 }
 
+# 3.3 GHCR ImagePullSecret in "apn-prod" (for pulling ghcr.io/reidmaks/apn release images)
+resource "kubernetes_secret" "apn_prod_ghcr_secret" {
+  metadata {
+    name      = "ghcr-secret"
+    namespace = kubernetes_namespace.apn_prod.metadata[0].name
+  }
+
+  type = "kubernetes.io/dockerconfigjson"
+
+  data = {
+    ".dockerconfigjson" = jsonencode({
+      auths = {
+        "ghcr.io" = {
+          username = "reidmaks"
+          password = data.bitwarden-secrets_secret.github_token.value
+          auth     = base64encode("reidmaks:${data.bitwarden-secrets_secret.github_token.value}")
+        }
+      }
+    })
+  }
+}
+
 # 4. GitHub Runner Secret (Uses Bitwarden Secret github_token)
 resource "kubernetes_secret" "github_runner_token" {
   metadata {
