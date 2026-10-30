@@ -107,6 +107,20 @@ resource "cloudflare_ruleset" "kms_lab_waf_custom" {
   }
 }
 
+resource "cloudflare_zone_settings_override" "kms_lab" {
+  zone_id = data.cloudflare_zone.main.id
+
+  settings {
+    ssl                      = "full"
+    always_use_https         = "on"
+    min_tls_version          = "1.2"
+    tls_1_3                  = "on"
+    automatic_https_rewrites = "on"
+    brotli                   = "on"
+    http3                    = "on"
+  }
+}
+
 # -----------------------------------------------------
 # APN Production Domain (apn.in.ua) — DNS, Tunnel & Free WAF/RateLimit
 # -----------------------------------------------------
@@ -155,6 +169,20 @@ resource "cloudflare_record" "apn_dkim_wildcard" {
   type    = "TXT"
   proxied = false
   comment = "Null wildcard DKIM record to invalidate unauthorized DKIM signatures"
+}
+
+resource "cloudflare_zone_settings_override" "apn" {
+  zone_id = data.cloudflare_zone.apn.id
+
+  settings {
+    ssl                      = "full"
+    always_use_https         = "on"
+    min_tls_version          = "1.2"
+    tls_1_3                  = "on"
+    automatic_https_rewrites = "on"
+    brotli                   = "on"
+    http3                    = "on"
+  }
 }
 
 # Декларативна конфігурація маршрутів Cloudflare Tunnel (Zero Trust Free)
