@@ -108,7 +108,7 @@ resource "kubernetes_deployment" "paperless_mcp" {
         # running Paperless container using its native Django management command.
         init_container {
           name  = "resolve-api-token"
-          image = "alpine/k8s:1.36.1"
+          image = "alpine/k8s:1.36.5"
 
           command = ["/bin/sh", "-c"]
           args = [

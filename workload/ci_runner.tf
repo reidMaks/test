@@ -272,7 +272,7 @@ resource "kubernetes_deployment" "github_runner" {
         # Init container to copy kubectl and helm from alpine/k8s image into shared volume
         init_container {
           name    = "install-k8s-tools"
-          image   = "alpine/k8s:1.36.1"
+          image   = "alpine/k8s:1.36.5"
           command = ["/bin/sh", "-c"]
           args = [
             <<-EOT
@@ -548,7 +548,7 @@ resource "kubernetes_deployment" "forgejo_runner" {
         # 2. Copy kubectl & helm into /tools and prepare /data permissions for UID 1000
         init_container {
           name    = "install-k8s-tools"
-          image   = "alpine/k8s:1.36.1"
+          image   = "alpine/k8s:1.36.5"
           command = ["/bin/sh", "-c"]
           args = [
             <<-EOT
@@ -619,7 +619,7 @@ resource "kubernetes_deployment" "forgejo_runner" {
         # Forgejo Actions Runner daemon
         container {
           name    = "runner"
-          image   = "data.forgejo.org/forgejo/runner:13.1.0"
+          image   = "data.forgejo.org/forgejo/runner:13.2.1"
           command = ["/bin/sh", "-c"]
           args = [
             <<-EOT
