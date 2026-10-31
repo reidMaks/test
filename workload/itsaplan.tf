@@ -109,7 +109,7 @@ resource "kubernetes_job_v1" "itsaplan_minio_bucket_init" {
         }
         container {
           name    = "s3-bucket-init"
-          image   = "rustfs/rustfs:1.0.0"
+          image   = "rustfs/rustfs:1.0.4"
           command = ["/bin/sh", "-c"]
           args = [
             <<-EOT

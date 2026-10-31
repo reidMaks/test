@@ -35,7 +35,7 @@ resource "kubernetes_deployment" "mailpit" {
 
         container {
           name  = "mailpit"
-          image = "axllent/mailpit:v1.31.6"
+          image = "axllent/mailpit:v1.33.0"
 
           env {
             name  = "MP_SMTP_BIND_ADDR"

@@ -87,7 +87,7 @@ services:
     depends_on:
       traefik-configurator:
         condition: service_completed_successfully
-    image: traefik:v3.0
+    image: traefik:v3.7
     container_name: traefik-qnap
     restart: always
     extra_hosts:
